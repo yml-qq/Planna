@@ -1,0 +1,20 @@
+{
+  "device_id": "018f4400-1234-7000-8000-000000000010",
+  "mutations": [
+    {
+      "mutation_id": "018f4400-1234-7000-8000-000000000011",
+      "entity_type": "task",
+      "entity_id": "018f4400-1234-7000-8000-000000000012",
+      "op": "upsert",
+      "base_version": 0,
+      "payload": {
+        "id": "018f4400-1234-7000-8000-000000000012",
+        "list_id": "018f4400-1234-7000-8000-000000000013",
+        "title": "买水果",
+        "priority": 0,
+        "all_day": false,
+        "time_zone": "Asia/Shanghai"
+      }
+    }
+  ]
+}

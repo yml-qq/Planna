@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.example.com/planna/ai-plan-v1.json",
+  "title": "AI Plan Preview",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "expires_at", "snapshot_hash", "confirmation_token", "operations", "conflicts", "unplanned_task_ids", "explanation"],
+  "properties": {
+    "plan_id": {"type": "string", "format": "uuid"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "snapshot_hash": {"type": "string", "minLength": 16},
+    "confirmation_token": {"type": "string", "minLength": 16},
+    "operations": {
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["operation_id", "task_id", "expected_version", "kind", "before", "after", "reason"],
+        "properties": {
+          "operation_id": {"type": "string", "format": "uuid"},
+          "task_id": {"type": "string", "format": "uuid"},
+          "expected_version": {"type": "integer", "minimum": 1},
+          "kind": {"const": "set_time_block"},
+          "before": {"type": ["object", "null"]},
+          "after": {
+            "type": "object", "additionalProperties": false,
+            "required": ["start_at", "end_at"],
+            "properties": {
+              "start_at": {"type": "string", "format": "date-time"},
+              "end_at": {"type": "string", "format": "date-time"}
+            }
+          },
+          "reason": {"type": "string", "maxLength": 500}
+        }
+      }
+    },
+    "conflicts": {"type": "array", "items": {"type": "string"}},
+    "unplanned_task_ids": {"type": "array", "items": {"type": "string", "format": "uuid"}},
+    "explanation": {"type": "string", "maxLength": 4000}
+  }
+}

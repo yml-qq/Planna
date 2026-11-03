@@ -1,0 +1,71 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using Planna.Infrastructure.Persistence;
+
+var value = Environment.GetEnvironmentVariable("PLANNADB_CONNECTION")
+    ?? throw new InvalidOperationException("Set PLANNADB_CONNECTION to an isolated local test database.");
+var target = new NpgsqlConnectionStringBuilder(value);
+if (target.Host is not ("localhost" or "127.0.0.1") ||
+    target.Database is not { } database ||
+    !database.StartsWith("planna_test", StringComparison.OrdinalIgnoreCase))
+    throw new InvalidOperationException("Migration smoke only runs against localhost/planna_test*.");
+
+await using (var db = new PlannaSchemaContextFactory().CreateDbContext([]))
+{
+    await db.Database.MigrateAsync();
+    await db.Database.MigrateAsync();
+}
+
+await using var connection = new NpgsqlConnection(value);
+await connection.OpenAsync();
+
+static async Task<int> Exec(NpgsqlConnection db, string sql, params object[] values)
+{
+    await using var cmd = new NpgsqlCommand(sql, db);
+    foreach (var item in values) cmd.Parameters.AddWithValue(item);
+    return await cmd.ExecuteNonQueryAsync();
+}
+
+static async Task Expect(string state, Func<Task> action)
+{
+    try { await action(); }
+    catch (PostgresException ex) when (ex.SqlState == state) { return; }
+    throw new InvalidOperationException($"Expected SQLSTATE {state}.");
+}
+
+var owner = Guid.NewGuid();
+var other = Guid.NewGuid();
+var list = Guid.NewGuid();
+var task = Guid.NewGuid();
+await Exec(connection, "INSERT INTO users(id,email) VALUES($1,$2),($3,$4)", owner, "one@example.test", other, "two@example.test");
+await Exec(connection, "INSERT INTO task_lists(id,owner_id,name) VALUES($1,$2,'Inbox')", list, owner);
+await Exec(connection, "INSERT INTO tasks(id,owner_id,list_id,title) VALUES($1,$2,$3,'Synthetic task')", task, owner, list);
+
+const string draft = "INSERT INTO ai_breakdown_drafts(owner_id,task_id,task_version,snapshot_hash,steps,confirmation_token_hash,expires_at) VALUES($1,$2,1,'hash','[]','token',now()+interval '1 hour')";
+await Expect("23503", () => Exec(connection, draft, other, task));
+await Expect("23514", () => Exec(connection, draft, owner, task));
+await Exec(connection, draft.Replace("'[]'", "'[{\"step_id\":\"synthetic\"}]'"), owner, task);
+await Expect("23514", () => Exec(connection,
+    "INSERT INTO task_steps(id,owner_id,task_id,title,estimate_minutes) VALUES($1,$2,$3,'Invalid',0)", Guid.NewGuid(), owner, task));
+await Expect("23514", () => Exec(connection, "INSERT INTO account_exports(owner_id,status) VALUES($1,'ready')", owner));
+await Exec(connection, "INSERT INTO account_deletion_requests(owner_id,policy_version) VALUES($1,'test-v1')", owner);
+await Expect("23505", () => Exec(connection,
+    "INSERT INTO account_deletion_requests(owner_id,policy_version) VALUES($1,'test-v1')", owner));
+
+var mutation = Guid.NewGuid();
+await using (var tx = await connection.BeginTransactionAsync())
+{
+    await Exec(connection, "INSERT INTO client_mutations(owner_id,mutation_id,request_hash,response) VALUES($1,$2,'hash','{}')", owner, mutation);
+    await Exec(connection, "INSERT INTO task_steps(id,owner_id,task_id,title,estimate_minutes) VALUES($1,$2,$3,'Rollback',15)", Guid.NewGuid(), owner, task);
+    await tx.RollbackAsync();
+}
+await using (var cmd = new NpgsqlCommand("SELECT count(*) FROM client_mutations WHERE owner_id=$1 AND mutation_id=$2", connection))
+{
+    cmd.Parameters.AddWithValue(owner);
+    cmd.Parameters.AddWithValue(mutation);
+    if ((long)(await cmd.ExecuteScalarAsync() ?? -1L) != 0) throw new InvalidOperationException("Rollback failed.");
+}
+await Exec(connection, "INSERT INTO client_mutations(owner_id,mutation_id,request_hash,response) VALUES($1,$2,'hash','{}')", owner, mutation);
+await Expect("23505", () => Exec(connection,
+    "INSERT INTO client_mutations(owner_id,mutation_id,request_hash,response) VALUES($1,$2,'hash','{}')", owner, mutation));
+Console.WriteLine("PASS: migrations/reapply, owner FK, constraints, rollback, duplicate mutation/deletion");

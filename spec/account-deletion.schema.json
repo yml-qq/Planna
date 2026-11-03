@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.example.com/planna/account-deletion-v1.json",
+  "title": "Accepted account deletion request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["deletion_request_id", "status", "requested_at", "policy_version"],
+  "properties": {
+    "deletion_request_id": {"type": "string", "format": "uuid"},
+    "status": {"const": "accepted"},
+    "requested_at": {"type": "string", "format": "date-time"},
+    "policy_version": {"type": "string", "minLength": 1}
+  }
+}

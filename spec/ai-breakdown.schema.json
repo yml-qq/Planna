@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.example.com/planna/ai-breakdown-v1.json",
+  "title": "Persisted AI task breakdown preview",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["draft_id", "task_id", "task_version", "expires_at", "snapshot_hash", "steps", "assumptions", "confirmation_token"],
+  "properties": {
+    "draft_id": {"type": "string", "format": "uuid"},
+    "task_id": {"type": "string", "format": "uuid"},
+    "task_version": {"type": "integer", "minimum": 1},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "snapshot_hash": {"type": "string", "minLength": 16},
+    "confirmation_token": {"type": "string", "minLength": 16},
+    "steps": {
+      "type": "array", "minItems": 1, "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["step_id", "title", "estimate_minutes", "position"],
+        "properties": {
+          "step_id": {"type": "string", "format": "uuid"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 500},
+          "estimate_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
+          "position": {"type": "integer", "minimum": 0, "maximum": 19}
+        }
+      }
+    },
+    "assumptions": {"type": "array", "items": {"type": "string", "maxLength": 500}}
+  }
+}

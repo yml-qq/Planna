@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.example.com/planna/account-export-v1.json",
+  "title": "Planna account export v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source", "generated_at", "snapshot_at", "pending_mutation_ids", "data"],
+  "properties": {
+    "schema_version": {"const": "account-export-v1"},
+    "source": {"enum": ["local", "cloud"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "snapshot_at": {"type": "string", "format": "date-time"},
+    "pending_mutation_ids": {"type": "array", "items": {"type": "string", "format": "uuid"}},
+    "data": {
+      "type": "object", "additionalProperties": false,
+      "required": ["account", "lists", "tasks", "steps", "tags", "reminders", "time_blocks", "ai_consents", "ai_memories"],
+      "properties": {
+        "account": {"type": "object", "required": ["id", "time_zone"], "properties": {"id": {"type": "string", "format": "uuid"}, "time_zone": {"type": "string"}}, "additionalProperties": true},
+        "lists": {"type": "array", "items": {"$ref": "#/$defs/list"}},
+        "tasks": {"type": "array", "items": {"$ref": "task.schema.json"}},
+        "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+        "tags": {"type": "array", "items": {"$ref": "#/$defs/tag"}},
+        "reminders": {"type": "array", "items": {"$ref": "#/$defs/reminder"}},
+        "time_blocks": {"type": "array", "items": {"$ref": "#/$defs/time_block"}},
+        "ai_consents": {"type": "array", "items": {"$ref": "#/$defs/ai_consent"}},
+        "ai_memories": {"type": "array", "items": {"$ref": "#/$defs/ai_memory"}}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"source": {"const": "cloud"}}, "required": ["source"]}, "then": {"properties": {"pending_mutation_ids": {"maxItems": 0}}}}
+  ],
+  "$defs": {
+    "list": {"type": "object", "required": ["id", "name", "kind", "version"], "properties": {"id": {"type": "string", "format": "uuid"}, "name": {"type": "string"}, "kind": {"type": "string"}, "version": {"type": "integer", "minimum": 1}}, "additionalProperties": true},
+    "step": {"type": "object", "required": ["id", "task_id", "title", "is_done"], "properties": {"id": {"type": "string", "format": "uuid"}, "task_id": {"type": "string", "format": "uuid"}, "title": {"type": "string"}, "is_done": {"type": "boolean"}, "estimate_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440}}, "additionalProperties": true},
+    "tag": {"type": "object", "required": ["id", "name"], "properties": {"id": {"type": "string", "format": "uuid"}, "name": {"type": "string"}}, "additionalProperties": true},
+    "reminder": {"type": "object", "required": ["id", "task_id", "scheduled_at", "enabled"], "properties": {"id": {"type": "string", "format": "uuid"}, "task_id": {"type": "string", "format": "uuid"}, "scheduled_at": {"type": "string", "format": "date-time"}, "enabled": {"type": "boolean"}}, "additionalProperties": true},
+    "time_block": {"type": "object", "required": ["id", "task_id", "start_at", "end_at"], "properties": {"id": {"type": "string", "format": "uuid"}, "task_id": {"type": "string", "format": "uuid"}, "start_at": {"type": "string", "format": "date-time"}, "end_at": {"type": "string", "format": "date-time"}}, "additionalProperties": true},
+    "ai_consent": {"type": "object", "required": ["allowed_scopes"], "properties": {"allowed_scopes": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": true},
+    "ai_memory": {"type": "object", "required": ["id", "kind", "content"], "properties": {"id": {"type": "string", "format": "uuid"}, "kind": {"type": "string"}, "content": {"type": "string"}}, "additionalProperties": true}
+  }
+}

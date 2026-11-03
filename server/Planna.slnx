@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Planna.Infrastructure/Planna.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,20 @@
+{
+  "plan_id": "018f4400-1234-7000-8000-000000000020",
+  "expires_at": "2026-11-03T08:30:00Z",
+  "snapshot_hash": "a-provisional-snapshot-hash-change-in-implementation",
+  "confirmation_token": "example-plan-confirm-token-v1",
+  "operations": [
+    {
+      "operation_id": "018f4400-1234-7000-8000-000000000021",
+      "task_id": "018f4400-1234-7000-8000-000000000012",
+      "expected_version": 2,
+      "kind": "set_time_block",
+      "before": null,
+      "after": {"start_at": "2026-11-04T01:00:00Z", "end_at": "2026-11-04T01:30:00Z"},
+      "reason": "在已知空闲时段内安排 30 分钟"
+    }
+  ],
+  "conflicts": [],
+  "unplanned_task_ids": [],
+  "explanation": "这是一份经过规则排程校验的示例草案，需要用户确认后执行。"
+}

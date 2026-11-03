@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.example.com/planna/task-v1.json",
+  "title": "Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "list_id", "title", "status", "priority", "all_day", "time_zone", "version", "deleted_at"],
+  "properties": {
+    "id": {"type": "string", "format": "uuid"},
+    "list_id": {"type": "string", "format": "uuid"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 500},
+    "description": {"type": "string", "maxLength": 20000},
+    "status": {"type": "string", "enum": ["todo", "in_progress", "done", "archived"]},
+    "priority": {"type": "integer", "minimum": 0, "maximum": 3},
+    "start_at": {"type": ["string", "null"], "format": "date-time"},
+    "due_at": {"type": ["string", "null"], "format": "date-time"},
+    "due_local_date": {"type": ["string", "null"], "format": "date"},
+    "all_day": {"type": "boolean"},
+    "time_zone": {"type": "string", "minLength": 1, "maxLength": 128},
+    "estimate_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "version": {"type": "integer", "minimum": 1},
+    "deleted_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "allOf": [
+    {"if": {"properties": {"all_day": {"const": true}}, "required": ["all_day"]}, "then": {"properties": {"due_at": {"type": "null"}}}},
+    {"if": {"properties": {"all_day": {"const": false}}, "required": ["all_day"]}, "then": {"properties": {"due_local_date": {"type": "null"}}}}
+  ]
+}

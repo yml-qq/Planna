@@ -1,0 +1,13 @@
+{
+  "draft_id": "018f4400-1234-7000-8000-000000000030",
+  "task_id": "018f4400-1234-7000-8000-000000000012",
+  "task_version": 2,
+  "expires_at": "2026-11-03T09:00:00Z",
+  "snapshot_hash": "example-breakdown-snapshot-v1",
+  "confirmation_token": "example-confirm-token-v1",
+  "steps": [
+    {"step_id": "018f4400-1234-7000-8000-000000000031", "title": "列出报告提纲", "estimate_minutes": 20, "position": 0},
+    {"step_id": "018f4400-1234-7000-8000-000000000032", "title": "撰写初稿", "estimate_minutes": 60, "position": 1}
+  ],
+  "assumptions": ["假设现有资料已齐备，请确认"]
+}

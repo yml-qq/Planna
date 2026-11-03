@@ -1,0 +1,825 @@
+openapi: 3.1.0
+info:
+  title: Planna Core API
+  version: 0.1.0
+  description: |
+    ASP.NET Core .NET 10 backend contract for Planna (普拉清单), a modern,
+    lightweight, AI-native, offline-first personal task and time management app.
+    This is an implementation starting point, not a verified deployed endpoint.
+servers:
+  - url: https://api.example.com/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Identity
+  - name: Tasks
+  - name: Lists
+  - name: Sync
+  - name: AI
+paths:
+  /health/live:
+    get:
+      operationId: healthLive
+      security: []
+      responses:
+        '200':
+          description: Service process responding
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: ok}
+  /auth/login:
+    post:
+      tags: [Identity]
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, code, device_name, platform]
+              properties:
+                email: {type: string, format: email}
+                code: {type: string, minLength: 4, maxLength: 12}
+                device_name: {type: string, maxLength: 120}
+                platform: {type: string, enum: [android, ios, windows, macos, linux]}
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/refresh:
+    post:
+      tags: [Identity]
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: {type: string}
+      responses:
+        '200':
+          description: Rotated tokens
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/step-up/challenges:
+    post:
+      tags: [Identity]
+      operationId: createSensitiveActionChallenge
+      description: Send a short-lived account deletion verification code to the authenticated account email; rate limited.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Challenge queued without exposing the code.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [purpose, expires_at]
+                properties:
+                  purpose: {type: string, const: account_delete}
+                  expires_at: {type: string, format: date-time}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/step-up:
+    post:
+      tags: [Identity]
+      operationId: verifySensitiveAction
+      description: Verify a fresh email one-time code for account deletion; returns a short-lived action-bound token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [purpose, code]
+              properties:
+                purpose: {type: string, const: account_delete}
+                code: {type: string, minLength: 4, maxLength: 12}
+      responses:
+        '200':
+          description: Fresh confirmation token for this owner and purpose.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [confirmation_token, expires_at]
+                properties:
+                  confirmation_token: {type: string, minLength: 16}
+                  expires_at: {type: string, format: date-time}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+  /me:
+    get:
+      tags: [Identity]
+      operationId: getMe
+      responses:
+        '200':
+          description: Current account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, email, timezone]
+                properties:
+                  id: {type: string, format: uuid}
+                  email: {type: string, format: email}
+                  timezone: {type: string, example: Asia/Shanghai}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+  /me/exports:
+    post:
+      tags: [Identity]
+      operationId: createAccountExport
+      description: Creates an export of committed cloud data at a consistent snapshot. Complete local export is a client feature.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Export queued or existing result for the same idempotency key.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AccountExportJob'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+    get:
+      tags: [Identity]
+      operationId: listAccountExports
+      responses:
+        '200':
+          description: Recent export jobs for the authenticated owner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/AccountExportJob'}}
+  /me/exports/{id}:
+    get:
+      tags: [Identity]
+      operationId: getAccountExport
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Export status for current owner.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AccountExportJob'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+  /me/exports/{id}/download:
+    get:
+      tags: [Identity]
+      operationId: downloadAccountExport
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Authorized JSON export, available for 24 hours after ready.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+              description: attachment filename; never includes user supplied text.
+          content:
+            application/json:
+              schema: {$ref: './account-export.schema.json'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '410': {$ref: '#/components/responses/ErrorResponse'}
+  /me/deletion-requests:
+    post:
+      tags: [Identity]
+      operationId: requestAccountDeletion
+      description: Step-up authenticated final confirmation. Atomically disables account and revokes all device sessions.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [confirmation_token, acknowledge_offline_devices]
+              properties:
+                confirmation_token: {type: string, minLength: 16}
+                acknowledge_offline_devices: {type: boolean, const: true}
+      responses:
+        '202':
+          description: Deletion accepted; sessions revoked before response.
+          content:
+            application/json:
+              schema: {$ref: './account-deletion.schema.json'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /lists:
+    get:
+      tags: [Lists]
+      operationId: listTaskLists
+      responses:
+        '200':
+          description: Lists for current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/TaskList'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Lists]
+      operationId: createTaskList
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, name]
+              properties:
+                id: {type: string, format: uuid}
+                name: {type: string, minLength: 1, maxLength: 120}
+      responses:
+        '201':
+          description: Created list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskList'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks:
+    get:
+      tags: [Tasks]
+      operationId: listTasks
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
+        - {name: list_id, in: query, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [todo, in_progress, done, archived]}}
+      responses:
+        '200':
+          description: Paged tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/Task'}}
+                  next_cursor: {type: [string, 'null']}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Tasks]
+      operationId: createTask
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateTask'}
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Tasks]
+      operationId: getTask
+      responses:
+        '200':
+          description: Task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    patch:
+      tags: [Tasks]
+      operationId: updateTask
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateTask'}
+      responses:
+        '200':
+          description: Updated task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Tasks]
+      operationId: deleteTask
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        '204': {description: Soft-deleted task}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/complete:
+    post:
+      tags: [Tasks]
+      operationId: completeTask
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                occurrence_id: {type: [string, 'null'], format: uuid}
+                completed_at: {type: [string, 'null'], format: date-time}
+      responses:
+        '200':
+          description: Completion result
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /sync/push:
+    post:
+      tags: [Sync]
+      operationId: pushMutations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SyncPushRequest'}
+      responses:
+        '200':
+          description: Per-mutation results
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SyncPushResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+  /sync/pull:
+    get:
+      tags: [Sync]
+      operationId: pullChanges
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
+      responses:
+        '200':
+          description: Incremental change pages for current owner
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SyncPullResponse'}
+        '410': {$ref: '#/components/responses/ErrorResponse'}
+  /sync/bootstrap:
+    post:
+      tags: [Sync]
+      operationId: bootstrapSync
+      description: Consistent paginated snapshot with cursor bound to database snapshot.
+      responses:
+        '200':
+          description: Snapshot first page (additional paging token implementation required)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [snapshot_cursor, tasks, lists]
+                properties:
+                  snapshot_cursor: {type: string}
+                  next_page_token: {type: [string, 'null']}
+                  tasks: {type: array, items: {$ref: '#/components/schemas/Task'}}
+                  lists: {type: array, items: {$ref: '#/components/schemas/TaskList'}}
+  /ai/parse:
+    post:
+      tags: [AI]
+      operationId: parseNaturalLanguage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiParseRequest'}
+      responses:
+        '200':
+          description: Draft parse, no business mutation
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiParseResponse'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+        '503': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/tasks/{id}/breakdowns:
+    post:
+      tags: [AI]
+      operationId: proposeTaskBreakdown
+      description: Persist an AI draft for an owned task; does not create business steps.
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                guidance: {type: string, maxLength: 2000}
+      responses:
+        '201':
+          description: Persisted editable draft, at most 20 steps.
+          content:
+            application/json:
+              schema: {$ref: './ai-breakdown.schema.json'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+        '503': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/breakdowns/{id}:
+    put:
+      tags: [AI]
+      operationId: editTaskBreakdown
+      description: Replace all draft steps; revalidate and issue a fresh snapshot hash and confirmation token.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [snapshot_hash, steps]
+              properties:
+                snapshot_hash: {type: string, minLength: 16}
+                steps: {type: array, minItems: 1, maxItems: 20, items: {$ref: '#/components/schemas/BreakdownStep'}}
+      responses:
+        '200':
+          description: Revalidated persisted draft.
+          content:
+            application/json:
+              schema: {$ref: './ai-breakdown.schema.json'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/breakdowns/{id}/apply:
+    post:
+      tags: [AI]
+      operationId: applyTaskBreakdown
+      description: Apply the complete confirmed draft atomically; no partial step writes.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [snapshot_hash, confirmation_token]
+              properties:
+                snapshot_hash: {type: string, minLength: 16}
+                confirmation_token: {type: string, minLength: 16}
+      responses:
+        '200':
+          description: Applied result; same idempotency key returns same result.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status, task_id, step_ids]
+                properties:
+                  status: {type: string, const: applied}
+                  task_id: {type: string, format: uuid}
+                  step_ids: {type: array, minItems: 1, maxItems: 20, items: {type: string, format: uuid}}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/plans:
+    post:
+      tags: [AI]
+      operationId: proposeAiPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids, range_start, range_end]
+              properties:
+                task_ids: {type: array, items: {type: string, format: uuid}, maxItems: 100}
+                range_start: {type: string, format: date-time}
+                range_end: {type: string, format: date-time}
+      responses:
+        '200':
+          description: Validated preview
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiPlan'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/plans/{id}/apply:
+    post:
+      tags: [AI]
+      operationId: applyAiPlan
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [snapshot_hash, accepted_operation_ids, confirmation_token]
+              properties:
+                snapshot_hash: {type: string}
+                accepted_operation_ids: {type: array, items: {type: string, format: uuid}, minItems: 1, maxItems: 20, uniqueItems: true, description: 'V1.0 requires exact equality with all persisted plan operation IDs.'}
+                confirmation_token: {type: string}
+      responses:
+        '200':
+          description: Applied operation IDs and server versions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, applied_operation_ids]
+                properties:
+                  status: {type: string, const: applied}
+                  applied_operation_ids: {type: array, items: {type: string, format: uuid}}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '403': {$ref: '#/components/responses/ErrorResponse'}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      description: Stable key reused for retries of the same write.
+    TaskId:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    ErrorResponse:
+      description: Standard error body
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorBody'}
+  schemas:
+    BreakdownStep:
+      type: object
+      additionalProperties: false
+      required: [step_id, title, estimate_minutes, position]
+      properties:
+        step_id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 500}
+        estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+        position: {type: integer, minimum: 0, maximum: 19}
+    AccountExportJob:
+      type: object
+      additionalProperties: false
+      required: [export_id, status, requested_at, snapshot_at, expires_at]
+      properties:
+        export_id: {type: string, format: uuid}
+        status: {type: string, enum: [pending, ready, failed, expired]}
+        requested_at: {type: string, format: date-time}
+        snapshot_at: {type: [string, 'null'], format: date-time}
+        expires_at: {type: [string, 'null'], format: date-time}
+        error_code: {type: [string, 'null']}
+    ErrorBody:
+      type: object
+      required: [error, request_id]
+      properties:
+        request_id: {type: string}
+        error:
+          type: object
+          required: [code, message, retryable]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            retryable: {type: boolean}
+            details: {type: object, additionalProperties: true}
+    AuthResponse:
+      type: object
+      required: [access_token, refresh_token, expires_in]
+      properties:
+        access_token: {type: string}
+        refresh_token: {type: string}
+        expires_in: {type: integer}
+    TaskList:
+      type: object
+      required: [id, name, kind, version]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string, enum: [inbox, custom]}
+        version: {type: integer, minimum: 1}
+    Task:
+      type: object
+      required: [id, list_id, title, status, priority, all_day, time_zone, version]
+      properties:
+        id: {type: string, format: uuid}
+        list_id: {type: string, format: uuid}
+        title: {type: string}
+        description: {type: string}
+        status: {type: string, enum: [todo, in_progress, done, archived]}
+        priority: {type: integer, minimum: 0, maximum: 3}
+        start_at: {type: [string, 'null'], format: date-time}
+        due_at: {type: [string, 'null'], format: date-time}
+        due_local_date: {type: [string, 'null'], format: date}
+        all_day: {type: boolean}
+        time_zone: {type: string}
+        estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+        completed_at: {type: [string, 'null'], format: date-time}
+        version: {type: integer, minimum: 1}
+        deleted_at: {type: [string, 'null'], format: date-time}
+    CreateTask:
+      type: object
+      additionalProperties: false
+      required: [id, list_id, title]
+      properties:
+        id: {type: string, format: uuid}
+        list_id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 500}
+        description: {type: string, maxLength: 20000}
+        priority: {type: integer, minimum: 0, maximum: 3, default: 0}
+        start_at: {type: [string, 'null'], format: date-time}
+        due_at: {type: [string, 'null'], format: date-time}
+        due_local_date: {type: [string, 'null'], format: date}
+        all_day: {type: boolean, default: false}
+        time_zone: {type: string, default: Asia/Shanghai}
+        estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+    UpdateTask:
+      type: object
+      additionalProperties: false
+      required: [expected_version, patch]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        patch:
+          type: object
+          minProperties: 1
+          additionalProperties: false
+          properties:
+            title: {type: string, minLength: 1, maxLength: 500}
+            description: {type: string, maxLength: 20000}
+            priority: {type: integer, minimum: 0, maximum: 3}
+            due_at: {type: [string, 'null'], format: date-time}
+            due_local_date: {type: [string, 'null'], format: date}
+            time_zone: {type: string}
+            estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+    SyncMutation:
+      type: object
+      required: [mutation_id, entity_type, entity_id, op, base_version, payload]
+      properties:
+        mutation_id: {type: string, format: uuid}
+        entity_type: {type: string, enum: [task, list, tag, step, reminder, time_block]}
+        entity_id: {type: string, format: uuid}
+        op: {type: string, enum: [upsert, delete]}
+        base_version: {type: integer, minimum: 0}
+        payload: {type: object, additionalProperties: true}
+    SyncPushRequest:
+      type: object
+      required: [device_id, mutations]
+      properties:
+        device_id: {type: string, format: uuid}
+        mutations: {type: array, minItems: 1, maxItems: 100, items: {$ref: '#/components/schemas/SyncMutation'}}
+    SyncPushResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [mutation_id, status]
+            properties:
+              mutation_id: {type: string, format: uuid}
+              status: {type: string, enum: [accepted, duplicate, conflict, rejected]}
+              entity_version: {type: [integer, 'null']}
+              server_entity: {type: [object, 'null'], additionalProperties: true}
+              retryable: {type: boolean}
+    SyncChange:
+      type: object
+      required: [revision, change_index, entity_type, entity_id, op, version]
+      properties:
+        revision: {type: integer, minimum: 1}
+        change_index: {type: integer, minimum: 0}
+        entity_type: {type: string}
+        entity_id: {type: string, format: uuid}
+        op: {type: string, enum: [upsert, delete]}
+        version: {type: integer, minimum: 1}
+        payload: {type: [object, 'null'], additionalProperties: true}
+    SyncPullResponse:
+      type: object
+      required: [changes, next_cursor, has_more, server_time]
+      properties:
+        changes: {type: array, items: {$ref: '#/components/schemas/SyncChange'}}
+        next_cursor: {type: string}
+        has_more: {type: boolean}
+        server_time: {type: string, format: date-time}
+    AiParseRequest:
+      type: object
+      required: [input, context]
+      properties:
+        input: {type: string, minLength: 1, maxLength: 10000}
+        context:
+          type: object
+          required: [time_zone, now]
+          properties:
+            time_zone: {type: string}
+            now: {type: string, format: date-time}
+        allowed_scopes: {type: array, items: {type: string}}
+    AiParseResponse:
+      type: object
+      required: [intent, drafts, assumptions, unresolved_fields]
+      properties:
+        intent: {type: string, enum: [create_task, multi_task, clarify, unsupported]}
+        drafts:
+          type: array
+          items:
+            type: object
+            required: [title]
+            properties:
+              title: {type: string}
+              due_at: {type: [string, 'null'], format: date-time}
+              time_zone: {type: string}
+              reminders: {type: array, items: {type: object, additionalProperties: true}}
+        assumptions: {type: array, items: {type: string}}
+        unresolved_fields: {type: array, items: {type: string}}
+    AiPlan:
+      type: object
+      required: [plan_id, expires_at, snapshot_hash, confirmation_token, operations, conflicts, unplanned_task_ids, explanation]
+      properties:
+        plan_id: {type: string, format: uuid}
+        expires_at: {type: string, format: date-time}
+        snapshot_hash: {type: string}
+        confirmation_token: {type: string, minLength: 16}
+        operations:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [operation_id, task_id, expected_version, kind, before, after, reason]
+            properties:
+              operation_id: {type: string, format: uuid}
+              task_id: {type: string, format: uuid}
+              expected_version: {type: integer, minimum: 1}
+              kind: {type: string, const: set_time_block}
+              before: {type: [object, 'null'], additionalProperties: true}
+              after:
+                type: object
+                required: [start_at, end_at]
+                properties:
+                  start_at: {type: string, format: date-time}
+                  end_at: {type: string, format: date-time}
+              reason: {type: string}
+        conflicts: {type: array, items: {type: string}}
+        unplanned_task_ids: {type: array, items: {type: string, format: uuid}}
+        explanation: {type: string}

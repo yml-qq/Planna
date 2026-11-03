@@ -1,0 +1,343 @@
+{
+  "name": "Planna (普拉清单) Product and Engineering Blueprint",
+  "version": "0.1.0",
+  "generated_at": "2026-11-04",
+  "status": "design baseline; no production app/source implementation",
+  "source_files": [
+    {
+      "file": ".gitignore",
+      "bytes": 64,
+      "sha256": "b1b8f2dd1f44c0f5494fd9565742b098b4628b7521ec6cb3db66e15a8c4b19e0"
+    },
+    {
+      "file": "00-README.md",
+      "bytes": 9108,
+      "sha256": "68c1f66d90bebba94fcb7b0bf2b8dca0bb381fdbc06dc041c2df0b011556b3f1"
+    },
+    {
+      "file": "AGENTS.md",
+      "bytes": 3750,
+      "sha256": "f1e94f13202fe5f33dcdb9b99ac4ba29f07317624b552fbf6d4f8fb7e628b1d4"
+    },
+    {
+      "file": "db/001_init.sql",
+      "bytes": 10432,
+      "sha256": "f24e3006f9455c2f0ae08c67d9d91b1a3923fd0f6fd838fbdc04b25529f74e76"
+    },
+    {
+      "file": "db/002_spec01.sql",
+      "bytes": 2842,
+      "sha256": "33b7d6e4617a28e73bfb9464c87f6a99f8b9a7a0d9ac2eb87a8885204f6132c4"
+    },
+    {
+      "file": "docs/01-PRD.md",
+      "bytes": 10441,
+      "sha256": "cdf4d31090b6566ee2cd1cf23eea1cd3b2b76bc311d2824a8209429dfd21e097"
+    },
+    {
+      "file": "docs/02-FUNCTIONAL-SPECS.md",
+      "bytes": 9446,
+      "sha256": "b8d6304701181d61c1d58e314704de6ee364f68070eb7bac74e3cc559b7832a2"
+    },
+    {
+      "file": "docs/03-UX-FLOWS.md",
+      "bytes": 6850,
+      "sha256": "d0a3da713add678a351686f8d8b4c38b80a409bb44a09fc80b02bd63caee5067"
+    },
+    {
+      "file": "docs/04-ARCHITECTURE.md",
+      "bytes": 6690,
+      "sha256": "9205f2202015effc9ffc92fb7e19e932023043361d1639b06469165606f116ec"
+    },
+    {
+      "file": "docs/05-DATA-DOMAIN.md",
+      "bytes": 8284,
+      "sha256": "7a85d46b82f125ee1e1162eb369d0b7e89cddfddd18bf646b0633e857fe91988"
+    },
+    {
+      "file": "docs/06-API-CONTRACT.md",
+      "bytes": 9098,
+      "sha256": "06cb6b404528a6cca287f677823f4eb117ea756f135209e8e5b1261f6170c79e"
+    },
+    {
+      "file": "docs/07-OFFLINE-SYNC.md",
+      "bytes": 6810,
+      "sha256": "ecb1d0eeac094946c64e2817275fb862d356faaa13e1bb13f6b259ed1cf589f6"
+    },
+    {
+      "file": "docs/08-AI-CAPABILITIES.md",
+      "bytes": 6387,
+      "sha256": "5728bda6c7fbb1ed80e9cb51af8ec499b13f1c0d3d32d18747c28509d1a49b98"
+    },
+    {
+      "file": "docs/09-AI-ORCHESTRATION.md",
+      "bytes": 7730,
+      "sha256": "d9c91d8e8cadd5a3265642bdac287fac2a84885433771b3ca023967c017f946d"
+    },
+    {
+      "file": "docs/10-RECURRENCE-NOTIFICATION.md",
+      "bytes": 5276,
+      "sha256": "6723fcdb744b3f60405526b28855b92f9a10fc2459bc7eaf9dc8e91ae54f3d76"
+    },
+    {
+      "file": "docs/11-DOTNET-BACKEND.md",
+      "bytes": 4288,
+      "sha256": "2cc73df6fa7b259ca0528c0543d94f7025cecd3d4ce1bc45f5dcaf1e81c5a1e8"
+    },
+    {
+      "file": "docs/12-DESKTOP-TAURI.md",
+      "bytes": 4452,
+      "sha256": "c4f66cd7dc66aceedd98ab6888cc58fb5cbaa0c13221c4e5737a0601795f4f35"
+    },
+    {
+      "file": "docs/13-ANDROID.md",
+      "bytes": 4059,
+      "sha256": "90fcbbaaa8ed6e16eb3e822145189f5942dc4d66ba5ae4b4529f05d10d8887a4"
+    },
+    {
+      "file": "docs/14-IOS.md",
+      "bytes": 3710,
+      "sha256": "fd579412acf6b3b721c3c2de084dca0a3619a6f65b07c585ab2e718c20215333"
+    },
+    {
+      "file": "docs/15-SECURITY-PRIVACY.md",
+      "bytes": 4614,
+      "sha256": "a91850a6ae49bb1c5589833509ea2f8d8c58d2a45d47891fb52c1fd11bca8548"
+    },
+    {
+      "file": "docs/16-QUALITY-TESTING.md",
+      "bytes": 3980,
+      "sha256": "b955c750ba33802f6b52cab2b7be7743cc0431112b95ecebcebb3fa7f579755e"
+    },
+    {
+      "file": "docs/17-DEVOPS.md",
+      "bytes": 3805,
+      "sha256": "33fe40740bd2e7a3104b407b2521d35f2bce83705d14274ece8c8eb22d62bac2"
+    },
+    {
+      "file": "docs/18-AI-CODING-GUIDE.md",
+      "bytes": 6781,
+      "sha256": "a7e777c269af4e9795083ebb23c6d244f235fcd7bf1daa41fee6dd97a2624fd0"
+    },
+    {
+      "file": "docs/19-ROADMAP-BACKLOG.md",
+      "bytes": 4432,
+      "sha256": "1c851cf4a61d28aa41b544507a4e6aa6974a6eb1134068d3bb70183106619145"
+    },
+    {
+      "file": "docs/20-BUSINESS-METRICS.md",
+      "bytes": 2582,
+      "sha256": "ad571a64557dd6533d5fbf14021e70d0b0380b4c7d9f66dd7dc54336ad9dbea9"
+    },
+    {
+      "file": "docs/21-ADR.md",
+      "bytes": 5042,
+      "sha256": "c58039314aeefad3ae5c877dce635d8c570284993aab7010014ff2f772ad0e24"
+    },
+    {
+      "file": "docs/22-DESIGN-SYSTEM.md",
+      "bytes": 2861,
+      "sha256": "380b31a4b40b801b4586e05de4ca3527a6fa27f27aa5ac113e3cf22209ba8fbd"
+    },
+    {
+      "file": "docs/23-LEGAL-RISKS.md",
+      "bytes": 2878,
+      "sha256": "715ab2dcf119f12294fce508ef53b5fe736bed2602466e863da0b02e423bae54"
+    },
+    {
+      "file": "docs/24-USER-STORIES.md",
+      "bytes": 5968,
+      "sha256": "0d279548a1322dcb636fd1c7583868db62fb10cd263b0c33e6ca14d69059d80d"
+    },
+    {
+      "file": "docs/25-OPERATING-RUNBOOK.md",
+      "bytes": 2708,
+      "sha256": "20cc851c566aa3e192842fd0c86942326dacd2fe93337dee285ab878e1f24909"
+    },
+    {
+      "file": "docs/26-LOCAL-SETUP.md",
+      "bytes": 4809,
+      "sha256": "f0c2a2f22f3edf83576b451004946285c08884c1484dd19dea20e16123ee4b15"
+    },
+    {
+      "file": "docs/27-TRACEABILITY.md",
+      "bytes": 2766,
+      "sha256": "11feee095f7b7be88b1d99cd51fc03deca85d91729f3451070a052f4f0055b26"
+    },
+    {
+      "file": "docs/28-SPEC-01.md",
+      "bytes": 5727,
+      "sha256": "cdaef4156a04e6b4de06b55f4f559cec4402c9b52882307460075c758f700745"
+    },
+    {
+      "file": "docs/29-DATA-01.md",
+      "bytes": 1900,
+      "sha256": "9d2ad713a7bbd666b6fde727cb27fe9e104030c8936586e25c2d1950b83f9838"
+    },
+    {
+      "file": "examples/ai-plan-preview.json",
+      "bytes": 763,
+      "sha256": "03c4ce754c64afb9e01feb724e73df4f01a52814dea11997530fdf05c6637e6d"
+    },
+    {
+      "file": "examples/spec-01/account-deletion-accepted.json",
+      "bytes": 168,
+      "sha256": "640496451149d07016fba0cfb45ca992a47252f84608899bece67f7240dfe517"
+    },
+    {
+      "file": "examples/spec-01/account-export-cloud.json",
+      "bytes": 420,
+      "sha256": "f732ee2ae44e37bd046314096d4b01dd5e56984720a2029b02cff3f7a64ad67a"
+    },
+    {
+      "file": "examples/spec-01/account-export-local.json",
+      "bytes": 683,
+      "sha256": "4de3c05a0c5822ee7536afb5f4983ecb5a49662f6e42aa87785963524a2f7cf7"
+    },
+    {
+      "file": "examples/spec-01/ai-breakdown-preview.json",
+      "bytes": 602,
+      "sha256": "f0a9376d9a59bd70c828dfcf539a7f6fff47020fadcdda2a50e85fd81b79bc1b"
+    },
+    {
+      "file": "examples/spec-01/contract-cases.json",
+      "bytes": 3012,
+      "sha256": "407788f09b84b8d23583321acb693657a56517bb3d7879f3e733325131631e50"
+    },
+    {
+      "file": "examples/sync-push.json",
+      "bytes": 544,
+      "sha256": "fc4de48b5af8b8a627353afef3a60d26d06c7e2ecdb213536da4df0826076040"
+    },
+    {
+      "file": "MASTER-DEVELOPMENT-SPEC.md",
+      "bytes": 157801,
+      "sha256": "35715120b07fedc14c6845730d74a21114846051e0761ec1b8c8655c4157b497"
+    },
+    {
+      "file": "prompts/00-START-PROJECT.md",
+      "bytes": 1397,
+      "sha256": "c284b83a28ae83754e95ca1f99e799d284e0ca6500e5210a2c14502c3b586642"
+    },
+    {
+      "file": "prompts/AI-AGENT.md",
+      "bytes": 1113,
+      "sha256": "fb7d4e5a0f5d7a03da942e62cb6d19935bab506a336398c39d0ba8f1b01d0d82"
+    },
+    {
+      "file": "prompts/ANDROID-NATIVE.md",
+      "bytes": 953,
+      "sha256": "bb3538b8d0b581fdb2b71f629c0a7ea75003588bcfaccc54f87f33162ec74dec"
+    },
+    {
+      "file": "prompts/DOTNET-BACKEND.md",
+      "bytes": 1438,
+      "sha256": "8bb3155c56480573366a58fc70e37d774e7ae28b7d027951bed54e64918516b9"
+    },
+    {
+      "file": "prompts/IOS-NATIVE.md",
+      "bytes": 991,
+      "sha256": "d619b34461adef5693b3feb928f6e1f84c7a28bbd4ed080e32459289a19c2864"
+    },
+    {
+      "file": "prompts/SYNC-ENGINE.md",
+      "bytes": 938,
+      "sha256": "8138e46a1d6509140427c5fff044fb00df25da83806ac988c308a975b043433c"
+    },
+    {
+      "file": "prompts/TAURI-DESKTOP.md",
+      "bytes": 1020,
+      "sha256": "4066bd11f67044150a516a2a0d4c1bf982ad053ec4dca38fef357a5b23274ff6"
+    },
+    {
+      "file": "prompts/TEST-REVIEW.md",
+      "bytes": 994,
+      "sha256": "9db3fdaa90fb05b5850c2e6c9265e5e4e00e6bcdf36444258fefbcdae751ac77"
+    },
+    {
+      "file": "server/Planna.slnx",
+      "bytes": 263,
+      "sha256": "094e0588d67845df2d42549df747ab420e4ea3a4ba5fbbc27c30c7c0c9dde217"
+    },
+    {
+      "file": "server/spec01-migrations.sql",
+      "bytes": 14350,
+      "sha256": "3844fe0f01c4d646e6d1147a220f852a3310ccdf6cff4307a621be77a7b85539"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030001_BaselineSchema.cs",
+      "bytes": 867,
+      "sha256": "bbc7d5ae553ad4c12728dea32eddcdc0cf68ead407df6cc070880c8d04bb34e9"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030002_Spec01Contracts.cs",
+      "bytes": 6320,
+      "sha256": "808fca45aafaeddc47f09db19cf125efe2e2e788d4a66a73eff89a35857459d8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/PlannaSchemaContext.cs",
+      "bytes": 949,
+      "sha256": "4d80cf65111cb403a6fcb37354f49326c4634a8dd79a7fbc1a49a4466c89819b"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Planna.Infrastructure.csproj",
+      "bytes": 875,
+      "sha256": "55183475a156207718763e20eaf8b1980209b85f909b177db39ea18cb2fa019b"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
+      "bytes": 500,
+      "sha256": "46d3458a4781ad8bdbdc0c52f30a2c84eccacd7618d70c6e6f180bc02a7b7d2e"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/Program.cs",
+      "bytes": 3999,
+      "sha256": "daaaac59255c7298f7e7dab4722f7fe98d750219eb0cc32edce4448029588dfe"
+    },
+    {
+      "file": "spec/account-deletion.schema.json",
+      "bytes": 565,
+      "sha256": "613fddb1f7b85d51e4b838cd5dc386225f23c5d385efe604ba3651060a968527"
+    },
+    {
+      "file": "spec/account-export.schema.json",
+      "bytes": 3776,
+      "sha256": "4da1d97e8034a81c2381dc61cd280635884ff94ace22ed46a747a1b8fb7c12a7"
+    },
+    {
+      "file": "spec/ai-breakdown.schema.json",
+      "bytes": 1379,
+      "sha256": "d7e8a8bb451036b97c032cfb851a657099a93696a78ddb9b5cf6d4f0423c219b"
+    },
+    {
+      "file": "spec/ai-plan.schema.json",
+      "bytes": 1776,
+      "sha256": "77904d7ff504b594294e55fcd7218af949d4f31643f0676d612826159c065a00"
+    },
+    {
+      "file": "spec/openapi.yaml",
+      "bytes": 31020,
+      "sha256": "dc16b8186fc36e3adf0b5eb16f3b159289efd871e1479ac59325b1d66f830cad"
+    },
+    {
+      "file": "spec/task.schema.json",
+      "bytes": 1603,
+      "sha256": "b93b34d8109314f73c22998962a7f6751af2036d0a66b0dc3fec9eda7aada4f1"
+    },
+    {
+      "file": "tests/contract/requirements.txt",
+      "bytes": 63,
+      "sha256": "1eed65f4331abc308fb00c0e1f9582b658ef3cb1f5af3d0a52208d0c01d2d573"
+    },
+    {
+      "file": "tests/contract/test_spec01.py",
+      "bytes": 5423,
+      "sha256": "23592b49736d6456f239746860a43974102bfb630975c74cea97cb5a9967d037"
+    },
+    {
+      "file": "VALIDATION.md",
+      "bytes": 3446,
+      "sha256": "9a856fdedf786cb198ee058a269ba5422fa8f862675e2dc4332dcfcf584821bb"
+    }
+  ]
+}

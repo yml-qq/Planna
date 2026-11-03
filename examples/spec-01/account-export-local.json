@@ -1,0 +1,14 @@
+{
+  "schema_version": "account-export-v1",
+  "source": "local",
+  "generated_at": "2026-11-03T10:00:00Z",
+  "snapshot_at": "2026-11-03T10:00:00Z",
+  "pending_mutation_ids": ["018f4400-1234-7000-8000-000000000041"],
+  "data": {
+    "account": {"id": "018f4400-1234-7000-8000-000000000040", "time_zone": "Asia/Shanghai"},
+    "lists": [],
+    "tasks": [{"id":"018f4400-1234-7000-8000-000000000042","list_id":"018f4400-1234-7000-8000-000000000043","title":"买水果","status":"todo","priority":0,"all_day":false,"time_zone":"Asia/Shanghai","version":1,"deleted_at":null}],
+    "steps": [], "tags": [], "reminders": [], "time_blocks": [],
+    "ai_consents": [], "ai_memories": []
+  }
+}

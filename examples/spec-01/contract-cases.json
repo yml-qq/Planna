@@ -1,0 +1,21 @@
+{
+  "cases": [
+    {"id": "BREAKDOWN-01", "scenario": "owned task, valid consent and current version", "expected_status": 201, "expected_side_effect": "persist draft only; zero task_steps"},
+    {"id": "BREAKDOWN-02", "scenario": "edit draft and apply with new token", "expected_status": 200, "expected_side_effect": "all steps, audit, revision and sync changes commit together"},
+    {"id": "BREAKDOWN-03", "scenario": "apply after task version changes", "expected_status": 409, "expected_code": "BREAKDOWN_STALE", "expected_side_effect": "zero new steps"},
+    {"id": "BREAKDOWN-04", "scenario": "same apply idempotency key retried after lost response", "expected_status": 200, "expected_side_effect": "same step IDs; no duplicate changes"},
+    {"id": "BREAKDOWN-05", "scenario": "task belongs to another owner", "expected_status": 404, "expected_side_effect": "no private task content sent to model"},
+    {"id": "BREAKDOWN-06", "scenario": "AI consent denied", "expected_status": 403, "expected_code": "AI_SCOPE_DENIED", "expected_side_effect": "no private task content sent to model"},
+    {"id": "BREAKDOWN-07", "scenario": "provider timeout", "expected_status": 503, "expected_code": "AI_UNAVAILABLE", "expected_side_effect": "no business steps"},
+    {"id": "BREAKDOWN-08", "scenario": "prompt injection in task text", "expected_status": 201, "expected_side_effect": "draft is schema-validated; injected text cannot alter tool authorization"},
+    {"id": "EXPORT-01", "scenario": "offline local export with pending outbox", "expected_status": 200, "expected_side_effect": "source local and pending mutation IDs present"},
+    {"id": "EXPORT-02", "scenario": "cloud export while another device has pending mutations", "expected_status": 200, "expected_side_effect": "source cloud and committed snapshot_at; pending IDs empty"},
+    {"id": "EXPORT-03", "scenario": "other owner downloads export", "expected_status": 404, "expected_side_effect": "no data disclosure"},
+    {"id": "EXPORT-04", "scenario": "download after expiry", "expected_status": 410, "expected_code": "EXPORT_EXPIRED"},
+    {"id": "DELETE-01", "scenario": "fresh step-up and confirmed deletion", "expected_status": 202, "expected_side_effect": "account disabled and all sessions revoked atomically"},
+    {"id": "DELETE-02", "scenario": "old offline device reconnects after deletion", "expected_status": 401, "expected_code": "ACCOUNT_DELETED", "expected_side_effect": "no push; local data offered for export or erase"},
+    {"id": "DELETE-03", "scenario": "invalid or expired step-up token", "expected_status": 403, "expected_side_effect": "account remains active"},
+    {"id": "PLAN-01", "scenario": "apply omits one persisted operation ID", "expected_status": 409, "expected_code": "PLAN_STALE", "expected_side_effect": "zero plan operations"},
+    {"id": "PLAN-02", "scenario": "apply full set after concurrent task edit", "expected_status": 409, "expected_code": "PLAN_STALE", "expected_side_effect": "zero plan operations"}
+  ]
+}
