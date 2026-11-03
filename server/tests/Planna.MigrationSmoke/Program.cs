@@ -41,10 +41,10 @@ await Exec(connection, "INSERT INTO users(id,email) VALUES($1,$2),($3,$4)", owne
 await Exec(connection, "INSERT INTO task_lists(id,owner_id,name) VALUES($1,$2,'Inbox')", list, owner);
 await Exec(connection, "INSERT INTO tasks(id,owner_id,list_id,title) VALUES($1,$2,$3,'Synthetic task')", task, owner, list);
 
-const string draft = "INSERT INTO ai_breakdown_drafts(owner_id,task_id,task_version,snapshot_hash,steps,confirmation_token_hash,expires_at) VALUES($1,$2,1,'hash','[]','token',now()+interval '1 hour')";
+const string draft = "INSERT INTO ai_breakdown_drafts(owner_id,task_id,task_version,snapshot_hash,steps,confirmation_token_hash,expires_at) VALUES($1,$2,1,'hash','[{\"step_id\":\"synthetic\"}]','token',now()+interval '1 hour')";
 await Expect("23503", () => Exec(connection, draft, other, task));
-await Expect("23514", () => Exec(connection, draft, owner, task));
-await Exec(connection, draft.Replace("'[]'", "'[{\"step_id\":\"synthetic\"}]'"), owner, task);
+await Expect("23514", () => Exec(connection, draft.Replace("'[{\"step_id\":\"synthetic\"}]'", "'[]'"), owner, task));
+await Exec(connection, draft, owner, task);
 await Expect("23514", () => Exec(connection,
     "INSERT INTO task_steps(id,owner_id,task_id,title,estimate_minutes) VALUES($1,$2,$3,'Invalid',0)", Guid.NewGuid(), owner, task));
 await Expect("23514", () => Exec(connection, "INSERT INTO account_exports(owner_id,status) VALUES($1,'ready')", owner));

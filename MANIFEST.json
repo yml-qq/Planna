@@ -296,8 +296,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 3999,
-      "sha256": "daaaac59255c7298f7e7dab4722f7fe98d750219eb0cc32edce4448029588dfe"
+      "bytes": 4026,
+      "sha256": "b3a6614c3a2f7b31009d96bd4cb30ab1c51f016ee00b9d8475d32a45ea6cdfe5"
     },
     {
       "file": "spec/account-deletion.schema.json",
