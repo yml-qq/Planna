@@ -334,4 +334,3 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('202611030002_Spec01Contracts', '10.0.14');
 
 COMMIT;
-

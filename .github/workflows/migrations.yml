@@ -1,0 +1,41 @@
+name: Database migrations
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: planna
+          POSTGRES_PASSWORD: local-ci-only
+          POSTGRES_DB: planna_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U planna -d planna_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PLANNADB_CONNECTION: Host=127.0.0.1;Port=5432;Database=planna_test;Username=planna;Password=local-ci-only
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore and build
+        run: |
+          dotnet restore server/Planna.slnx
+          dotnet build server/Planna.slnx --no-restore --warnaserror
+      - name: Format
+        run: dotnet format server/Planna.slnx --verify-no-changes --no-restore
+      - name: PostgreSQL migration and constraints
+        run: dotnet run --project server/tests/Planna.MigrationSmoke --no-build

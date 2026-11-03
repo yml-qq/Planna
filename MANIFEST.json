@@ -5,6 +5,11 @@
   "status": "design baseline; no production app/source implementation",
   "source_files": [
     {
+      "file": ".github/workflows/migrations.yml",
+      "bytes": 1169,
+      "sha256": "9916a8020b0ab5012c3e3504c6f7affca4fc8b1d627575d794445db8081ff139"
+    },
+    {
       "file": ".gitignore",
       "bytes": 64,
       "sha256": "b1b8f2dd1f44c0f5494fd9565742b098b4628b7521ec6cb3db66e15a8c4b19e0"
@@ -171,8 +176,8 @@
     },
     {
       "file": "docs/29-DATA-01.md",
-      "bytes": 1900,
-      "sha256": "9d2ad713a7bbd666b6fde727cb27fe9e104030c8936586e25c2d1950b83f9838"
+      "bytes": 1943,
+      "sha256": "3c6be02afeba7e0c04c3225f80c2f79d4e71dce711db94a537c46955e91beec7"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -211,8 +216,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 157801,
-      "sha256": "35715120b07fedc14c6845730d74a21114846051e0761ec1b8c8655c4157b497"
+      "bytes": 157844,
+      "sha256": "e7f620d5acf01c7d260e9cc1ca42a6a0d863a3597570b6689f3dfc434d26e1ca"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -261,8 +266,8 @@
     },
     {
       "file": "server/spec01-migrations.sql",
-      "bytes": 14350,
-      "sha256": "3844fe0f01c4d646e6d1147a220f852a3310ccdf6cff4307a621be77a7b85539"
+      "bytes": 14601,
+      "sha256": "6526ec150f8db6056f56c8402c0b97207b15fee57916e83db943ec9ddb1f401d"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030001_BaselineSchema.cs",

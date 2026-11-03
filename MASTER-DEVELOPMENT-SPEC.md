@@ -2329,4 +2329,4 @@ $env:PLANNADB_CONNECTION='Host=127.0.0.1;Port=55432;Database=planna_test;Usernam
 dotnet run --project server/tests/Planna.MigrationSmoke
 ```
 
-这台机器的 Docker 引擎和 PostgreSQL 服务均未可用，因此上述数据库检查尚未通过真实运行。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。数据库可用后须在全新隔离库运行检查，修复任何实际 SQL 差异，再开始业务 CRUD。
+这台机器的 Docker 引擎和 PostgreSQL 服务均未可用，已增加 `.github/workflows/migrations.yml` 在 GitHub Actions 的 PostgreSQL 16 服务容器中运行数据库检查。CI 结果须实际查看并修复失败，不能仅凭 workflow 文件断言通过。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
