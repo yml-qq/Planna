@@ -176,8 +176,8 @@
     },
     {
       "file": "docs/29-DATA-01.md",
-      "bytes": 1943,
-      "sha256": "3c6be02afeba7e0c04c3225f80c2f79d4e71dce711db94a537c46955e91beec7"
+      "bytes": 1918,
+      "sha256": "8492e6fbf3bc49c1bf1f01e07718ee8ace731ff3840320d300ae08ed82d69ab7"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -216,8 +216,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 157844,
-      "sha256": "e7f620d5acf01c7d260e9cc1ca42a6a0d863a3597570b6689f3dfc434d26e1ca"
+      "bytes": 157819,
+      "sha256": "016ec83c32655a2ff1f8c0179c245cda082dfb3a4f25e93429c2e558abdaef4a"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -341,8 +341,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 3446,
-      "sha256": "9a856fdedf786cb198ee058a269ba5422fa8f862675e2dc4332dcfcf584821bb"
+      "bytes": 3838,
+      "sha256": "81b5b3afefd925720ffe22cfd214c2d3652a51cd46863ca3a48293f1b3b97957"
     }
   ]
 }
