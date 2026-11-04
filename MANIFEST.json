@@ -6,8 +6,8 @@
   "source_files": [
     {
       "file": ".github/workflows/migrations.yml",
-      "bytes": 1168,
-      "sha256": "db2cdc0e6a988ba0b341775918dc0c79811f1d3ad4a4b1589ac503248695b29e"
+      "bytes": 1314,
+      "sha256": "b88ffe05366d840c33eea755368102d06a4e8025d5afe0dce35e5918194f75a5"
     },
     {
       "file": ".gitignore",
@@ -176,8 +176,8 @@
     },
     {
       "file": "docs/29-DATA-01.md",
-      "bytes": 1918,
-      "sha256": "8492e6fbf3bc49c1bf1f01e07718ee8ace731ff3840320d300ae08ed82d69ab7"
+      "bytes": 2170,
+      "sha256": "6a29c47a6b1d205d5d920812075aab02329ee4e8917ab6d274759844458d3f4a"
     },
     {
       "file": "docs/30-TASK-01.md",
@@ -221,8 +221,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 160044,
-      "sha256": "8c10063703ce345bc3ee47f2942a653926f6dcdc9c19d94b608d97f309851081"
+      "bytes": 160296,
+      "sha256": "0479d1575610c5f21f50645bc4577b317929019fe29a0365baca362d7f16d3c5"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -406,8 +406,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 4520,
-      "sha256": "feec2cbb966a969c62a396d97ea0a98eb9b51ad36bfeea0a4c535338dd650c45"
+      "bytes": 5116,
+      "sha256": "0e738970b2a7e615fd8bb3efc41244f67a8d2634b87059f1204d8df16b4a0183"
     }
   ]
 }

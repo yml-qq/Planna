@@ -2330,7 +2330,7 @@ $env:PLANNADB_CONNECTION='Host=127.0.0.1;Port=55432;Database=planna_test;Usernam
 dotnet run --project server/tests/Planna.MigrationSmoke
 ```
 
-这台机器的 Docker 引擎和 PostgreSQL 服务均未可用。GitHub Actions [运行 41670993447](https://github.com/yml-qq/Planna/actions/runs/41670993447) 已在 PostgreSQL 16 服务容器中成功完成上述检查，且 .NET 构建无警告。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
+这台机器的 Docker 引擎和 PostgreSQL 服务均未可用。GitHub Actions [运行 41670993447](https://github.com/yml-qq/Planna/actions/runs/41670993447) 已在 PostgreSQL 16 服务容器中成功完成上述检查，且 .NET 构建无警告。2026-11-04 对空的 `planna_db_dev` 应用了两条迁移；只读核对确认服务端为 PostgreSQL 18.6、`public` 有 22 张表，迁移历史包含两条迁移。CI 增加 PostgreSQL 16/18 双版本矩阵，以验证当前开发库的主版本。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
 
 ---
 
