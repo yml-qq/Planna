@@ -38,10 +38,16 @@ internal static class HttpCreateTaskSmoke
 
         var missingToken = await Send(client, body, key, null);
         AssertStatus(missingToken, HttpStatusCode.Unauthorized);
+        await AssertCode(missingToken, "UNAUTHORIZED");
         var wrongSignature = await Send(client, body, key, Token(owner, Key + "wrong"));
         AssertStatus(wrongSignature, HttpStatusCode.Unauthorized);
+        await AssertCode(wrongSignature, "UNAUTHORIZED");
         var expired = await Send(client, body, key, Token(owner, Key, DateTime.UtcNow.AddMinutes(-1)));
         AssertStatus(expired, HttpStatusCode.Unauthorized);
+        await AssertCode(expired, "UNAUTHORIZED");
+        var emptySubject = await Send(client, body, key, Token(Guid.Empty, Key));
+        AssertStatus(emptySubject, HttpStatusCode.Unauthorized);
+        await AssertCode(emptySubject, "UNAUTHORIZED");
 
         var missingKey = await Send(client, body, null, Token(owner, Key));
         AssertStatus(missingKey, HttpStatusCode.BadRequest);

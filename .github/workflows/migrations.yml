@@ -1,4 +1,4 @@
-name: Database migrations
+name: Server integration
 
 on:
   push:
@@ -37,5 +37,5 @@ jobs:
           dotnet build server/Planna.slnx --no-restore --warnaserror
       - name: Format
         run: dotnet format server/Planna.slnx --verify-no-changes --no-restore
-      - name: PostgreSQL migration and constraints
+      - name: PostgreSQL migration and HTTP checks
         run: dotnet run --project server/tests/Planna.MigrationSmoke --no-build

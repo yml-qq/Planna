@@ -2347,6 +2347,6 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 ## 验证与范围
 
-`server/tests/Planna.MigrationSmoke` 在 PostgreSQL 16 隔离库覆盖创建成功、幂等重放、同键不同内容、跨账号清单、已删除账号、并发 revision 与任务 ID 冲突回滚。CI 运行记录应以最新提交的 `Database migrations` 结果为准；本机 Docker 引擎仍不可连接。
+`server/tests/Planna.MigrationSmoke` 在 PostgreSQL 16 隔离库覆盖创建成功、幂等重放、同键不同内容、跨账号清单、已删除账号、并发 revision 与任务 ID 冲突回滚。`HttpCreateTaskSmoke` 通过 `WebApplicationFactory` 走真实 HTTP 路由、JWT 中间件和 PostgreSQL，验证未授权、签名错误、过期 token、缺少幂等键、跨账号清单、创建、重放、同键不同内容和账号删除后的结果。[CI 运行 41761975744](https://github.com/yml-qq/Planna/actions/runs/41761975744) 已通过；本机 Docker 引擎仍不可连接。
 
-本切片未提供登录、刷新令牌、任务更新或本地客户端同步；JWT 由未来认证服务签发。API 层尚无 HTTP 端到端测试，当前集成验证直接调用写入用例。后续任务应完成 API 认证端到端测试及任务更新的版本冲突处理。
+本切片未提供登录、刷新令牌、任务更新或本地客户端同步；JWT 由未来认证服务签发。测试 token 仅在独立测试进程中创建。后续任务应完成登录/刷新令牌闭环及任务更新的版本冲突处理。

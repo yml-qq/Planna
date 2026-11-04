@@ -6,8 +6,8 @@
   "source_files": [
     {
       "file": ".github/workflows/migrations.yml",
-      "bytes": 1169,
-      "sha256": "9916a8020b0ab5012c3e3504c6f7affca4fc8b1d627575d794445db8081ff139"
+      "bytes": 1168,
+      "sha256": "db2cdc0e6a988ba0b341775918dc0c79811f1d3ad4a4b1589ac503248695b29e"
     },
     {
       "file": ".gitignore",
@@ -181,8 +181,8 @@
     },
     {
       "file": "docs/30-TASK-01.md",
-      "bytes": 1749,
-      "sha256": "8514abb8f0979411a4690803ff5caac21753ae205d186dd47343ac131a092eaf"
+      "bytes": 1993,
+      "sha256": "b75fb9ecf96c4934dc961b0cf22fd426fbd68097c9a11f624ad5965f1ddb300e"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -221,8 +221,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 159800,
-      "sha256": "4c36460d00139b4672267ef49cb64229714f56e152452ec3c4375eab4cebbbe9"
+      "bytes": 160044,
+      "sha256": "8c10063703ce345bc3ee47f2942a653926f6dcdc9c19d94b608d97f309851081"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -351,8 +351,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpCreateTaskSmoke.cs",
-      "bytes": 7082,
-      "sha256": "9d41f634613581c9e746f899202479f92c18e08f3cc082b29ca94202cf11516a"
+      "bytes": 7450,
+      "sha256": "467414ba2d7a8f9248188e5d109d31ddcf83fe5b5f5ee3d2388d519441aa37d5"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
@@ -406,8 +406,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 4343,
-      "sha256": "ec0d1a8bb2f879521d578a344ffd14f2985c667d8ba7126d499ea7aa7178f0f5"
+      "bytes": 4520,
+      "sha256": "feec2cbb966a969c62a396d97ea0a98eb9b51ad36bfeea0a4c535338dd650c45"
     }
   ]
 }
