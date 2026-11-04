@@ -73,7 +73,7 @@
 | 区域 | 建议技术 |
 |---|---|
 | Server | C# / ASP.NET Core (.NET 10.0) + Dependency Injection + OpenTelemetry |
-| Database | PostgreSQL 16+；EF Core 负责简单 CRUD 与迁移，Dapper 负责复杂只读查询；Redis / S3 兼容存储按需使用 |
+| Database | PostgreSQL 18；EF Core 负责简单 CRUD 与迁移，Dapper 负责复杂只读查询；Redis / S3 兼容存储按需使用 |
 | Async Jobs | 独立 .NET Worker Service + PostgreSQL 任务表 + `FOR UPDATE SKIP LOCKED`；后期独立队列 |
 | Desktop | Tauri 2 + Vue 3 + TypeScript + Vite + Pinia + SQLite + Rust commands |
 | Android | Kotlin + Jetpack Compose + Room + Hilt + Coroutines/Flow + WorkManager |

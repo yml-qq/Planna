@@ -5,7 +5,7 @@
 ## Project invariants
 
 1. Product: Planna (普拉清单), a modern, lightweight, AI-native, offline-first, personal-first task/time assistant; no enterprise IM or large multi-tenant team suite.
-2. Server: C# / ASP.NET Core on .NET 10.0 + PostgreSQL, maintainable modular monolith, separate .NET worker. Use EF Core for simple CRUD and Dapper for complex read queries; keep their data-access implementations separate rather than mixing them in one Repository.
+2. Server: C# / ASP.NET Core on .NET 10.0 + PostgreSQL 18, maintainable modular monolith, separate .NET worker. PostgreSQL 16 compatibility is not required. Use EF Core for simple CRUD and Dapper for complex read queries; keep their data-access implementations separate rather than mixing them in one Repository.
 3. Desktop: Tauri 2 + Vue 3 + TypeScript + Vite. SQLite and OS functionality through vetted Rust commands.
 4. Android: native Kotlin + Jetpack Compose + Room. NEVER introduce Flutter/React Native/Tauri Mobile.
 5. iOS: native Swift + SwiftUI + SQLite (GRDB candidate). NEVER introduce Flutter/React Native/Tauri Mobile.

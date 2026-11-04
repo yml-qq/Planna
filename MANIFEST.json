@@ -6,8 +6,8 @@
   "source_files": [
     {
       "file": ".github/workflows/migrations.yml",
-      "bytes": 1314,
-      "sha256": "b88ffe05366d840c33eea755368102d06a4e8025d5afe0dce35e5918194f75a5"
+      "bytes": 1192,
+      "sha256": "bb56138a20c91970d1a6a2f391faf8e55fb67c6a68a9f9b450201d45498e1dbd"
     },
     {
       "file": ".gitignore",
@@ -16,18 +16,18 @@
     },
     {
       "file": "00-README.md",
-      "bytes": 9295,
-      "sha256": "3e3fb19e019535b9f39fb5e76c1551d2dcf25eddebaecaa0e90d210d0c1fe047"
+      "bytes": 9294,
+      "sha256": "93c52d390d1b9906b764642b12dd6f83c6051826be3ccad75418ef16fc30c48f"
     },
     {
       "file": "AGENTS.md",
-      "bytes": 3750,
-      "sha256": "f1e94f13202fe5f33dcdb9b99ac4ba29f07317624b552fbf6d4f8fb7e628b1d4"
+      "bytes": 3798,
+      "sha256": "eef915c65deb080c47a1e82f67031c63a333768cda18d22ab75c641e09e0bc45"
     },
     {
       "file": "db/001_init.sql",
-      "bytes": 10432,
-      "sha256": "f24e3006f9455c2f0ae08c67d9d91b1a3923fd0f6fd838fbdc04b25529f74e76"
+      "bytes": 10431,
+      "sha256": "59134768e60abadbacb3d09d943b77dfe31681935103b540948ed5bf5f234821"
     },
     {
       "file": "db/002_spec01.sql",
@@ -136,8 +136,8 @@
     },
     {
       "file": "docs/21-ADR.md",
-      "bytes": 5567,
-      "sha256": "71e20ed4b670279e74fd8faad18ebb6e75b896b50614b996a1a0dcde6d90ba9f"
+      "bytes": 6000,
+      "sha256": "3c56e663c1f7ccb79058e461634b106f9b4dde11e33cb1e7d36763f7b94d325b"
     },
     {
       "file": "docs/22-DESIGN-SYSTEM.md",
@@ -161,8 +161,8 @@
     },
     {
       "file": "docs/26-LOCAL-SETUP.md",
-      "bytes": 4809,
-      "sha256": "f0c2a2f22f3edf83576b451004946285c08884c1484dd19dea20e16123ee4b15"
+      "bytes": 5001,
+      "sha256": "57b8aca45bb93f52542a3537bf846ad0a0109931c0517c5ace254536a3fdfeba"
     },
     {
       "file": "docs/27-TRACEABILITY.md",
@@ -176,8 +176,8 @@
     },
     {
       "file": "docs/29-DATA-01.md",
-      "bytes": 2369,
-      "sha256": "0f11b79e20a3326a3b78b079f6b7226d5e9391b2b039eb5b35e3c2f271e35bd8"
+      "bytes": 2394,
+      "sha256": "fada223a79c52bc17528ace14fb92be40314ced437f1a6518bbe320ffc51df5a"
     },
     {
       "file": "docs/30-TASK-01.md",
@@ -186,8 +186,8 @@
     },
     {
       "file": "docs/31-AUTH-01.md",
-      "bytes": 2399,
-      "sha256": "f4f2bbcd2756c1a88e32405278e5239a7663b41e39af4ec73f36709bae3d18eb"
+      "bytes": 2393,
+      "sha256": "c91f58e53c1a06ab377a87feca082871b93e421a23bd7cb79a89efe61c25997f"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -226,8 +226,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 163971,
-      "sha256": "49bb8080ff77e7d08a668ee0b7c4b8f92cca735cf56aedaee64d3108a884bde7"
+      "bytes": 164619,
+      "sha256": "4815b761c1fef7ab704b45570f034ebd06812e0b304b3caad2472276478e3cc0"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -271,8 +271,8 @@
     },
     {
       "file": "server/auth-migrations.sql",
-      "bytes": 15977,
-      "sha256": "4d0f5f75818c43b3f9538e9482b191debea83343e4a0ffaa0ad8074589053c40"
+      "bytes": 15723,
+      "sha256": "d0e0cef8aa7ed15dde1b60ed23a750abdbf0e7afd0d9e8aa7a8333d44777f089"
     },
     {
       "file": "server/Planna.slnx",
@@ -281,8 +281,8 @@
     },
     {
       "file": "server/spec01-migrations.sql",
-      "bytes": 14601,
-      "sha256": "6526ec150f8db6056f56c8402c0b97207b15fee57916e83db943ec9ddb1f401d"
+      "bytes": 14600,
+      "sha256": "baa3bd843bcc808dbcc4f05f2a139a2c6f40e08c18f243493e2e89647ebfe86c"
     },
     {
       "file": "server/src/Planna.Api/ApiAssemblyMarker.cs",
@@ -456,8 +456,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 6102,
-      "sha256": "6b655dbcdb578374647ef7b825b05739e0fa6af0c5d131559de505a6b91e495c"
+      "bytes": 6088,
+      "sha256": "a8511168fd1f12624f0bfb61e839914f32892d035fd1c91ea6d723ace2199a3f"
     }
   ]
 }

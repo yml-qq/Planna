@@ -1877,6 +1877,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 
 补齐原 OpenAPI 缺少的登录验证码申请端点；验证通过时原子创建个人账号、Inbox、同步时钟和设备会话。独立 `/auth/register` 暂不实现，页面可复用同一入口。刷新令牌只存哈希和使用历史，重放撤销对应设备会话；访问令牌逐次查会话状态。代价是邮件供应商可用性、验证码与令牌历史清理及发信 outbox 仍需后续运维切片处理。详见 `31-AUTH-01.md`。
 
+## ADR-016：PostgreSQL 18 单版本基线（Accepted）
+
+当前开发库使用 PostgreSQL 18.6；项目以 PostgreSQL 18 为唯一支持的服务端主版本，CI 和本地 Docker 示例只运行 18。不承诺 PostgreSQL 16 兼容性，也不再维护双版本测试矩阵。历史在 16 上通过的测试记录仅作为当时的验证证据。部署到其他主版本前须另行评估并验证迁移、查询和备份恢复。
+
 ---
 
 # 22｜视觉、组件、交互 Token 与无障碍规范
@@ -2161,7 +2165,7 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 - Node.js LTS + pnpm，桌面 Tauri Vue/TS 环境；Windows/macOS/Linux Tauri 系统依赖参照 Tauri 2 官方安装文档。
 - Android Studio Stable、Android SDK、Kotlin/Gradle、模拟器与至少一台 Android 真机。
 - macOS + Xcode Stable、命令行工具、iOS Simulator、Apple 开发者账号（发布/签名阶段）；Linux/Windows 无法原生完成 iOS 构建。
-- PostgreSQL 16+（Docker），EF Core migration 工具及 CI 测试数据库；Dapper 查询在真实 PostgreSQL 上验证。
+- PostgreSQL 18（Docker），EF Core migration 工具及 CI 测试数据库；Dapper 查询在真实 PostgreSQL 上验证。
 
 ## 2. 推荐 monorepo 初始化顺序
 
@@ -2180,13 +2184,13 @@ mkdir -p server desktop android ios docs spec db tests/fixtures .github/workflow
 name: planna-dev
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18
     environment:
       POSTGRES_USER: planna
       POSTGRES_PASSWORD: local-dev-only
       POSTGRES_DB: planna
     ports: ["127.0.0.1:5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes: ["pgdata:/var/lib/postgresql"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U planna"]
       interval: 5s
@@ -2199,7 +2203,7 @@ volumes:
   pgdata:
 ```
 
-上面只是本地示例，密码不可用于生产。实际部署时锁定镜像 digest、资源限制和健康检查。
+上面只是本地示例，密码不可用于生产。PostgreSQL 18 官方镜像的数据卷挂载点为 `/var/lib/postgresql`；已有旧版数据卷不能仅通过替换镜像标签升级，需先备份并按 PostgreSQL 主版本升级流程迁移。实际部署时锁定镜像 digest、资源限制和健康检查。
 
 ## 4. 初始检查命令
 
@@ -2320,7 +2324,7 @@ OpenAPI 3.1 和 JSON Schema 能解析；本地 `$ref` 与合成样例有效；�
 
 # 29｜DATA-01：数据库迁移起点
 
-状态：迁移代码及 PostgreSQL 16 隔离库检查已通过；业务服务与 API 层授权仍未实现。
+状态：迁移代码已在隔离库和 PostgreSQL 18 开发库验证；当前支持基线见 ADR-016。本文件记录 DATA-01 当时的实施状态。
 
 ## 范围
 
@@ -2338,7 +2342,7 @@ $env:PLANNADB_CONNECTION='Host=127.0.0.1;Port=55432;Database=planna_test;Usernam
 dotnet run --project server/tests/Planna.MigrationSmoke
 ```
 
-这台机器的 Docker 引擎和 PostgreSQL 服务均未可用。GitHub Actions [运行 41670993447](https://github.com/yml-qq/Planna/actions/runs/41670993447) 已在 PostgreSQL 16 服务容器中成功完成上述检查，且 .NET 构建无警告。2026-11-04 对空的 `planna_db_dev` 应用了两条迁移；只读核对确认服务端为 PostgreSQL 18.6、`public` 有 22 张表，迁移历史包含两条迁移。CI 增加 PostgreSQL 16/18 双版本矩阵，以验证当前开发库的主版本。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
+这台机器的 Docker 引擎和 PostgreSQL 服务均未可用。历史 GitHub Actions [运行 41670993447](https://github.com/yml-qq/Planna/actions/runs/41670993447) 曾在 PostgreSQL 16 服务容器中完成上述检查，且 .NET 构建无警告；这不代表当前支持 16。2026-11-04 对空的 `planna_db_dev` 应用了两条迁移；只读核对确认服务端为 PostgreSQL 18.6、`public` 有 22 张表，迁移历史包含两条迁移。当前 CI 仅验证 PostgreSQL 18。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
 
 随后 `AUTH-01` 增加并在开发库应用 `202611040003_AuthSessions`；此处的 22 张表和两条迁移数字仅是首次迁移时的历史快照。最新迁移状态参见 `31-AUTH-01.md`。
 
@@ -2365,7 +2369,7 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 # 31｜AUTH-01：邮箱验证码登录与刷新令牌
 
-状态：认证实现和第三条迁移已在 PostgreSQL 16/18 CI 及开发库核对通过；真实 SMTP 投递尚待供应商配置验证。
+状态：认证实现和第三条迁移已在 PostgreSQL 18 CI 及开发库核对通过；真实 SMTP 投递尚待供应商配置验证。
 
 ## 范围与决策
 
@@ -2376,6 +2380,6 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 ## 验收和限制
 
-新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、错误尝试上限、发送失败重试、令牌轮换与重放撤销后的访问令牌失效。[CI 首轮 41793249572](https://github.com/yml-qq/Planna/actions/runs/41793249572) 已在 PostgreSQL 16/18 通过。开发库 `planna_db_dev` 已应用第三条迁移，迁移历史只读复核通过；未在开发库插入合成用户。真实 SMTP 可达性和投递率需有供应商配置后验证。
+新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、错误尝试上限、发送失败重试、令牌轮换与重放撤销后的访问令牌失效。[CI 运行 41794248660](https://github.com/yml-qq/Planna/actions/runs/41794248660) 已在 PostgreSQL 18 通过。开发库 `planna_db_dev` 已应用第三条迁移，迁移历史只读复核通过；未在开发库插入合成用户。真实 SMTP 可达性和投递率需有供应商配置后验证。
 
 验证码发送与数据库提交跨越外部服务；发送失败会清除本次挑战，但发送成功后进程异常仍可能需要用户重新申请。后续应接持久化邮件 outbox、IP/设备层限流、验证码与刷新历史清理作业，以及设备管理/注销接口。客户端应把刷新令牌存入系统凭据库。

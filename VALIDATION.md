@@ -50,12 +50,12 @@
 
 - 只读检查 `planna_db_dev` 在迁移前的 `public` 无业务表；随后执行 `dotnet ef database update --context PlannaSchemaContext`，两条迁移均完成。
 - 迁移后只读检查确认 PostgreSQL 服务端版本为 18.6，`public` 有 22 张表，`__EFMigrationsHistory` 包含 `202611030001_BaselineSchema` 与 `202611030002_Spec01Contracts`。未查询或导出业务数据，也未在该库运行插入合成数据的冒烟程序。
-- CI 已增加 PostgreSQL 16/18 双版本矩阵；通过结果以新提交的 CI 运行记录为准。
+- 当前仅支持 PostgreSQL 18，CI 已改为 18 单版本验证；早期 PostgreSQL 16 运行记录仅为历史证据。
 
 ## AUTH-01 认证切片检查（2026-11-04）
 
 - 新增登录验证码申请、验证码登录和刷新令牌轮换端点；新增 `AuthSessions` EF Core migration、契约和隔离库 HTTP 测试。
-- 验证范围包含验证码发送接口、一次性消费、错误码、自动建立个人账号、刷新轮换与旧令牌重放撤销；最终通过结果须以新提交的 PostgreSQL 16/18 CI 为准。
+- 验证范围包含验证码发送接口、一次性消费、错误码、自动建立个人账号、刷新轮换与旧令牌重放撤销；PostgreSQL 18 验证结果见下述 CI 记录。
 - 真实 SMTP 供应商配置、投递率、邮件 outbox 与历史清理仍未验证或实现；生产凭据未加入仓库。
-- [CI 首轮 41793249572](https://github.com/yml-qq/Planna/actions/runs/41793249572) 在 PostgreSQL 16/18 上通过迁移、构建、格式与 HTTP 认证检查。增强测试继续覆盖邮件失败重试、五次错误码和访问令牌撤销，以最终提交的 CI 为准。
+- [CI 运行 41794248660](https://github.com/yml-qq/Planna/actions/runs/41794248660) 在 PostgreSQL 18 上通过迁移、构建、格式与 HTTP 认证检查，覆盖邮件失败重试、五次错误码和访问令牌撤销。当前 CI 仅保留 PostgreSQL 18。
 - `planna_db_dev` 已应用 `202611040003_AuthSessions`；`dotnet ef migrations list` 只读复核显示三条迁移均已应用，未运行插入合成用户的测试。

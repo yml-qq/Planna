@@ -10,7 +10,7 @@
 - Node.js LTS + pnpm，桌面 Tauri Vue/TS 环境；Windows/macOS/Linux Tauri 系统依赖参照 Tauri 2 官方安装文档。
 - Android Studio Stable、Android SDK、Kotlin/Gradle、模拟器与至少一台 Android 真机。
 - macOS + Xcode Stable、命令行工具、iOS Simulator、Apple 开发者账号（发布/签名阶段）；Linux/Windows 无法原生完成 iOS 构建。
-- PostgreSQL 16+（Docker），EF Core migration 工具及 CI 测试数据库；Dapper 查询在真实 PostgreSQL 上验证。
+- PostgreSQL 18（Docker），EF Core migration 工具及 CI 测试数据库；Dapper 查询在真实 PostgreSQL 上验证。
 
 ## 2. 推荐 monorepo 初始化顺序
 
@@ -29,13 +29,13 @@ mkdir -p server desktop android ios docs spec db tests/fixtures .github/workflow
 name: planna-dev
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18
     environment:
       POSTGRES_USER: planna
       POSTGRES_PASSWORD: local-dev-only
       POSTGRES_DB: planna
     ports: ["127.0.0.1:5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes: ["pgdata:/var/lib/postgresql"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U planna"]
       interval: 5s
@@ -48,7 +48,7 @@ volumes:
   pgdata:
 ```
 
-上面只是本地示例，密码不可用于生产。实际部署时锁定镜像 digest、资源限制和健康检查。
+上面只是本地示例，密码不可用于生产。PostgreSQL 18 官方镜像的数据卷挂载点为 `/var/lib/postgresql`；已有旧版数据卷不能仅通过替换镜像标签升级，需先备份并按 PostgreSQL 主版本升级流程迁移。实际部署时锁定镜像 digest、资源限制和健康检查。
 
 ## 4. 初始检查命令
 
