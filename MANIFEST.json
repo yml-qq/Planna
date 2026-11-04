@@ -61,8 +61,8 @@
     },
     {
       "file": "docs/06-API-CONTRACT.md",
-      "bytes": 9098,
-      "sha256": "06cb6b404528a6cca287f677823f4eb117ea756f135209e8e5b1261f6170c79e"
+      "bytes": 9291,
+      "sha256": "0fe52ea568f6a1928fba4a5f7ec81fd72741a95a1b687498c4a3af6505529030"
     },
     {
       "file": "docs/07-OFFLINE-SYNC.md",
@@ -216,8 +216,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 157819,
-      "sha256": "016ec83c32655a2ff1f8c0179c245cda082dfb3a4f25e93429c2e558abdaef4a"
+      "bytes": 158012,
+      "sha256": "20bbb35b940e813d4719aaeed6ae2f33c89dffdbc2a971238e1a535e81a369cb"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -261,13 +261,53 @@
     },
     {
       "file": "server/Planna.slnx",
-      "bytes": 263,
-      "sha256": "094e0588d67845df2d42549df747ab420e4ea3a4ba5fbbc27c30c7c0c9dde217"
+      "bytes": 393,
+      "sha256": "2754bfebbfbb6adeb9c4fbbb295074eea8f82f164dbef8b56d6d664544b30bf3"
     },
     {
       "file": "server/spec01-migrations.sql",
       "bytes": 14601,
       "sha256": "6526ec150f8db6056f56c8402c0b97207b15fee57916e83db943ec9ddb1f401d"
+    },
+    {
+      "file": "server/src/Planna.Api/appsettings.Development.json",
+      "bytes": 127,
+      "sha256": "73f95f9e0ceb205fc1c4dc50c07697fcfa29d7087868c2aef1d504cb38c771ec"
+    },
+    {
+      "file": "server/src/Planna.Api/appsettings.json",
+      "bytes": 151,
+      "sha256": "200332b434757a0054a3d356c91cde01f2c48712be8aa2bcb0f3e973619f06e3"
+    },
+    {
+      "file": "server/src/Planna.Api/Planna.Api.csproj",
+      "bytes": 560,
+      "sha256": "9e13cba587ebf0aeb4ce26af67fbc436bb233cc6b65fd1601f8798af86a039e7"
+    },
+    {
+      "file": "server/src/Planna.Api/Program.cs",
+      "bytes": 2115,
+      "sha256": "274d6d33d7ff271d02d8f794476c1903e3ba9c5027941c820ed428efa4dd8a1d"
+    },
+    {
+      "file": "server/src/Planna.Api/Properties/launchSettings.json",
+      "bytes": 639,
+      "sha256": "bb9c55f0a194e7aae62e743c8af0060c37258cc4a673245ee573e63bd4cef930"
+    },
+    {
+      "file": "server/src/Planna.Api/Tasks/TaskEndpoints.cs",
+      "bytes": 1834,
+      "sha256": "7182c863667fed8d690d7a757a84726497eaeb44cc8ccfe18e4d571d54fe581c"
+    },
+    {
+      "file": "server/src/Planna.Application/Planna.Application.csproj",
+      "bytes": 219,
+      "sha256": "61e3f2d043e37f0db4be1d8083dd31bebbfbb8fde2cf027327db2556c16bc385"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/CreateTask.cs",
+      "bytes": 2103,
+      "sha256": "5f1320e319d02b3c6bddbbe2b7364dfb0483e3abe6f752fac78c0db20f8d3100"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030001_BaselineSchema.cs",
@@ -285,9 +325,19 @@
       "sha256": "4d80cf65111cb403a6fcb37354f49326c4634a8dd79a7fbc1a49a4466c89819b"
     },
     {
+      "file": "server/src/Planna.Infrastructure/Persistence/TaskWriteContext.cs",
+      "bytes": 5222,
+      "sha256": "b33e0c3100e29c42c3615fe0371cbb511fee98bed64bdf36e6ccffc0093181f6"
+    },
+    {
       "file": "server/src/Planna.Infrastructure/Planna.Infrastructure.csproj",
-      "bytes": 875,
-      "sha256": "55183475a156207718763e20eaf8b1980209b85f909b177db39ea18cb2fa019b"
+      "bytes": 992,
+      "sha256": "1e3cd6a4f5779f1ef8cc595562dab72dd03f92f5d75ec4fc351ab4b8e280422b"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/CreateTaskService.cs",
+      "bytes": 4998,
+      "sha256": "fb12ff337378ad247f4131440ded0e3d177aa88a162df905bd9ef41f4899d682"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
@@ -296,8 +346,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 4026,
-      "sha256": "b3a6614c3a2f7b31009d96bd4cb30ab1c51f016ee00b9d8475d32a45ea6cdfe5"
+      "bytes": 6697,
+      "sha256": "c7eab2e362c38e20f2ca59640553690e78e1c277c201fea917697ea2f8c119b4"
     },
     {
       "file": "spec/account-deletion.schema.json",
@@ -321,8 +371,8 @@
     },
     {
       "file": "spec/openapi.yaml",
-      "bytes": 31020,
-      "sha256": "dc16b8186fc36e3adf0b5eb16f3b159289efd871e1479ac59325b1d66f830cad"
+      "bytes": 31206,
+      "sha256": "a69048b7e83d19f284305788cdd825d910de5d4bfc5015c243503883fd41d9c9"
     },
     {
       "file": "spec/task.schema.json",

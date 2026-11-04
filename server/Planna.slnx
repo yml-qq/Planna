@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Planna.Api/Planna.Api.csproj" />
+    <Project Path="src/Planna.Application/Planna.Application.csproj" />
     <Project Path="src/Planna.Infrastructure/Planna.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
