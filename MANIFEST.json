@@ -446,8 +446,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/AuthMaintenanceSmoke.cs",
-      "bytes": 5240,
-      "sha256": "6c4b56acfd3019ffbd0816ebde034d3fd6b731ec0da47d6f3c8e27312d190887"
+      "bytes": 5406,
+      "sha256": "4795340673b7a6796f1eaec9e272e636c2ad0819b17ca0f7035e54aa0708a333"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpAuthSmoke.cs",

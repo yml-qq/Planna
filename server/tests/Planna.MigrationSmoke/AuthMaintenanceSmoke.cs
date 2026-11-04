@@ -41,8 +41,10 @@ internal static class AuthMaintenanceSmoke
                    ($3,$4,now()-interval '31 days',now()-interval '32 days')
             """, revokedHash, revokedSession, activeHash, activeSession);
 
+        var testConnection = Environment.GetEnvironmentVariable("PLANNADB_CONNECTION")
+            ?? throw new InvalidOperationException("Isolated test connection is missing.");
         var options = new DbContextOptionsBuilder<AuthContext>()
-            .UseNpgsql(connection.ConnectionString).Options;
+            .UseNpgsql(testConnection).Options;
         await using var db = new AuthContext(options);
         var maintenance = new AuthQueueMaintenance(db, TimeProvider.System);
         var snapshot = await maintenance.RunOnceAsync(CancellationToken.None);
