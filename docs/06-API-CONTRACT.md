@@ -57,7 +57,7 @@
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
 
-`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`，同邮箱同键在 24 小时保留窗口内不重复排队。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 

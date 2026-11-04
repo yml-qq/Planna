@@ -101,6 +101,7 @@ class Spec01Contracts(unittest.TestCase):
         challenge = api["paths"]["/auth/login/challenges"]["post"]
         self.assertIn("202", challenge["responses"])
         self.assertIn("pending", challenge["responses"]["202"]["description"])
+        self.assertIn("24 hours", challenge["description"])
         self.assertNotIn("503", challenge["responses"])
         for path, method in (
             ("/auth/login/challenges", "post"),

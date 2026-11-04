@@ -38,5 +38,11 @@ jobs:
           dotnet build server/Planna.slnx --no-restore --warnaserror
       - name: Format
         run: dotnet format server/Planna.slnx --verify-no-changes --no-restore
+      - name: OpenAPI and shared contract checks
+        run: |
+          python3 -m venv /tmp/planna-contract-venv
+          /tmp/planna-contract-venv/bin/pip install -r tests/contract/requirements.txt
+          /tmp/planna-contract-venv/bin/python -m unittest discover -s tests/contract -p 'test_*.py'
+          /tmp/planna-contract-venv/bin/python -m openapi_spec_validator spec/openapi.yaml
       - name: PostgreSQL migration and HTTP checks
         run: dotnet run --project server/tests/Planna.MigrationSmoke --no-build

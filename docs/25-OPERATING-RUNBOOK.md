@@ -20,6 +20,10 @@
 
 立刻对 AI 入口降级：保留纯规则输入、手动保存，提示智能规划不可用；暂停不必要的自动总结，切换备用 Provider 前检查权限、数据地域和成本。核心任务 API 不应随着模型连接池不可用而挂掉。
 
+## 4.1 登录邮件积压或失败
+
+`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 触发后，先检查 Worker 存活、PostgreSQL 连接、SMTP 配置与供应商状态。五分钟没有 `AUTH_EMAIL_QUEUE_HEARTBEAT` 也需按 Worker 停止排查。不要手工清空或改写待发队列；恢复后让租约和退避机制自动处理。排查日志只使用挑战 ID 和聚合计数，不复制邮箱、验证码或令牌。
+
 ## 5. AI 批量错误操作
 
 冻结有问题的 AI plan/apply 路径；根据 `ai_action_audit` 确定受影响 task IDs、before/after、关联计划和版本；优先给用户明确通知与受控撤销（再次校验当前版本，不能盲目覆盖用户后续修改）；调查 scope/validator/prompt/tool 变更并补充回归案例。

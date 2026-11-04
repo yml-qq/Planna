@@ -49,6 +49,7 @@ Main：镜像构建+SBOM/签名 → staging 部署 → smoke+迁移测试 → �
 - PostgreSQL：连接池等待、慢查询、锁等待、磁盘、复制/备份状态。
 - Sync：push failure、conflict rate、cursor lag、device pending mutations。
 - Reminder：due backlog、job retries、provider errors、发出延迟。
+- Auth email：`AUTH_EMAIL_QUEUE_HEARTBEAT` 每分钟出现；`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 需告警；心跳缺失五分钟需告警。日志只包含聚合计数与挑战 ID。
 - AI：Provider timeout、schema-invalid、cost/user/day、plan_stale、action_denied、model quality regression。
 - 客户端：crash/ANR、离线操作失败、通知授权率、异常同步重试。
 

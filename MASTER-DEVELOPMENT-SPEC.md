@@ -37,6 +37,8 @@
 - 29-DATA-01
 - 30-TASK-01
 - 31-AUTH-01
+- 32-AUTH-02
+- 33-AUTH-03
 
 ---
 
@@ -634,7 +636,7 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
 
-`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`，同邮箱同键在 24 小时保留窗口内不重复排队。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 
@@ -1560,6 +1562,7 @@ Main：镜像构建+SBOM/签名 → staging 部署 → smoke+迁移测试 → �
 - PostgreSQL：连接池等待、慢查询、锁等待、磁盘、复制/备份状态。
 - Sync：push failure、conflict rate、cursor lag、device pending mutations。
 - Reminder：due backlog、job retries、provider errors、发出延迟。
+- Auth email：`AUTH_EMAIL_QUEUE_HEARTBEAT` 每分钟出现；`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 需告警；心跳缺失五分钟需告警。日志只包含聚合计数与挑战 ID。
 - AI：Provider timeout、schema-invalid、cost/user/day、plan_stale、action_denied、model quality regression。
 - 客户端：crash/ANR、离线操作失败、通知授权率、异常同步重试。
 
@@ -1885,6 +1888,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 
 验证码挑战和加密邮件负载在同一 PostgreSQL 事务提交，API 返回 `202` 代表排队成功。独立 .NET Worker 使用 `FOR UPDATE SKIP LOCKED`、限时租约和有限重试处理；多实例可并发领取。数据库只保存 HMAC 验证哈希与 AES-GCM 密文，发送成功、过期或终止失败后清除密文。SMTP 发送与数据库确认无法形成原子事务，崩溃重试可能重复投递同一验证码；客户端仍只能消费一次。加密密钥必须在 API 和 Worker 中一致，轮换需先处理未完成队列。详见 `32-AUTH-02.md`。
 
+## ADR-018：认证临时记录的保留与告警信号（Accepted）
+
+验证码挑战及其邮件队列记录保留 24 小时，之后按批删除；同邮箱同幂等键仅在该窗口内保证不重复排队。已撤销设备会话满 30 天后可删其刷新令牌历史，因为会话已拒绝所有令牌；活跃会话的历史不得清理，否则会削弱旧令牌重放检测。Worker 每分钟输出无个人信息的队列心跳，积压达到 100 条或最旧待处理记录超过 120 秒发错误事件；投递终止失败单独发错误事件。外部日志平台需要按这些事件建告警，并检测心跳缺失。详见 `33-AUTH-03.md`。
+
 ---
 
 # 22｜视觉、组件、交互 Token 与无障碍规范
@@ -2138,6 +2145,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 ## 4. AI Provider 故障
 
 立刻对 AI 入口降级：保留纯规则输入、手动保存，提示智能规划不可用；暂停不必要的自动总结，切换备用 Provider 前检查权限、数据地域和成本。核心任务 API 不应随着模型连接池不可用而挂掉。
+
+## 4.1 登录邮件积压或失败
+
+`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 触发后，先检查 Worker 存活、PostgreSQL 连接、SMTP 配置与供应商状态。五分钟没有 `AUTH_EMAIL_QUEUE_HEARTBEAT` 也需按 Worker 停止排查。不要手工清空或改写待发队列；恢复后让租约和退避机制自动处理。排查日志只使用挑战 ID 和聚合计数，不复制邮箱、验证码或令牌。
 
 ## 5. AI 批量错误操作
 
@@ -2409,4 +2420,21 @@ API：`PLANNADB_CONNECTION`、`AUTH_CODE_PEPPER`、`AUTH_OUTBOX_KEY` 和现有 J
 
 ## 限制与后续
 
-SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复发送；幂等键和一次性消费仍保护登录。`202` 仅表示持久化排队；未启动 Worker 或 SMTP 长期故障时邮件不会到达。当前没有用户可见的投递状态接口、IP/设备层限流、密钥版本轮换或历史记录定期清理。下一切片可加入投递指标与告警、清理作业和设备级限制。本任务不修改任务同步、AI 或通知逻辑。
+SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复发送；幂等键和一次性消费仍保护登录。`202` 仅表示持久化排队；未启动 Worker 或 SMTP 长期故障时邮件不会到达。队列信号和历史清理在 `AUTH-03` 中补齐；当前仍无用户可见的投递状态接口、IP/设备层限流或密钥版本轮换。本任务不修改任务同步、AI 或通知逻辑。
+
+---
+
+# 33｜AUTH-03：登录邮件队列信号与历史清理
+
+状态：代码已实现；PostgreSQL 18 CI 验证以当前提交为准。真实 SMTP 与外部告警平台仍需部署环境接入。
+
+## 边界与验收
+
+- Worker 每分钟执行一次维护。`AUTH_EMAIL_QUEUE_HEARTBEAT` 结构化记录 pending、leased、failed 数量、最旧待处理秒数和本轮删除数；不记录邮箱、验证码、令牌或邮件内容。
+- 待处理达到 100 条或最旧记录等待超过 120 秒时，输出 `AUTH_EMAIL_QUEUE_BACKLOG` 错误事件；投递达到终止条件时输出 `AUTH_EMAIL_DELIVERY_TERMINAL` 错误事件。可重试故障为 `AUTH_EMAIL_DELIVERY_RETRY` 警告事件。部署日志平台应对错误事件告警，并在 5 分钟没有心跳时告警；多 Worker 实例按实例分别检查心跳。
+- 按每轮最多 500 条清理 24 小时前且已经过期的验证码挑战，外键级联删除邮件队列记录。重复同邮箱同幂等键仅在 24 小时保留窗口内不重发。每轮最多 500 条清理撤销超过 30 天的设备会话关联的刷新令牌历史；活跃会话的全部历史继续用于重放检测。
+- PostgreSQL 18 隔离库测试覆盖保留边界、级联清理、活跃会话历史保护、重复清理和积压阈值。此切片没有新增表或字段，也没有改变 HTTP 路径与响应形状。
+
+## 运维边界
+
+日志事件是告警输入，仓库尚未连接具体告警接收方。Worker 停止时不会产生自身心跳，所以必须由外部日志平台检测缺失。积压排查先看 Worker 存活、PostgreSQL 连接、SMTP 配置和供应商状态；不要清空队列来解除告警。当前未清理长期活跃设备的刷新令牌历史，因为这会失去旧令牌重放证据；后续需要会话最长寿命或令牌族设计后再确定上限。历史备份与日志的保留仍按发布前审定的隐私政策执行。

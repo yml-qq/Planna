@@ -125,3 +125,4 @@ if (await Scalar("SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", own
 Console.WriteLine("PASS: create task, replay, owner isolation, deleted account, concurrent revisions, conflict rollback");
 await HttpCreateTaskSmoke.RunAsync(connection);
 await HttpAuthSmoke.RunAsync(connection);
+await AuthMaintenanceSmoke.RunAsync(connection);

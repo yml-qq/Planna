@@ -35,7 +35,7 @@ paths:
       tags: [Identity]
       operationId: createLoginChallenge
       security: []
-      description: Queue an encrypted six-digit, ten-minute email code for delivery; repeated idempotency key does not queue or send again. Delivery is asynchronous and may be retried.
+      description: Queue an encrypted six-digit, ten-minute email code for delivery; a repeated idempotency key within 24 hours does not queue or send again. Delivery is asynchronous and may be retried.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:

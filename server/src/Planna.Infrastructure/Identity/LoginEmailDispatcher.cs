@@ -92,8 +92,12 @@ public sealed class LoginEmailDispatcher(
                     .SetProperty(x => x.Tag, terminal ? null : job.Tag)
                     .SetProperty(x => x.LeaseToken, (Guid?)null)
                     .SetProperty(x => x.LeaseUntil, (DateTimeOffset?)null), ct);
-            logger.LogWarning("Login email dispatch failed for challenge {ChallengeId}; attempt {Attempt}; terminal {Terminal}",
-                job.ChallengeId, attempts, terminal);
+            if (terminal)
+                logger.LogError("AUTH_EMAIL_DELIVERY_TERMINAL challenge_id={ChallengeId} attempts={Attempts}",
+                    job.ChallengeId, attempts);
+            else
+                logger.LogWarning("AUTH_EMAIL_DELIVERY_RETRY challenge_id={ChallengeId} attempt={Attempt}",
+                    job.ChallengeId, attempts);
         }
         return true;
     }

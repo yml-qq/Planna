@@ -26,5 +26,6 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ILoginCodeSender>(_ => new SmtpLoginCodeSender(
     smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom));
 builder.Services.AddScoped<LoginEmailDispatcher>();
+builder.Services.AddScoped<AuthQueueMaintenance>();
 builder.Services.AddHostedService<LoginEmailWorker>();
 await builder.Build().RunAsync();
