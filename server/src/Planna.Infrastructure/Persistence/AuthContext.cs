@@ -58,6 +58,9 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
         {
             e.ToTable("auth_email_outbox", t => t.ExcludeFromMigrations());
             e.HasKey(x => x.ChallengeId);
+            e.HasOne<LoginChallengeRow>().WithOne()
+                .HasForeignKey<LoginEmailOutboxRow>(x => x.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
             e.Property(x => x.ChallengeId).HasColumnName("challenge_id");
             e.Property(x => x.Ciphertext).HasColumnName("ciphertext");
             e.Property(x => x.Nonce).HasColumnName("nonce");

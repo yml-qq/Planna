@@ -376,8 +376,8 @@
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/AuthContext.cs",
-      "bytes": 5440,
-      "sha256": "2cb0fd841b1cb25de3564788a761018db928a817e391cf5f331403aaf49ca93d"
+      "bytes": 5615,
+      "sha256": "a41708fb545e4b11f7e1c831b2e9f5f679f641e8e2d8268eacdf820e2182a1bf"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030001_BaselineSchema.cs",
