@@ -2340,6 +2340,8 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 这台机器的 Docker 引擎和 PostgreSQL 服务均未可用。GitHub Actions [运行 41670993447](https://github.com/yml-qq/Planna/actions/runs/41670993447) 已在 PostgreSQL 16 服务容器中成功完成上述检查，且 .NET 构建无警告。2026-11-04 对空的 `planna_db_dev` 应用了两条迁移；只读核对确认服务端为 PostgreSQL 18.6、`public` 有 22 张表，迁移历史包含两条迁移。CI 增加 PostgreSQL 16/18 双版本矩阵，以验证当前开发库的主版本。API 鉴权、用户版本校验、确认 token、删除账号后拒绝同步等属于应用层，迁移和数据库约束不能替代相应实现与测试。
 
+随后 `AUTH-01` 增加并在开发库应用 `202611040003_AuthSessions`；此处的 22 张表和两条迁移数字仅是首次迁移时的历史快照。最新迁移状态参见 `31-AUTH-01.md`。
+
 ---
 
 # 30｜TASK-01：创建任务写入切片
@@ -2363,7 +2365,7 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 # 31｜AUTH-01：邮箱验证码登录与刷新令牌
 
-状态：实现与契约已提交候选；需以 PostgreSQL 16/18 的 HTTP CI 结果和开发库迁移复核为准。
+状态：认证实现和第三条迁移已在 PostgreSQL 16/18 CI 及开发库核对通过；真实 SMTP 投递尚待供应商配置验证。
 
 ## 范围与决策
 
@@ -2374,6 +2376,6 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 ## 验收和限制
 
-新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、令牌轮换与重放撤销。真实 SMTP 可达性和投递率需有供应商配置后验证。
+新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、错误尝试上限、发送失败重试、令牌轮换与重放撤销后的访问令牌失效。[CI 首轮 41793249572](https://github.com/yml-qq/Planna/actions/runs/41793249572) 已在 PostgreSQL 16/18 通过。开发库 `planna_db_dev` 已应用第三条迁移，迁移历史只读复核通过；未在开发库插入合成用户。真实 SMTP 可达性和投递率需有供应商配置后验证。
 
 验证码发送与数据库提交跨越外部服务；发送失败会清除本次挑战，但发送成功后进程异常仍可能需要用户重新申请。后续应接持久化邮件 outbox、IP/设备层限流、验证码与刷新历史清理作业，以及设备管理/注销接口。客户端应把刷新令牌存入系统凭据库。

@@ -57,3 +57,5 @@
 - 新增登录验证码申请、验证码登录和刷新令牌轮换端点；新增 `AuthSessions` EF Core migration、契约和隔离库 HTTP 测试。
 - 验证范围包含验证码发送接口、一次性消费、错误码、自动建立个人账号、刷新轮换与旧令牌重放撤销；最终通过结果须以新提交的 PostgreSQL 16/18 CI 为准。
 - 真实 SMTP 供应商配置、投递率、邮件 outbox 与历史清理仍未验证或实现；生产凭据未加入仓库。
+- [CI 首轮 41793249572](https://github.com/yml-qq/Planna/actions/runs/41793249572) 在 PostgreSQL 16/18 上通过迁移、构建、格式与 HTTP 认证检查。增强测试继续覆盖邮件失败重试、五次错误码和访问令牌撤销，以最终提交的 CI 为准。
+- `planna_db_dev` 已应用 `202611040003_AuthSessions`；`dotnet ef migrations list` 只读复核显示三条迁移均已应用，未运行插入合成用户的测试。

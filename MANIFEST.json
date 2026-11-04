@@ -176,8 +176,8 @@
     },
     {
       "file": "docs/29-DATA-01.md",
-      "bytes": 2170,
-      "sha256": "6a29c47a6b1d205d5d920812075aab02329ee4e8917ab6d274759844458d3f4a"
+      "bytes": 2369,
+      "sha256": "0f11b79e20a3326a3b78b079f6b7226d5e9391b2b039eb5b35e3c2f271e35bd8"
     },
     {
       "file": "docs/30-TASK-01.md",
@@ -186,8 +186,8 @@
     },
     {
       "file": "docs/31-AUTH-01.md",
-      "bytes": 2071,
-      "sha256": "2a4c7f7c6ecbe78263db8909c38c68561f628b41e2c944ac5acde360aabf7576"
+      "bytes": 2399,
+      "sha256": "f4f2bbcd2756c1a88e32405278e5239a7663b41e39af4ec73f36709bae3d18eb"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -226,8 +226,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 163442,
-      "sha256": "fe6718018a19abf27578e01204417ccbc57bcd06a124695ee11aa035b019e556"
+      "bytes": 163971,
+      "sha256": "49bb8080ff77e7d08a668ee0b7c4b8f92cca735cf56aedaee64d3108a884bde7"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -396,8 +396,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpAuthSmoke.cs",
-      "bytes": 4766,
-      "sha256": "53e673fd27377bf1e6f870e58e26dd57bd221f49593c0c238b124c27550a4a85"
+      "bytes": 6787,
+      "sha256": "83acf1e80032e469d43dbe439ea7f0b9ab96f404d4e6fb8920d6e0884e54832d"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpCreateTaskSmoke.cs",
@@ -456,8 +456,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 5652,
-      "sha256": "ee01d0e17a17822b1de5409cab4f210196cc93b5ed23587e4a6fc117c6ff02a9"
+      "bytes": 6102,
+      "sha256": "6b655dbcdb578374647ef7b825b05739e0fa6af0c5d131559de505a6b91e495c"
     }
   ]
 }
