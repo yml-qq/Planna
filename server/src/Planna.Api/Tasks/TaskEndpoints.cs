@@ -16,7 +16,7 @@ public static class TaskEndpoints
         HttpContext http, CreateTaskRequest request, ICreateTask command, CancellationToken ct)
     {
         if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
-            return TypedResults.Unauthorized();
+            return Error(http, 401, "UNAUTHORIZED");
         if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
             return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
 

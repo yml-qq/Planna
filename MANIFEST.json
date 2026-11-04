@@ -275,6 +275,11 @@
       "sha256": "6526ec150f8db6056f56c8402c0b97207b15fee57916e83db943ec9ddb1f401d"
     },
     {
+      "file": "server/src/Planna.Api/ApiAssemblyMarker.cs",
+      "bytes": 62,
+      "sha256": "bf2321984a7fbe2bffb4ce6d588023b53f12cfc4123e9d45df4bc9bcbbb20853"
+    },
+    {
       "file": "server/src/Planna.Api/appsettings.Development.json",
       "bytes": 127,
       "sha256": "73f95f9e0ceb205fc1c4dc50c07697fcfa29d7087868c2aef1d504cb38c771ec"
@@ -291,8 +296,8 @@
     },
     {
       "file": "server/src/Planna.Api/Program.cs",
-      "bytes": 2115,
-      "sha256": "274d6d33d7ff271d02d8f794476c1903e3ba9c5027941c820ed428efa4dd8a1d"
+      "bytes": 2654,
+      "sha256": "22f3732fb3cb7a51d65a45df5bad8d788bd5d370f3c0d8d27303447cb2ccefdf"
     },
     {
       "file": "server/src/Planna.Api/Properties/launchSettings.json",
@@ -301,8 +306,8 @@
     },
     {
       "file": "server/src/Planna.Api/Tasks/TaskEndpoints.cs",
-      "bytes": 1834,
-      "sha256": "7182c863667fed8d690d7a757a84726497eaeb44cc8ccfe18e4d571d54fe581c"
+      "bytes": 1839,
+      "sha256": "17ab4b992d568831c086290b58598f7001404ba0710fe95fa993030e2454ddb5"
     },
     {
       "file": "server/src/Planna.Application/Planna.Application.csproj",
@@ -345,14 +350,19 @@
       "sha256": "fb12ff337378ad247f4131440ded0e3d177aa88a162df905bd9ef41f4899d682"
     },
     {
+      "file": "server/tests/Planna.MigrationSmoke/HttpCreateTaskSmoke.cs",
+      "bytes": 7082,
+      "sha256": "9d41f634613581c9e746f899202479f92c18e08f3cc082b29ca94202cf11516a"
+    },
+    {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
-      "bytes": 500,
-      "sha256": "46d3458a4781ad8bdbdc0c52f30a2c84eccacd7618d70c6e6f180bc02a7b7d2e"
+      "bytes": 662,
+      "sha256": "02d0afa389126e976c3ff713d32dae17a406dadde495ae299ef14282e2a33ca3"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 7427,
-      "sha256": "4c6d7f341ff2f4b4f021f4afb416df7ff5bfae0186c721e5086091d47a0f06be"
+      "bytes": 7475,
+      "sha256": "bebff22244cd6d753c0cac4bd494f1273164e9c60a4d83a97145a4f67386863f"
     },
     {
       "file": "spec/account-deletion.schema.json",
