@@ -2394,7 +2394,7 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 # 32｜AUTH-02：持久化登录邮件发送队列
 
-状态：代码与迁移已实现；PostgreSQL 18 CI 验证结果见对应提交。真实 SMTP 投递仍需供应商环境验证。
+状态：代码与迁移已实现；[PostgreSQL 18 CI 运行 41851558589](https://github.com/yml-qq/Planna/actions/runs/41851558589) 通过。`planna_db_dev` 已应用第四条迁移并只读核对迁移历史；真实 SMTP 投递仍需供应商环境验证。
 
 ## 范围与验收
 

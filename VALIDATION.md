@@ -64,4 +64,5 @@
 
 - 新增 `202611040004_LoginEmailOutbox` EF Core migration、独立 `Planna.Worker` 和生成的 `server/outbox-migrations.sql`；挑战与加密邮件负载同一事务提交。
 - 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror`、`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 已通过；7 项 Python 契约测试及 OpenAPI 3.1 校验已通过。
-- PostgreSQL 18 隔离库将在当前提交的 CI 验证发送故障、重试上限、租约恢复、并发领取、过期与密文篡改。真实 SMTP 服务未配置，投递率与凭据可用性未验证。
+- [PostgreSQL 18 CI 运行 41851558589](https://github.com/yml-qq/Planna/actions/runs/41851558589) 已通过迁移重放、构建、格式和 HTTP 冒烟，覆盖发送故障、重试上限、租约恢复、并发领取、过期与密文篡改。
+- `planna_db_dev` 已应用 `202611040004_LoginEmailOutbox`，`dotnet ef migrations list` 只读核对显示四条迁移均已应用；未在开发库插入合成账号或发送邮件。真实 SMTP 服务未配置，投递率与凭据可用性未验证。
