@@ -8,7 +8,7 @@ using Planna.Infrastructure.Persistence;
 namespace Planna.Infrastructure.Identity;
 
 public sealed class AuthService(
-    AuthContext db, ILoginCodeSender sender, IAccessTokenIssuer issuer,
+    AuthContext db, LoginCodeCipher cipher, IAccessTokenIssuer issuer,
     TimeProvider clock, string codePepper) : IAuthService
 {
     private const int AccessSeconds = 600;
@@ -36,16 +36,19 @@ public sealed class AuthService(
             ExpiresAt = now.AddMinutes(10),
             CreatedAt = now
         };
+        var encrypted = cipher.Encrypt(challenge.Id, normalized, code);
         db.Challenges.Add(challenge);
+        db.EmailOutbox.Add(new LoginEmailOutboxRow
+        {
+            ChallengeId = challenge.Id,
+            Ciphertext = encrypted.Ciphertext,
+            Nonce = encrypted.Nonce,
+            Tag = encrypted.Tag,
+            NextAttemptAt = now,
+            CreatedAt = now
+        });
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-        try { await sender.SendAsync(normalized, code, ct); }
-        catch (Exception) when (!ct.IsCancellationRequested)
-        {
-            db.Challenges.Remove(challenge);
-            await db.SaveChangesAsync(ct);
-            return new(AuthStatus.Unavailable);
-        }
         return new(AuthStatus.Accepted);
     }
 
@@ -60,7 +63,7 @@ public sealed class AuthService(
         var now = clock.GetUtcNow();
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var challenge = await db.Challenges.Where(x => x.Email == email)
-            .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(ct);
+            .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
         if (challenge is null) return new(AuthStatus.Invalid);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE auth_login_challenges SET attempts=attempts WHERE id={challenge.Id}", ct);

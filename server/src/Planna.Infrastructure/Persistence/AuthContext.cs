@@ -8,6 +8,7 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
     public DbSet<LoginChallengeRow> Challenges => Set<LoginChallengeRow>();
     public DbSet<DeviceSessionRow> Sessions => Set<DeviceSessionRow>();
     public DbSet<RefreshTokenRow> RefreshTokens => Set<RefreshTokenRow>();
+    public DbSet<LoginEmailOutboxRow> EmailOutbox => Set<LoginEmailOutboxRow>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -53,6 +54,22 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
             e.Property(x => x.ConsumedAt).HasColumnName("consumed_at");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
+        model.Entity<LoginEmailOutboxRow>(e =>
+        {
+            e.ToTable("auth_email_outbox", t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.ChallengeId);
+            e.Property(x => x.ChallengeId).HasColumnName("challenge_id");
+            e.Property(x => x.Ciphertext).HasColumnName("ciphertext");
+            e.Property(x => x.Nonce).HasColumnName("nonce");
+            e.Property(x => x.Tag).HasColumnName("tag");
+            e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.Attempts).HasColumnName("attempts");
+            e.Property(x => x.NextAttemptAt).HasColumnName("next_attempt_at");
+            e.Property(x => x.LeaseToken).HasColumnName("lease_token");
+            e.Property(x => x.LeaseUntil).HasColumnName("lease_until");
+            e.Property(x => x.SentAt).HasColumnName("sent_at");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+        });
     }
 }
 
@@ -91,5 +108,20 @@ public sealed class RefreshTokenRow
     public string TokenHash { get; set; } = "";
     public Guid SessionId { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class LoginEmailOutboxRow
+{
+    public Guid ChallengeId { get; set; }
+    public byte[]? Ciphertext { get; set; }
+    public byte[]? Nonce { get; set; }
+    public byte[]? Tag { get; set; }
+    public string Status { get; set; } = "pending";
+    public int Attempts { get; set; }
+    public DateTimeOffset NextAttemptAt { get; set; }
+    public Guid? LeaseToken { get; set; }
+    public DateTimeOffset? LeaseUntil { get; set; }
+    public DateTimeOffset? SentAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }

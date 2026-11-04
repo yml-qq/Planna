@@ -22,9 +22,3 @@ public sealed class SmtpLoginCodeSender(
         await smtp.SendMailAsync(message, ct);
     }
 }
-
-public sealed class UnavailableLoginCodeSender : ILoginCodeSender
-{
-    public Task SendAsync(string email, string code, CancellationToken ct) =>
-        throw new InvalidOperationException("SMTP is not configured.");
-}

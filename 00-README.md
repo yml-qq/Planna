@@ -42,6 +42,7 @@
 | 29 | `docs/29-DATA-01.md` | EF Core 迁移起点、隔离库验证与当前限制 |
 | 30 | `docs/30-TASK-01.md` | 创建任务 API、owner/幂等写入与 PostgreSQL 集成验证 |
 | 31 | `docs/31-AUTH-01.md` | 邮箱验证码登录、设备会话与刷新令牌轮换 |
+| 32 | `docs/32-AUTH-02.md` | 登录邮件加密 outbox、独立 Worker 与重试边界 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

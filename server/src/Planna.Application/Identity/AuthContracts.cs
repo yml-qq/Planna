@@ -22,7 +22,7 @@ public sealed record AuthResponse(
     [property: JsonPropertyName("refresh_token")] string RefreshToken,
     [property: JsonPropertyName("expires_in")] int ExpiresIn);
 
-public enum AuthStatus { Success, Accepted, Invalid, RateLimited, Unavailable }
+public enum AuthStatus { Success, Accepted, Invalid, RateLimited }
 public sealed record AuthResult(AuthStatus Status, AuthResponse? Tokens = null);
 
 public interface IAuthService

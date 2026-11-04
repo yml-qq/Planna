@@ -594,7 +594,7 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 |---|---|---|---|
 | POST | `/auth/register` | 注册 | V1.0 |
 | POST | `/auth/login` | 登录 | V1.0 |
-| POST | `/auth/login/challenges` | 发送登录邮箱验证码 | V1.0 |
+| POST | `/auth/login/challenges` | 持久化排队登录邮箱验证码 | V1.0 |
 | POST | `/auth/refresh` | 轮换刷新 token | V1.0 |
 | POST | `/auth/step-up` | 敏感操作的近期身份复核 | V1.0 |
 | POST | `/auth/step-up/challenges` | 向当前账号发送敏感操作验证码 | V1.0 |
@@ -634,7 +634,7 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
 
-`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。邮箱发送需配置 SMTP STARTTLS；未配置时返回可重试服务错误。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 
@@ -1881,6 +1881,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 
 当前开发库使用 PostgreSQL 18.6；项目以 PostgreSQL 18 为唯一支持的服务端主版本，CI 和本地 Docker 示例只运行 18。不承诺 PostgreSQL 16 兼容性，也不再维护双版本测试矩阵。历史在 16 上通过的测试记录仅作为当时的验证证据。部署到其他主版本前须另行评估并验证迁移、查询和备份恢复。
 
+## ADR-017：登录邮件加密 outbox 与独立 Worker（Accepted）
+
+验证码挑战和加密邮件负载在同一 PostgreSQL 事务提交，API 返回 `202` 代表排队成功。独立 .NET Worker 使用 `FOR UPDATE SKIP LOCKED`、限时租约和有限重试处理；多实例可并发领取。数据库只保存 HMAC 验证哈希与 AES-GCM 密文，发送成功、过期或终止失败后清除密文。SMTP 发送与数据库确认无法形成原子事务，崩溃重试可能重复投递同一验证码；客户端仍只能消费一次。加密密钥必须在 API 和 Worker 中一致，轮换需先处理未完成队列。详见 `32-AUTH-02.md`。
+
 ---
 
 # 22｜视觉、组件、交互 Token 与无障碍规范
@@ -2371,6 +2375,8 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 状态：认证实现和第三条迁移已在 PostgreSQL 18 CI 及开发库核对通过；真实 SMTP 投递尚待供应商配置验证。
 
+后续 `AUTH-02` 已把同步 SMTP 发送改为持久化加密邮件队列；本文件以下内容保留原切片验收记录。当前发送语义、运行配置和限制见 `32-AUTH-02.md`。
+
 ## 范围与决策
 
 - `POST /auth/login/challenges` 接收邮箱与稳定 `Idempotency-Key`，生成六位、10 分钟有效的验证码。数据库仅存 HMAC 哈希；同邮箱 15 分钟最多三次申请，重复键不重发。SMTP 由环境变量配置并要求 STARTTLS；未配置或发送失败返回安全错误。
@@ -2383,3 +2389,24 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、错误尝试上限、发送失败重试、令牌轮换与重放撤销后的访问令牌失效。[CI 运行 41794248660](https://github.com/yml-qq/Planna/actions/runs/41794248660) 已在 PostgreSQL 18 通过。开发库 `planna_db_dev` 已应用第三条迁移，迁移历史只读复核通过；未在开发库插入合成用户。真实 SMTP 可达性和投递率需有供应商配置后验证。
 
 验证码发送与数据库提交跨越外部服务；发送失败会清除本次挑战，但发送成功后进程异常仍可能需要用户重新申请。后续应接持久化邮件 outbox、IP/设备层限流、验证码与刷新历史清理作业，以及设备管理/注销接口。客户端应把刷新令牌存入系统凭据库。
+
+---
+
+# 32｜AUTH-02：持久化登录邮件发送队列
+
+状态：代码与迁移已实现；PostgreSQL 18 CI 验证结果见对应提交。真实 SMTP 投递仍需供应商环境验证。
+
+## 范围与验收
+
+- `POST /auth/login/challenges` 在一个事务中写入挑战和 `auth_email_outbox`，只返回 `202` 排队结果；相同邮箱与幂等键不新增邮件。验证码仍有 10 分钟有效期和每邮箱 15 分钟三次申请限制。
+- 待发六位码使用 `AUTH_OUTBOX_KEY` 的 32 字节 Base64 密钥做 AES-GCM 加密，并绑定挑战 ID 与邮箱。数据库不保存可直接读取的验证码。API 与 Worker 必须配置同一密钥；`AUTH_CODE_PEPPER` 仍独立用于验证码校验哈希。
+- `Planna.Worker` 从 PostgreSQL 18 领取邮件，使用 SMTP STARTTLS 发送。领取租约为一分钟，SMTP 调用限时 20 秒；失败按 2、4、8、16 秒退避，最多五次尝试。过期、已消费或被更新验证码取代的待发负载被清除。发送成功或终止失败也清除密文。
+- 验证包括：队列和挑战原子提交、请求重放不重复排队、SMTP 故障后重试、五次失败后停止、过期租约回收、并发领取只发一次、过期不发送、密文篡改拒绝、原登录和刷新令牌行为回归。
+
+## 运行配置
+
+API：`PLANNADB_CONNECTION`、`AUTH_CODE_PEPPER`、`AUTH_OUTBOX_KEY` 和现有 JWT 配置。Worker：`PLANNADB_CONNECTION`、同一个 `AUTH_OUTBOX_KEY`、`SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASSWORD`、`SMTP_FROM`。迁移 `202611040004_LoginEmailOutbox` 必须先应用，再启动新 API 与 Worker；生成的完整审阅 SQL 为 `server/outbox-migrations.sql`。密钥通过环境秘密管理注入，不写入仓库；密钥轮换前应处理完未完成队列。
+
+## 限制与后续
+
+SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复发送；幂等键和一次性消费仍保护登录。`202` 仅表示持久化排队；未启动 Worker 或 SMTP 长期故障时邮件不会到达。当前没有用户可见的投递状态接口、IP/设备层限流、密钥版本轮换或历史记录定期清理。下一切片可加入投递指标与告警、清理作业和设备级限制。本任务不修改任务同步、AI 或通知逻辑。

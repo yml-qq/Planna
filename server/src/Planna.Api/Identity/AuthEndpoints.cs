@@ -27,7 +27,6 @@ public static class AuthEndpoints
                 expires_at = clock.GetUtcNow().AddMinutes(10)
             }),
             AuthStatus.RateLimited => Error(http, 429, "RATE_LIMITED"),
-            AuthStatus.Unavailable => Error(http, 503, "EMAIL_UNAVAILABLE"),
             _ => Error(http, 422, "INVALID_EMAIL")
         };
     }

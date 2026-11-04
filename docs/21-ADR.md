@@ -65,3 +65,7 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 ## ADR-016：PostgreSQL 18 单版本基线（Accepted）
 
 当前开发库使用 PostgreSQL 18.6；项目以 PostgreSQL 18 为唯一支持的服务端主版本，CI 和本地 Docker 示例只运行 18。不承诺 PostgreSQL 16 兼容性，也不再维护双版本测试矩阵。历史在 16 上通过的测试记录仅作为当时的验证证据。部署到其他主版本前须另行评估并验证迁移、查询和备份恢复。
+
+## ADR-017：登录邮件加密 outbox 与独立 Worker（Accepted）
+
+验证码挑战和加密邮件负载在同一 PostgreSQL 事务提交，API 返回 `202` 代表排队成功。独立 .NET Worker 使用 `FOR UPDATE SKIP LOCKED`、限时租约和有限重试处理；多实例可并发领取。数据库只保存 HMAC 验证哈希与 AES-GCM 密文，发送成功、过期或终止失败后清除密文。SMTP 发送与数据库确认无法形成原子事务，崩溃重试可能重复投递同一验证码；客户端仍只能消费一次。加密密钥必须在 API 和 Worker 中一致，轮换需先处理未完成队列。详见 `32-AUTH-02.md`。

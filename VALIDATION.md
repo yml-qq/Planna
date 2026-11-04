@@ -59,3 +59,9 @@
 - 真实 SMTP 供应商配置、投递率、邮件 outbox 与历史清理仍未验证或实现；生产凭据未加入仓库。
 - [CI 运行 41794248660](https://github.com/yml-qq/Planna/actions/runs/41794248660) 在 PostgreSQL 18 上通过迁移、构建、格式与 HTTP 认证检查，覆盖邮件失败重试、五次错误码和访问令牌撤销。当前 CI 仅保留 PostgreSQL 18。
 - `planna_db_dev` 已应用 `202611040003_AuthSessions`；`dotnet ef migrations list` 只读复核显示三条迁移均已应用，未运行插入合成用户的测试。
+
+## AUTH-02 持久化登录邮件队列检查（2026-11-04）
+
+- 新增 `202611040004_LoginEmailOutbox` EF Core migration、独立 `Planna.Worker` 和生成的 `server/outbox-migrations.sql`；挑战与加密邮件负载同一事务提交。
+- 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror`、`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 已通过；7 项 Python 契约测试及 OpenAPI 3.1 校验已通过。
+- PostgreSQL 18 隔离库将在当前提交的 CI 验证发送故障、重试上限、租约恢复、并发领取、过期与密文篡改。真实 SMTP 服务未配置，投递率与凭据可用性未验证。

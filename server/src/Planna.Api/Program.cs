@@ -25,26 +25,19 @@ var codePepper = builder.Configuration["AUTH_CODE_PEPPER"]
     ?? throw new InvalidOperationException("AUTH_CODE_PEPPER is required.");
 if (Encoding.UTF8.GetByteCount(codePepper) < 32)
     throw new InvalidOperationException("AUTH_CODE_PEPPER must contain at least 32 bytes.");
+var outboxKey = builder.Configuration["AUTH_OUTBOX_KEY"]
+    ?? throw new InvalidOperationException("AUTH_OUTBOX_KEY is required.");
 
 builder.Services.AddDbContext<TaskWriteContext>(options => options.UseNpgsql(connection));
 builder.Services.AddDbContext<AuthContext>(options => options.UseNpgsql(connection));
+builder.Services.AddSingleton(new LoginCodeCipher(outboxKey));
 builder.Services.AddScoped<ICreateTask, CreateTaskService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddScoped<IAuthService>(sp => new AuthService(
-    sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<ILoginCodeSender>(),
+    sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<LoginCodeCipher>(),
     sp.GetRequiredService<IAccessTokenIssuer>(), sp.GetRequiredService<TimeProvider>(), codePepper));
-var smtpHost = builder.Configuration["SMTP_HOST"];
-var smtpUser = builder.Configuration["SMTP_USER"];
-var smtpPassword = builder.Configuration["SMTP_PASSWORD"];
-var smtpFrom = builder.Configuration["SMTP_FROM"];
-if (smtpHost is not null && smtpUser is not null && smtpPassword is not null && smtpFrom is not null &&
-    int.TryParse(builder.Configuration["SMTP_PORT"], out var smtpPort))
-    builder.Services.AddScoped<ILoginCodeSender>(_ => new SmtpLoginCodeSender(
-        smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom));
-else
-    builder.Services.AddScoped<ILoginCodeSender, UnavailableLoginCodeSender>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

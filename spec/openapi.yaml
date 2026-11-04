@@ -35,7 +35,7 @@ paths:
       tags: [Identity]
       operationId: createLoginChallenge
       security: []
-      description: Send a six-digit, ten-minute email code; repeated idempotency key does not resend.
+      description: Queue an encrypted six-digit, ten-minute email code for delivery; repeated idempotency key does not queue or send again. Delivery is asynchronous and may be retried.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -50,7 +50,7 @@ paths:
                 email: {type: string, format: email}
       responses:
         '202':
-          description: Challenge accepted.
+          description: Challenge and email delivery job committed atomically; delivery is pending.
           content:
             application/json:
               schema:
@@ -61,7 +61,6 @@ paths:
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
         '429': {$ref: '#/components/responses/ErrorResponse'}
-        '503': {$ref: '#/components/responses/ErrorResponse'}
   /auth/login:
     post:
       tags: [Identity]

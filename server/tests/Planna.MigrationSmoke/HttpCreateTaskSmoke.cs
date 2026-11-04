@@ -36,6 +36,7 @@ internal static class HttpCreateTaskSmoke
         Environment.SetEnvironmentVariable("JWT_AUDIENCE", Audience);
         Environment.SetEnvironmentVariable("JWT_SIGNING_KEY", Key);
         Environment.SetEnvironmentVariable("AUTH_CODE_PEPPER", "local-test-code-pepper-32-bytes-minimum-2026");
+        Environment.SetEnvironmentVariable("AUTH_OUTBOX_KEY", Convert.ToBase64String(new byte[32]));
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
         var body = new CreateTaskRequest(Guid.NewGuid(), list, "HTTP task", null, 0,

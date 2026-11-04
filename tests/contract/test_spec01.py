@@ -98,6 +98,10 @@ class Spec01Contracts(unittest.TestCase):
 
     def test_writes_require_idempotency_and_plan_full_set(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        challenge = api["paths"]["/auth/login/challenges"]["post"]
+        self.assertIn("202", challenge["responses"])
+        self.assertIn("pending", challenge["responses"]["202"]["description"])
+        self.assertNotIn("503", challenge["responses"])
         for path, method in (
             ("/auth/login/challenges", "post"),
             ("/auth/step-up/challenges", "post"),
