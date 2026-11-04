@@ -17,6 +17,7 @@
 |---|---|---|---|
 | POST | `/auth/register` | 注册 | V1.0 |
 | POST | `/auth/login` | 登录 | V1.0 |
+| POST | `/auth/login/challenges` | 发送登录邮箱验证码 | V1.0 |
 | POST | `/auth/refresh` | 轮换刷新 token | V1.0 |
 | POST | `/auth/step-up` | 敏感操作的近期身份复核 | V1.0 |
 | POST | `/auth/step-up/challenges` | 向当前账号发送敏感操作验证码 | V1.0 |
@@ -55,6 +56,8 @@
 `spec/openapi.yaml` 已包含 MVP 核心路径的机器可读初稿；本文件定义更多语义，开发前对齐二者。
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
+
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。邮箱发送需配置 SMTP STARTTLS；未配置时返回可重试服务错误。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 

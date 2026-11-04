@@ -30,6 +30,38 @@ paths:
                 type: object
                 properties:
                   status: {type: string, const: ok}
+  /auth/login/challenges:
+    post:
+      tags: [Identity]
+      operationId: createLoginChallenge
+      security: []
+      description: Send a six-digit, ten-minute email code; repeated idempotency key does not resend.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: {type: string, format: email}
+      responses:
+        '202':
+          description: Challenge accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expires_at]
+                properties:
+                  expires_at: {type: string, format: date-time}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+        '503': {$ref: '#/components/responses/ErrorResponse'}
   /auth/login:
     post:
       tags: [Identity]
@@ -45,7 +77,7 @@ paths:
               required: [email, code, device_name, platform]
               properties:
                 email: {type: string, format: email}
-                code: {type: string, minLength: 4, maxLength: 12}
+                code: {type: string, pattern: '^[0-9]{6}$'}
                 device_name: {type: string, maxLength: 120}
                 platform: {type: string, enum: [android, ios, windows, macos, linux]}
       responses:
@@ -67,6 +99,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [refresh_token]
               properties:
                 refresh_token: {type: string}

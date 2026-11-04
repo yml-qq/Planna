@@ -17,6 +17,7 @@ internal static class HttpCreateTaskSmoke
     private const string Issuer = "planna-http-test";
     private const string Audience = "planna-http-test-client";
     private const string Key = "local-test-signing-key-32-bytes-minimum-2026";
+    private static readonly Dictionary<Guid, Guid> SessionIds = [];
 
     public static async Task RunAsync(NpgsqlConnection database)
     {
@@ -26,10 +27,15 @@ internal static class HttpCreateTaskSmoke
         await Execute(database, "INSERT INTO users(id,email) VALUES($1,'http-one@example.test'),($2,'http-two@example.test')", owner, other);
         await Execute(database, "INSERT INTO owner_sync_clocks(owner_id) VALUES($1),($2)", owner, other);
         await Execute(database, "INSERT INTO task_lists(id,owner_id,name) VALUES($1,$2,'HTTP Inbox')", list, owner);
+        SessionIds[owner] = Guid.NewGuid();
+        SessionIds[other] = Guid.NewGuid();
+        await Execute(database, "INSERT INTO device_sessions(id,user_id,device_name,platform,refresh_token_hash) VALUES($1,$2,'Test','windows',$3),($4,$5,'Test','windows',$6)",
+            SessionIds[owner], owner, Guid.NewGuid().ToString(), SessionIds[other], other, Guid.NewGuid().ToString());
 
         Environment.SetEnvironmentVariable("JWT_ISSUER", Issuer);
         Environment.SetEnvironmentVariable("JWT_AUDIENCE", Audience);
         Environment.SetEnvironmentVariable("JWT_SIGNING_KEY", Key);
+        Environment.SetEnvironmentVariable("AUTH_CODE_PEPPER", "local-test-code-pepper-32-bytes-minimum-2026");
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
         var body = new CreateTaskRequest(Guid.NewGuid(), list, "HTTP task", null, 0,
@@ -89,7 +95,10 @@ internal static class HttpCreateTaskSmoke
         {
             Issuer = Issuer,
             Audience = Audience,
-            Subject = new ClaimsIdentity([new Claim("sub", owner.ToString())]),
+            Subject = new ClaimsIdentity([
+                new Claim("sub", owner.ToString()),
+                new Claim("sid", SessionIds.GetValueOrDefault(owner).ToString())
+            ]),
             Expires = expires ?? DateTime.UtcNow.AddMinutes(5),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256)

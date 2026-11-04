@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Planna.Application.Tasks;
+using Planna.Application.Identity;
+using Planna.Api.Identity;
 using Planna.Api.Tasks;
+using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
 using Planna.Infrastructure.Tasks;
 
@@ -18,16 +21,56 @@ var signingKey = builder.Configuration["JWT_SIGNING_KEY"]
     ?? throw new InvalidOperationException("JWT_SIGNING_KEY is required.");
 if (Encoding.UTF8.GetByteCount(signingKey) < 32)
     throw new InvalidOperationException("JWT_SIGNING_KEY must contain at least 32 bytes.");
+var codePepper = builder.Configuration["AUTH_CODE_PEPPER"]
+    ?? throw new InvalidOperationException("AUTH_CODE_PEPPER is required.");
+if (Encoding.UTF8.GetByteCount(codePepper) < 32)
+    throw new InvalidOperationException("AUTH_CODE_PEPPER must contain at least 32 bytes.");
 
 builder.Services.AddDbContext<TaskWriteContext>(options => options.UseNpgsql(connection));
+builder.Services.AddDbContext<AuthContext>(options => options.UseNpgsql(connection));
 builder.Services.AddScoped<ICreateTask, CreateTaskService>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
+    issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<IAuthService>(sp => new AuthService(
+    sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<ILoginCodeSender>(),
+    sp.GetRequiredService<IAccessTokenIssuer>(), sp.GetRequiredService<TimeProvider>(), codePepper));
+var smtpHost = builder.Configuration["SMTP_HOST"];
+var smtpUser = builder.Configuration["SMTP_USER"];
+var smtpPassword = builder.Configuration["SMTP_PASSWORD"];
+var smtpFrom = builder.Configuration["SMTP_FROM"];
+if (smtpHost is not null && smtpUser is not null && smtpPassword is not null && smtpFrom is not null &&
+    int.TryParse(builder.Configuration["SMTP_PORT"], out var smtpPort))
+    builder.Services.AddScoped<ILoginCodeSender>(_ => new SmtpLoginCodeSender(
+        smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom));
+else
+    builder.Services.AddScoped<ILoginCodeSender, UnavailableLoginCodeSender>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
         options.Events = new JwtBearerEvents
         {
+            OnTokenValidated = async context =>
+            {
+                if (!Guid.TryParse(context.Principal?.FindFirst("sub")?.Value, out var owner) ||
+                    !Guid.TryParse(context.Principal?.FindFirst("sid")?.Value, out var session))
+                {
+                    context.Fail("Missing session claims.");
+                    return;
+                }
+                var auth = context.HttpContext.RequestServices.GetRequiredService<AuthContext>();
+                var user = await auth.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == owner);
+                if (user?.DeletedAt is not null)
+                {
+                    context.HttpContext.Items["AuthError"] = "ACCOUNT_DELETED";
+                    context.Fail("Account deleted.");
+                    return;
+                }
+                if (user is null || !await auth.Sessions.AsNoTracking().AnyAsync(x =>
+                    x.Id == session && x.UserId == owner && x.RevokedAt == null))
+                    context.Fail("Session revoked or missing.");
+            },
             OnChallenge = context =>
             {
                 context.HandleResponse();
@@ -35,7 +78,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return context.Response.WriteAsJsonAsync(new
                 {
                     request_id = context.HttpContext.TraceIdentifier,
-                    error = new { code = "UNAUTHORIZED", message = "UNAUTHORIZED", retryable = false }
+                    error = new
+                    {
+                        code = context.HttpContext.Items["AuthError"] as string ?? "UNAUTHORIZED",
+                        message = context.HttpContext.Items["AuthError"] as string ?? "UNAUTHORIZED",
+                        retryable = false
+                    }
                 });
             }
         };
@@ -58,6 +106,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));
 app.MapTaskEndpoints();
+app.MapAuthEndpoints();
 app.Run();
 
 public partial class Program;

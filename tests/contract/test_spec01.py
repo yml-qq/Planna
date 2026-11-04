@@ -65,6 +65,9 @@ class Spec01Contracts(unittest.TestCase):
         for path, method in (
             ("/auth/step-up/challenges", "post"),
             ("/auth/step-up", "post"),
+            ("/auth/login/challenges", "post"),
+            ("/auth/login", "post"),
+            ("/auth/refresh", "post"),
             ("/ai/tasks/{id}/breakdowns", "post"),
             ("/ai/breakdowns/{id}", "put"),
             ("/ai/breakdowns/{id}/apply", "post"),
@@ -96,6 +99,7 @@ class Spec01Contracts(unittest.TestCase):
     def test_writes_require_idempotency_and_plan_full_set(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         for path, method in (
+            ("/auth/login/challenges", "post"),
             ("/auth/step-up/challenges", "post"),
             ("/ai/tasks/{id}/breakdowns", "post"),
             ("/ai/breakdowns/{id}", "put"),

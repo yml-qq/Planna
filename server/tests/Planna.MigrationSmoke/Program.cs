@@ -124,3 +124,4 @@ if (await Scalar("SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", own
     throw new InvalidOperationException("Create, sync change and mutation result were not atomic.");
 Console.WriteLine("PASS: create task, replay, owner isolation, deleted account, concurrent revisions, conflict rollback");
 await HttpCreateTaskSmoke.RunAsync(connection);
+await HttpAuthSmoke.RunAsync(connection);

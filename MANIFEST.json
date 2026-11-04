@@ -16,8 +16,8 @@
     },
     {
       "file": "00-README.md",
-      "bytes": 9205,
-      "sha256": "c552624e8a54d2dbca545b44dee1426a32b15228a95abbbe793de4185fd41d8f"
+      "bytes": 9295,
+      "sha256": "3e3fb19e019535b9f39fb5e76c1551d2dcf25eddebaecaa0e90d210d0c1fe047"
     },
     {
       "file": "AGENTS.md",
@@ -61,8 +61,8 @@
     },
     {
       "file": "docs/06-API-CONTRACT.md",
-      "bytes": 9291,
-      "sha256": "0fe52ea568f6a1928fba4a5f7ec81fd72741a95a1b687498c4a3af6505529030"
+      "bytes": 9801,
+      "sha256": "ab41192754a8a1604de077d822ffa22cf8f5926591af1b4fd6a8dd30cd300464"
     },
     {
       "file": "docs/07-OFFLINE-SYNC.md",
@@ -136,8 +136,8 @@
     },
     {
       "file": "docs/21-ADR.md",
-      "bytes": 5042,
-      "sha256": "c58039314aeefad3ae5c877dce635d8c570284993aab7010014ff2f772ad0e24"
+      "bytes": 5567,
+      "sha256": "71e20ed4b670279e74fd8faad18ebb6e75b896b50614b996a1a0dcde6d90ba9f"
     },
     {
       "file": "docs/22-DESIGN-SYSTEM.md",
@@ -181,8 +181,13 @@
     },
     {
       "file": "docs/30-TASK-01.md",
-      "bytes": 1993,
-      "sha256": "b75fb9ecf96c4934dc961b0cf22fd426fbd68097c9a11f624ad5965f1ddb300e"
+      "bytes": 1987,
+      "sha256": "e58182ea0fc4edf30b01959ab1e7491692a3b8352b2b81d2311a004495d80910"
+    },
+    {
+      "file": "docs/31-AUTH-01.md",
+      "bytes": 2071,
+      "sha256": "2a4c7f7c6ecbe78263db8909c38c68561f628b41e2c944ac5acde360aabf7576"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -221,8 +226,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 160296,
-      "sha256": "0479d1575610c5f21f50645bc4577b317929019fe29a0365baca362d7f16d3c5"
+      "bytes": 163442,
+      "sha256": "fe6718018a19abf27578e01204417ccbc57bcd06a124695ee11aa035b019e556"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -265,6 +270,11 @@
       "sha256": "9db3fdaa90fb05b5850c2e6c9265e5e4e00e6bcdf36444258fefbcdae751ac77"
     },
     {
+      "file": "server/auth-migrations.sql",
+      "bytes": 15977,
+      "sha256": "4d0f5f75818c43b3f9538e9482b191debea83343e4a0ffaa0ad8074589053c40"
+    },
+    {
       "file": "server/Planna.slnx",
       "bytes": 393,
       "sha256": "2754bfebbfbb6adeb9c4fbbb295074eea8f82f164dbef8b56d6d664544b30bf3"
@@ -290,14 +300,24 @@
       "sha256": "200332b434757a0054a3d356c91cde01f2c48712be8aa2bcb0f3e973619f06e3"
     },
     {
+      "file": "server/src/Planna.Api/Identity/AccessTokenIssuer.cs",
+      "bytes": 1099,
+      "sha256": "4193268b4f2651828e08b4e05a11cc9f9d39e9ebee125d0418edcb10aa3a6f77"
+    },
+    {
+      "file": "server/src/Planna.Api/Identity/AuthEndpoints.cs",
+      "bytes": 2339,
+      "sha256": "a25dc845538d0d107a873cd1a2d9960d314c26f7e71846dfda670d49e3f7f740"
+    },
+    {
       "file": "server/src/Planna.Api/Planna.Api.csproj",
       "bytes": 560,
       "sha256": "9e13cba587ebf0aeb4ce26af67fbc436bb233cc6b65fd1601f8798af86a039e7"
     },
     {
       "file": "server/src/Planna.Api/Program.cs",
-      "bytes": 2654,
-      "sha256": "22f3732fb3cb7a51d65a45df5bad8d788bd5d370f3c0d8d27303447cb2ccefdf"
+      "bytes": 5502,
+      "sha256": "6579decf3cc89e551cbe1b3447408238c4e18d9673ecf020d2e217a65ddd989b"
     },
     {
       "file": "server/src/Planna.Api/Properties/launchSettings.json",
@@ -310,6 +330,11 @@
       "sha256": "17ab4b992d568831c086290b58598f7001404ba0710fe95fa993030e2454ddb5"
     },
     {
+      "file": "server/src/Planna.Application/Identity/AuthContracts.cs",
+      "bytes": 1729,
+      "sha256": "470b71a061e871487b8e14f79f0a17d39ad1603bbf4b79b71d68bdc5683fb575"
+    },
+    {
       "file": "server/src/Planna.Application/Planna.Application.csproj",
       "bytes": 219,
       "sha256": "61e3f2d043e37f0db4be1d8083dd31bebbfbb8fde2cf027327db2556c16bc385"
@@ -320,6 +345,21 @@
       "sha256": "5f1320e319d02b3c6bddbbe2b7364dfb0483e3abe6f752fac78c0db20f8d3100"
     },
     {
+      "file": "server/src/Planna.Infrastructure/Identity/AuthService.cs",
+      "bytes": 8334,
+      "sha256": "b34506fc3b35659238fd2d418e83e305f628a5bb168ca4a2648475231fa4e6fc"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Identity/SmtpLoginCodeSender.cs",
+      "bytes": 1023,
+      "sha256": "cfda5abaaea390254563186ae230ceaf3272ad674c84703e5ace2c9c611b212e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/AuthContext.cs",
+      "bytes": 3879,
+      "sha256": "65adf66abb559105c50a64ca6626d4e4ebf47c4ea4cdc78802b1a5c9b026e432"
+    },
+    {
       "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030001_BaselineSchema.cs",
       "bytes": 867,
       "sha256": "bbc7d5ae553ad4c12728dea32eddcdc0cf68ead407df6cc070880c8d04bb34e9"
@@ -328,6 +368,11 @@
       "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611030002_Spec01Contracts.cs",
       "bytes": 6320,
       "sha256": "808fca45aafaeddc47f09db19cf125efe2e2e788d4a66a73eff89a35857459d8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611040003_AuthSessions.cs",
+      "bytes": 2765,
+      "sha256": "7acfed98191fff299ded60354d2dad1f7c855bbed9070da52e5f1bb1bb6d04ab"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/PlannaSchemaContext.cs",
@@ -350,9 +395,14 @@
       "sha256": "fb12ff337378ad247f4131440ded0e3d177aa88a162df905bd9ef41f4899d682"
     },
     {
+      "file": "server/tests/Planna.MigrationSmoke/HttpAuthSmoke.cs",
+      "bytes": 4766,
+      "sha256": "53e673fd27377bf1e6f870e58e26dd57bd221f49593c0c238b124c27550a4a85"
+    },
+    {
       "file": "server/tests/Planna.MigrationSmoke/HttpCreateTaskSmoke.cs",
-      "bytes": 7450,
-      "sha256": "467414ba2d7a8f9248188e5d109d31ddcf83fe5b5f5ee3d2388d519441aa37d5"
+      "bytes": 8126,
+      "sha256": "165f4756dd788741a6a6a13b1f5237d768c2bd9e6335d6b615f26137f7847d79"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
@@ -361,8 +411,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 7475,
-      "sha256": "bebff22244cd6d753c0cac4bd494f1273164e9c60a4d83a97145a4f67386863f"
+      "bytes": 7517,
+      "sha256": "1cd563456ddccf1d1017bc7119c83800b62035783405e1221154f1afa48b2d46"
     },
     {
       "file": "spec/account-deletion.schema.json",
@@ -386,8 +436,8 @@
     },
     {
       "file": "spec/openapi.yaml",
-      "bytes": 31206,
-      "sha256": "a69048b7e83d19f284305788cdd825d910de5d4bfc5015c243503883fd41d9c9"
+      "bytes": 32378,
+      "sha256": "ddc104d54338294492c2dcbc788dd2cb41e58be4394ee01f01149a717758b3c6"
     },
     {
       "file": "spec/task.schema.json",
@@ -401,13 +451,13 @@
     },
     {
       "file": "tests/contract/test_spec01.py",
-      "bytes": 5423,
-      "sha256": "23592b49736d6456f239746860a43974102bfb630975c74cea97cb5a9967d037"
+      "bytes": 5595,
+      "sha256": "d29225af201705dbb816c993c6b56b48baf3eeeaa998d1aba3b58b9cbf1881f3"
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 5116,
-      "sha256": "0e738970b2a7e615fd8bb3efc41244f67a8d2634b87059f1204d8df16b4a0183"
+      "bytes": 5652,
+      "sha256": "ee01d0e17a17822b1de5409cab4f210196cc93b5ed23587e4a6fc117c6ff02a9"
     }
   ]
 }

@@ -36,6 +36,7 @@
 - 28-SPEC-01
 - 29-DATA-01
 - 30-TASK-01
+- 31-AUTH-01
 
 ---
 
@@ -593,6 +594,7 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 |---|---|---|---|
 | POST | `/auth/register` | 注册 | V1.0 |
 | POST | `/auth/login` | 登录 | V1.0 |
+| POST | `/auth/login/challenges` | 发送登录邮箱验证码 | V1.0 |
 | POST | `/auth/refresh` | 轮换刷新 token | V1.0 |
 | POST | `/auth/step-up` | 敏感操作的近期身份复核 | V1.0 |
 | POST | `/auth/step-up/challenges` | 向当前账号发送敏感操作验证码 | V1.0 |
@@ -631,6 +633,8 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 `spec/openapi.yaml` 已包含 MVP 核心路径的机器可读初稿；本文件定义更多语义，开发前对齐二者。
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
+
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。邮箱发送需配置 SMTP STARTTLS；未配置时返回可重试服务错误。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 
@@ -1869,6 +1873,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 
 任务拆解采用持久化可编辑草案，最多 20 步，整组确认并按任务版本应用；AI 计划 V1.0 只支持完整操作集合。数据导出分本地离线副本与云端已提交快照，统一版本化 JSON；云端文件就绪后保留 24 小时供授权下载。账号删除经近期身份复核，接受后立即禁用账号及会话，旧设备停同步并保留本地副本供用户选择导出或清除。代价是新增草案、导出任务和删除请求状态及跨设备边界测试；保留期限由发布前隐私政策审定。详见 `28-SPEC-01.md`。
 
+## ADR-015：邮箱验证码首次登录即注册（Accepted）
+
+补齐原 OpenAPI 缺少的登录验证码申请端点；验证通过时原子创建个人账号、Inbox、同步时钟和设备会话。独立 `/auth/register` 暂不实现，页面可复用同一入口。刷新令牌只存哈希和使用历史，重放撤销对应设备会话；访问令牌逐次查会话状态。代价是邮件供应商可用性、验证码与令牌历史清理及发信 outbox 仍需后续运维切片处理。详见 `31-AUTH-01.md`。
+
 ---
 
 # 22｜视觉、组件、交互 Token 与无障碍规范
@@ -2349,4 +2357,23 @@ dotnet run --project server/tests/Planna.MigrationSmoke
 
 `server/tests/Planna.MigrationSmoke` 在 PostgreSQL 16 隔离库覆盖创建成功、幂等重放、同键不同内容、跨账号清单、已删除账号、并发 revision 与任务 ID 冲突回滚。`HttpCreateTaskSmoke` 通过 `WebApplicationFactory` 走真实 HTTP 路由、JWT 中间件和 PostgreSQL，验证未授权、签名错误、过期 token、缺少幂等键、跨账号清单、创建、重放、同键不同内容和账号删除后的结果。[CI 运行 41761975744](https://github.com/yml-qq/Planna/actions/runs/41761975744) 已通过；本机 Docker 引擎仍不可连接。
 
-本切片未提供登录、刷新令牌、任务更新或本地客户端同步；JWT 由未来认证服务签发。测试 token 仅在独立测试进程中创建。后续任务应完成登录/刷新令牌闭环及任务更新的版本冲突处理。
+本切片本身不包含登录、刷新令牌、任务更新或本地客户端同步；认证入口后续由 `31-AUTH-01.md` 单独实现。测试 token 仅在独立测试进程中创建。任务更新的版本冲突处理仍待后续切片。
+
+---
+
+# 31｜AUTH-01：邮箱验证码登录与刷新令牌
+
+状态：实现与契约已提交候选；需以 PostgreSQL 16/18 的 HTTP CI 结果和开发库迁移复核为准。
+
+## 范围与决策
+
+- `POST /auth/login/challenges` 接收邮箱与稳定 `Idempotency-Key`，生成六位、10 分钟有效的验证码。数据库仅存 HMAC 哈希；同邮箱 15 分钟最多三次申请，重复键不重发。SMTP 由环境变量配置并要求 STARTTLS；未配置或发送失败返回安全错误。
+- `POST /auth/login` 验证一次性码，最多允许五次尝试；首次验证通过时在同一事务中创建个人账号、Inbox 和账户同步时钟，然后创建设备会话。已删除账号不自动恢复。现有文档列出的独立 `/auth/register` 留待后续，首发注册可复用验证码登录入口。
+- `POST /auth/refresh` 只接受随机刷新令牌；数据库保存 SHA-256 哈希和使用历史。成功后轮换令牌；旧令牌重放会撤销该设备会话。访问 JWT 有效期 10 分钟，包含账号与设备会话 ID；受保护路由逐次确认会话未撤销、账号未删除。
+- 邮件服务需要 `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASSWORD`、`SMTP_FROM`；认证还需要 `AUTH_CODE_PEPPER`、`JWT_SIGNING_KEY`、`JWT_ISSUER`、`JWT_AUDIENCE`。密钥由部署环境提供，不写入仓库。SMTP 使用 STARTTLS，需由邮件服务提供商支持。
+
+## 验收和限制
+
+新增 `202611040003_AuthSessions` 迁移、OpenAPI 登录验证码端点与隔离库 HTTP 测试。测试发送器只在测试宿主注入，捕获合成验证码，检查一次性消费、错误码、令牌轮换与重放撤销。真实 SMTP 可达性和投递率需有供应商配置后验证。
+
+验证码发送与数据库提交跨越外部服务；发送失败会清除本次挑战，但发送成功后进程异常仍可能需要用户重新申请。后续应接持久化邮件 outbox、IP/设备层限流、验证码与刷新历史清理作业，以及设备管理/注销接口。客户端应把刷新令牌存入系统凭据库。
