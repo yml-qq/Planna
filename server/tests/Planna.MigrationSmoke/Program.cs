@@ -97,6 +97,15 @@ var foreign = await Create(other, Guid.NewGuid(), createRequest with { Id = Guid
 if (foreign.Status != CreateTaskStatus.ListNotFound)
     throw new InvalidOperationException("Foreign list was accepted.");
 
+var concurrent = await Task.WhenAll(
+    Create(owner, Guid.NewGuid(), createRequest with { Id = Guid.NewGuid(), Title = "Concurrent A" }),
+    Create(owner, Guid.NewGuid(), createRequest with { Id = Guid.NewGuid(), Title = "Concurrent B" }));
+if (concurrent.Any(x => x.Status != CreateTaskStatus.Created))
+    throw new InvalidOperationException("Concurrent creates did not both commit.");
+var collision = await Create(owner, Guid.NewGuid(), createRequest with { Title = "Collision" });
+if (collision.Status != CreateTaskStatus.Conflict)
+    throw new InvalidOperationException("Duplicate task ID was accepted.");
+
 await Exec(connection, "UPDATE users SET deleted_at=now() WHERE id=$1", owner);
 var deleted = await Create(owner, Guid.NewGuid(), createRequest with { Id = Guid.NewGuid() });
 if (deleted.Status != CreateTaskStatus.AccountDeleted)
@@ -108,8 +117,9 @@ async Task<long> Scalar(string sql, params object[] values)
     foreach (var item in values) command.Parameters.AddWithValue(item);
     return (long)(await command.ExecuteScalarAsync() ?? -1L);
 }
-if (await Scalar("SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 1 ||
-    await Scalar("SELECT count(*) FROM sync_changes WHERE owner_id=$1", owner) != 1 ||
+if (await Scalar("SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 3 ||
+    await Scalar("SELECT count(*) FROM sync_changes WHERE owner_id=$1", owner) != 3 ||
+    await Scalar("SELECT count(DISTINCT revision) FROM sync_changes WHERE owner_id=$1", owner) != 3 ||
     await Scalar("SELECT count(*) FROM client_mutations WHERE owner_id=$1 AND mutation_id=$2", owner, createKey) != 1)
     throw new InvalidOperationException("Create, sync change and mutation result were not atomic.");
-Console.WriteLine("PASS: create task, replay, changed key, owner isolation, deleted account, single revision");
+Console.WriteLine("PASS: create task, replay, owner isolation, deleted account, concurrent revisions, conflict rollback");

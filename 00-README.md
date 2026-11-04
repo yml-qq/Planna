@@ -40,6 +40,7 @@
 | 27 | `docs/27-TRACEABILITY.md` | 需求、API、数据、测试追踪矩阵 |
 | 28 | `docs/28-SPEC-01.md` | V1.0 任务拆解、导出、账号删除与 AI 整份确认契约 |
 | 29 | `docs/29-DATA-01.md` | EF Core 迁移起点、隔离库验证与当前限制 |
+| 30 | `docs/30-TASK-01.md` | 创建任务 API、owner/幂等写入与 PostgreSQL 集成验证 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

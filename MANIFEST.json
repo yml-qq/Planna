@@ -16,8 +16,8 @@
     },
     {
       "file": "00-README.md",
-      "bytes": 9108,
-      "sha256": "68c1f66d90bebba94fcb7b0bf2b8dca0bb381fdbc06dc041c2df0b011556b3f1"
+      "bytes": 9205,
+      "sha256": "c552624e8a54d2dbca545b44dee1426a32b15228a95abbbe793de4185fd41d8f"
     },
     {
       "file": "AGENTS.md",
@@ -180,6 +180,11 @@
       "sha256": "8492e6fbf3bc49c1bf1f01e07718ee8ace731ff3840320d300ae08ed82d69ab7"
     },
     {
+      "file": "docs/30-TASK-01.md",
+      "bytes": 1749,
+      "sha256": "8514abb8f0979411a4690803ff5caac21753ae205d186dd47343ac131a092eaf"
+    },
+    {
       "file": "examples/ai-plan-preview.json",
       "bytes": 763,
       "sha256": "03c4ce754c64afb9e01feb724e73df4f01a52814dea11997530fdf05c6637e6d"
@@ -216,8 +221,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 158012,
-      "sha256": "20bbb35b940e813d4719aaeed6ae2f33c89dffdbc2a971238e1a535e81a369cb"
+      "bytes": 159800,
+      "sha256": "4c36460d00139b4672267ef49cb64229714f56e152452ec3c4375eab4cebbbe9"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -346,8 +351,8 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 6697,
-      "sha256": "c7eab2e362c38e20f2ca59640553690e78e1c277c201fea917697ea2f8c119b4"
+      "bytes": 7427,
+      "sha256": "4c6d7f341ff2f4b4f021f4afb416df7ff5bfae0186c721e5086091d47a0f06be"
     },
     {
       "file": "spec/account-deletion.schema.json",
@@ -391,8 +396,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 3838,
-      "sha256": "81b5b3afefd925720ffe22cfd214c2d3652a51cd46863ca3a48293f1b3b97957"
+      "bytes": 4343,
+      "sha256": "ec0d1a8bb2f879521d578a344ffd14f2985c667d8ba7126d499ea7aa7178f0f5"
     }
   ]
 }
