@@ -68,6 +68,9 @@ class Spec01Contracts(unittest.TestCase):
             ("/auth/login/challenges", "post"),
             ("/auth/login", "post"),
             ("/auth/refresh", "post"),
+            ("/auth/devices", "get"),
+            ("/auth/devices/{id}/revoke", "post"),
+            ("/auth/logout", "post"),
             ("/ai/tasks/{id}/breakdowns", "post"),
             ("/ai/breakdowns/{id}", "put"),
             ("/ai/breakdowns/{id}/apply", "post"),
@@ -132,6 +135,21 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         for prefix in ("BREAKDOWN", "EXPORT", "DELETE", "PLAN"):
             self.assertTrue(any(item.startswith(prefix) for item in ids))
+
+    def test_device_session_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        listing = api["paths"]["/auth/devices"]["get"]
+        self.assertEqual(set(listing["responses"]), {"200", "400", "401"})
+        self.assertEqual(listing["responses"]["200"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/DeviceSessionPage")
+        self.assertEqual({p["name"] for p in listing["parameters"]}, {"limit", "cursor"})
+        for path in ("/auth/devices/{id}/revoke", "/auth/logout"):
+            operation = api["paths"][path]["post"]
+            self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, operation["parameters"])
+            self.assertIn({"$ref": "#/components/parameters/DeviceIfMatch"}, operation["parameters"])
+            for status in ("204", "400", "401", "409"):
+                self.assertIn(status, operation["responses"])
+        self.assertIn("404", api["paths"]["/auth/devices/{id}/revoke"]["post"]["responses"])
 
 
 if __name__ == "__main__":

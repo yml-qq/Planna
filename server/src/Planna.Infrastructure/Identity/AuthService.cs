@@ -202,6 +202,9 @@ public sealed class AuthService(
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE refresh_token_history SET consumed_at=consumed_at WHERE token_hash={hash}", ct);
         await db.Entry(token).ReloadAsync(ct);
+        // Serialize refresh with device revocation before issuing another token.
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE device_sessions SET version=version WHERE id={token.SessionId}", ct);
         var session = await db.Sessions.FirstOrDefaultAsync(x => x.Id == token.SessionId, ct);
         if (session is null || session.RevokedAt is not null) return new(AuthStatus.Invalid);
         if (token.ConsumedAt is not null || session.RefreshTokenHash != hash)

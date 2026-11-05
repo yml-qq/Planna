@@ -46,6 +46,7 @@
 | 33 | `docs/33-AUTH-03.md` | 认证队列告警信号与历史清理边界 |
 | 34 | `docs/34-AUTH-04.md` | 登录验证码申请的 IP/设备限流与代理边界 |
 | 35 | `docs/35-AUTH-05.md` | 验证码校验失败的跨邮箱 IP/设备限流 |
+| 36 | `docs/36-AUTH-06.md` | 设备会话列表、版本化撤销与当前设备退出 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -12,6 +12,8 @@
 
 检查 API 5xx/429、Postgres pool/locks、owner sync_revision、worker backlog、设备 outbox。不要为了“恢复”清空 outbox 或硬删除 changelog。必要时暂停写入接口、保留 queued operations，修复后按幂等重放；用测试账号先验收。
 
+用户报告设备丢失时，先让其从仍可登录的设备查看 `/auth/devices` 并撤销对应会话；若撤销当前设备，调用 `/auth/logout`。确认服务端之后拒绝该会话的访问和刷新令牌。此操作不能清除丢失设备的离线 SQLite 副本，应同时指导用户检查设备系统级锁定和本地数据保护。排障日志不得记录原始令牌或会话哈希。
+
 ## 3. 提醒漏发
 
 分层检查：(1) 用户设备通知权限/勿扰；(2) 客户端近期本地调度；(3) 服务端 scheduled_jobs 计数、pending lease、DLQ；(4) push 凭据与 provider ack；(5) 跨时区/夏令时规则。不能把 provider ack 误当用户收到。修复重发应有 delivery_key 去重。

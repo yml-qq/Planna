@@ -57,6 +57,8 @@ builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
 builder.Services.AddScoped<IAuthService>(sp => new AuthService(
     sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<LoginCodeCipher>(),
     sp.GetRequiredService<IAccessTokenIssuer>(), sp.GetRequiredService<TimeProvider>(), codePepper));
+builder.Services.AddScoped<IDeviceSessionQuery>(_ => new DeviceSessionQuery(connection));
+builder.Services.AddScoped<IRevokeDeviceSession, RevokeDeviceSession>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -120,6 +122,7 @@ app.UseAuthorization();
 app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));
 app.MapTaskEndpoints();
 app.MapAuthEndpoints();
+app.MapDeviceEndpoints();
 app.Run();
 
 public partial class Program;

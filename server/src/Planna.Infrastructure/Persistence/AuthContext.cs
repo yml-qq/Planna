@@ -47,6 +47,8 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
             e.Property(x => x.RefreshTokenHash).HasColumnName("refresh_token_hash");
             e.Property(x => x.RevokedAt).HasColumnName("revoked_at");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.RevocationKey).HasColumnName("revocation_key");
         });
         model.Entity<RefreshTokenRow>(e =>
         {
@@ -118,6 +120,8 @@ public sealed class DeviceSessionRow
     public string RefreshTokenHash { get; set; } = "";
     public DateTimeOffset? RevokedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public int Version { get; set; } = 1;
+    public Guid? RevocationKey { get; set; }
 }
 
 public sealed class RefreshTokenRow

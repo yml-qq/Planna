@@ -130,6 +130,58 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/AuthResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/devices:
+    get:
+      tags: [Identity]
+      operationId: listDevices
+      description: List the authenticated owner's active device sessions using stable descending created_at/id keyset pagination. Revoked sessions are omitted.
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+        - name: cursor
+          in: query
+          schema: {type: string}
+          description: Opaque next_cursor from the preceding page.
+      responses:
+        '200':
+          description: Active device sessions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DeviceSessionPage'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/devices/{id}/revoke:
+    post:
+      tags: [Identity]
+      operationId: revokeDevice
+      description: Revoke one owned session. The same idempotency key replays as 204 even after the session is revoked; a different key conflicts. Access and refresh tokens for the session then fail.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/DeviceIfMatch'
+      responses:
+        '204': {description: Revoked or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /auth/logout:
+    post:
+      tags: [Identity]
+      operationId: logout
+      description: Revoke the current JWT session with the same version and idempotency semantics as device revocation. A replay using the now-invalid JWT returns 401.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/DeviceIfMatch'
+      responses:
+        '204': {description: Current session revoked}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
   /auth/step-up/challenges:
     post:
       tags: [Identity]
@@ -663,6 +715,12 @@ components:
       required: true
       schema: {type: string, format: uuid}
       description: Stable, non-empty client installation ID; it is an abuse signal, not proof of identity.
+    DeviceIfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: {type: string, pattern: '^"[1-9][0-9]*"$', example: '"1"'}
+      description: Strong quoted version from the device list; stale versions return 409.
     TaskId:
       name: id
       in: path
@@ -715,6 +773,24 @@ components:
         access_token: {type: string}
         refresh_token: {type: string}
         expires_in: {type: integer}
+    DeviceSession:
+      type: object
+      additionalProperties: false
+      required: [id, device_name, platform, version, created_at, is_current]
+      properties:
+        id: {type: string, format: uuid}
+        device_name: {type: string}
+        platform: {type: string, enum: [android, ios, windows, macos, linux]}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        is_current: {type: boolean}
+    DeviceSessionPage:
+      type: object
+      additionalProperties: false
+      required: [devices, next_cursor]
+      properties:
+        devices: {type: array, items: {$ref: '#/components/schemas/DeviceSession'}}
+        next_cursor: {type: [string, 'null']}
     TaskList:
       type: object
       required: [id, name, kind, version]

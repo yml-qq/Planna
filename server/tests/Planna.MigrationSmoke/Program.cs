@@ -126,3 +126,4 @@ Console.WriteLine("PASS: create task, replay, owner isolation, deleted account, 
 await HttpCreateTaskSmoke.RunAsync(connection);
 await HttpAuthSmoke.RunAsync(connection);
 await AuthMaintenanceSmoke.RunAsync(connection);
+await HttpDeviceSmoke.RunAsync(connection);
