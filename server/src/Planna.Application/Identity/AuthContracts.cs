@@ -30,7 +30,8 @@ public interface IAuthService
 {
     Task<AuthResult> ChallengeAsync(string email, Guid requestKey, Guid deviceId,
         IPAddress? remoteAddress, CancellationToken ct);
-    Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken ct);
+    Task<AuthResult> LoginAsync(LoginRequest request, Guid deviceId,
+        IPAddress? remoteAddress, CancellationToken ct);
     Task<AuthResult> RefreshAsync(string refreshToken, CancellationToken ct);
     Task<bool> SessionActiveAsync(Guid ownerId, Guid sessionId, CancellationToken ct);
 }

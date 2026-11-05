@@ -33,18 +33,17 @@ internal static class HttpAuthSmoke
         if (sender.SendCount != 1 || await Dispatch(factory, sender))
             throw new InvalidOperationException("Challenge retry sent duplicate mail.");
 
-        var bad = await client.PostAsJsonAsync("/auth/login",
-            new LoginRequest(email, "000000", "Test device", "windows"));
+        var loginDevice = Guid.NewGuid();
+        var bad = await Login(client, new LoginRequest(email, "000000", "Test device", "windows"), loginDevice);
         Check(bad, HttpStatusCode.Unauthorized);
-        var login = await client.PostAsJsonAsync("/auth/login",
-            new LoginRequest(email, code, "Test device", "windows"));
+        var login = await Login(client, new LoginRequest(email, code, "Test device", "windows"), loginDevice);
         Check(login, HttpStatusCode.OK);
         var tokens = await login.Content.ReadFromJsonAsync<AuthResponse>()
             ?? throw new InvalidOperationException("Missing token response.");
         if (tokens.ExpiresIn != 600 || string.IsNullOrWhiteSpace(tokens.AccessToken) || tokens.RefreshToken.Length != 64)
             throw new InvalidOperationException("Invalid login tokens.");
-        Check(await client.PostAsJsonAsync("/auth/login",
-            new LoginRequest(email, code, "Test device", "windows")), HttpStatusCode.Unauthorized);
+        Check(await Login(client, new LoginRequest(email, code, "Test device", "windows"), loginDevice),
+            HttpStatusCode.Unauthorized);
 
         var refresh = await client.PostAsJsonAsync("/auth/refresh", new RefreshRequest(tokens.RefreshToken));
         Check(refresh, HttpStatusCode.OK);
@@ -143,17 +142,19 @@ internal static class HttpAuthSmoke
         const string lockedEmail = "auth-attempts@example.test";
         Check(await Challenge(client, lockedEmail, Guid.NewGuid()), HttpStatusCode.Accepted);
         if (!await Dispatch(factory, sender)) throw new InvalidOperationException("Attempt-limit code was not sent.");
+        var lockedDevice = Guid.NewGuid();
         for (var attempt = 0; attempt < 5; attempt++)
-            Check(await client.PostAsJsonAsync("/auth/login",
-                new LoginRequest(lockedEmail, "000000", "Test", "windows")), HttpStatusCode.Unauthorized);
-        Check(await client.PostAsJsonAsync("/auth/login",
-            new LoginRequest(lockedEmail, sender.Codes[lockedEmail], "Test", "windows")), HttpStatusCode.Unauthorized);
+            Check(await Login(client, new LoginRequest(lockedEmail, "000000", "Test", "windows"), lockedDevice),
+                HttpStatusCode.Unauthorized);
+        Check(await Login(client, new LoginRequest(lockedEmail, sender.Codes[lockedEmail], "Test", "windows"),
+            lockedDevice), HttpStatusCode.Unauthorized);
 
         await using var count = new NpgsqlCommand(
             "SELECT count(*) FROM users WHERE email=$1 AND deleted_at IS NULL", database);
         count.Parameters.AddWithValue(email);
         if ((long)(await count.ExecuteScalarAsync() ?? 0L) != 1)
             throw new InvalidOperationException("Verified login did not create exactly one account.");
+        await LoginFailureLimitChecks(client, database, factory, sender);
         await RateLimitChecks(client, database);
         Console.WriteLine("PASS: OTP login, durable mail retry/crash/concurrency/expiry/tamper, refresh rotation and access revocation");
     }
@@ -237,6 +238,44 @@ internal static class HttpAuthSmoke
         Console.WriteLine("PASS: email, device and IP challenge limits, retry header, idempotent replay and concurrent cap");
     }
 
+    private static async Task LoginFailureLimitChecks(HttpClient client, NpgsqlConnection database,
+        AuthFactory factory, CaptureCodeSender sender)
+    {
+        var invalid = new LoginRequest("unknown-login@example.test", "000000", "Test", "windows");
+        Check(await Login(client, invalid, Guid.Empty), HttpStatusCode.BadRequest);
+        const string validEmail = "login-limit-valid@example.test";
+        Check(await Challenge(client, validEmail, Guid.NewGuid()), HttpStatusCode.Accepted);
+        if (!await Dispatch(factory, sender) || !sender.Codes.TryGetValue(validEmail, out var validCode))
+            throw new InvalidOperationException("Login limit fixture code was not sent.");
+
+        var device = Guid.NewGuid();
+        for (var i = 0; i < 10; i++)
+            Check(await Login(client, invalid with { Email = $"unknown-login-{i}@example.test" }, device),
+                HttpStatusCode.Unauthorized);
+        AssertLimited(await Login(client, invalid, device));
+        AssertLimited(await Login(client, new LoginRequest(validEmail, validCode, "Test", "windows"), device));
+        Check(await Login(client, new LoginRequest(validEmail, validCode, "Test", "windows"), Guid.NewGuid()),
+            HttpStatusCode.OK);
+
+        await using var count = new NpgsqlCommand("""
+            SELECT count(*) FROM auth_login_failures
+            WHERE created_at > now() - interval '15 minutes'
+            """, database);
+        var existing = (long)(await count.ExecuteScalarAsync() ?? -1L);
+        if (existing >= 38) throw new InvalidOperationException("Login IP limit fixture exceeded its setup budget.");
+        for (var i = existing; i < 38; i++)
+            Check(await Login(client, invalid with { Email = $"ip-login-{i}@example.test" }, Guid.NewGuid(),
+                $"203.0.113.{i}"), HttpStatusCode.Unauthorized);
+        var concurrent = await Task.WhenAll(Enumerable.Range(0, 3).Select(i =>
+            Login(client, invalid with { Email = $"ip-login-concurrent-{i}@example.test" }, Guid.NewGuid(),
+                $"203.0.113.{i + 50}")));
+        if (concurrent.Count(x => x.StatusCode == HttpStatusCode.Unauthorized) != 2 ||
+            concurrent.Count(x => x.StatusCode == HttpStatusCode.TooManyRequests) != 1)
+            throw new InvalidOperationException("Concurrent login failures exceeded the IP limit.");
+        AssertLimited(concurrent.Single(x => x.StatusCode == HttpStatusCode.TooManyRequests));
+        Console.WriteLine("PASS: login failure device/IP limits, successful code preservation and concurrent cap");
+    }
+
     private static void AssertLimited(HttpResponseMessage response)
     {
         Check(response, HttpStatusCode.TooManyRequests);
@@ -254,6 +293,18 @@ internal static class HttpAuthSmoke
         };
         request.Headers.Add("Idempotency-Key", key.ToString());
         request.Headers.Add("X-Device-Id", (deviceId ?? key).ToString());
+        if (forwardedFor is not null) request.Headers.Add("X-Forwarded-For", forwardedFor);
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> Login(HttpClient client, LoginRequest body,
+        Guid deviceId, string? forwardedFor = null)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/auth/login")
+        {
+            Content = JsonContent.Create(body)
+        };
+        request.Headers.Add("X-Device-Id", deviceId.ToString());
         if (forwardedFor is not null) request.Headers.Add("X-Forwarded-For", forwardedFor);
         return await client.SendAsync(request);
     }

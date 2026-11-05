@@ -14,6 +14,7 @@ public sealed class AuthService(
 {
     private const int AccessSeconds = 600;
     private const int ChallengeWindowMinutes = 15;
+    private const int LoginFailureWindowMinutes = 15;
     private readonly byte[] rateKey = Encoding.UTF8.GetBytes(codePepper);
 
     public async Task<AuthResult> ChallengeAsync(string email, Guid requestKey, Guid deviceId,
@@ -33,19 +34,19 @@ public sealed class AuthService(
         var since = now.AddMinutes(-ChallengeWindowMinutes);
         var emailWindow = db.Challenges.Where(x => x.Email == normalized && x.CreatedAt > since);
         if (await emailWindow.CountAsync(ct) >= 3)
-            return await RateLimited(emailWindow, now, ct);
+            return RateLimited(await emailWindow.MinAsync(x => x.CreatedAt, ct), now, ChallengeWindowMinutes);
 
         // The locks serialize the limits across all API instances before counting or inserting.
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-ip:" + ipHash}, 0))", ct);
         var ipWindow = db.Challenges.Where(x => x.IpHash == ipHash && x.CreatedAt > since);
         if (await ipWindow.CountAsync(ct) >= 20)
-            return await RateLimited(ipWindow, now, ct);
+            return RateLimited(await ipWindow.MinAsync(x => x.CreatedAt, ct), now, ChallengeWindowMinutes);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-device:" + deviceHash}, 0))", ct);
         var deviceWindow = db.Challenges.Where(x => x.DeviceHash == deviceHash && x.CreatedAt > since);
         if (await deviceWindow.CountAsync(ct) >= 5)
-            return await RateLimited(deviceWindow, now, ct);
+            return RateLimited(await deviceWindow.MinAsync(x => x.CreatedAt, ct), now, ChallengeWindowMinutes);
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
         var challenge = new LoginChallengeRow
         {
@@ -74,11 +75,9 @@ public sealed class AuthService(
         return new(AuthStatus.Accepted);
     }
 
-    private async Task<AuthResult> RateLimited(IQueryable<LoginChallengeRow> window,
-        DateTimeOffset now, CancellationToken ct)
+    private static AuthResult RateLimited(DateTimeOffset oldest, DateTimeOffset now, int windowMinutes)
     {
-        var oldest = await window.MinAsync(x => x.CreatedAt, ct);
-        var seconds = Math.Max(1, (int)Math.Ceiling((oldest.AddMinutes(ChallengeWindowMinutes) - now).TotalSeconds));
+        var seconds = Math.Max(1, (int)Math.Ceiling((oldest.AddMinutes(windowMinutes) - now).TotalSeconds));
         return new(AuthStatus.RateLimited, RetryAfterSeconds: seconds);
     }
 
@@ -94,39 +93,53 @@ public sealed class AuthService(
         return address.ToString();
     }
 
-    public async Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken ct)
+    public async Task<AuthResult> LoginAsync(LoginRequest request, Guid deviceId,
+        IPAddress? remoteAddress, CancellationToken ct)
     {
         var email = Normalize(request.Email);
-        if (email is null || request.Code is null || request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit) ||
+        if (deviceId == Guid.Empty || email is null || request.Code is null ||
+            request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit) ||
             string.IsNullOrWhiteSpace(request.DeviceName) || request.DeviceName.Length > 120 ||
             request.Platform is not ("android" or "ios" or "windows" or "macos" or "linux"))
             return new(AuthStatus.Invalid);
 
+        var ipHash = RateHash("login-ip", NormalizeAddress(remoteAddress));
+        var deviceHash = RateHash("login-device", deviceId.ToString("N"));
         var now = clock.GetUtcNow();
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        // Match challenge creation's lock order before taking source locks.
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({email}, 0))", ct);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-login-ip:" + ipHash}, 0))", ct);
+        var since = now.AddMinutes(-LoginFailureWindowMinutes);
+        var ipWindow = db.LoginFailures.Where(x => x.IpHash == ipHash && x.CreatedAt > since);
+        if (await ipWindow.CountAsync(ct) >= 40)
+            return RateLimited(await ipWindow.MinAsync(x => x.CreatedAt, ct), now, LoginFailureWindowMinutes);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-login-device:" + deviceHash}, 0))", ct);
+        var deviceWindow = db.LoginFailures.Where(x => x.DeviceHash == deviceHash && x.CreatedAt > since);
+        if (await deviceWindow.CountAsync(ct) >= 10)
+            return RateLimited(await deviceWindow.MinAsync(x => x.CreatedAt, ct), now, LoginFailureWindowMinutes);
         var challenge = await db.Challenges.Where(x => x.Email == email)
             .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
-        if (challenge is null) return new(AuthStatus.Invalid);
+        if (challenge is null) return await RecordLoginFailure(ipHash, deviceHash, now, ct);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE auth_login_challenges SET attempts=attempts WHERE id={challenge.Id}", ct);
         await db.Entry(challenge).ReloadAsync(ct);
         if (challenge.ConsumedAt is not null || challenge.ExpiresAt <= now || challenge.Attempts >= 5)
-            return new(AuthStatus.Invalid);
+            return await RecordLoginFailure(ipHash, deviceHash, now, ct);
         var expected = Convert.FromHexString(challenge.CodeHash);
         var provided = Convert.FromHexString(CodeHash(email, request.Code));
         if (!CryptographicOperations.FixedTimeEquals(expected, provided))
         {
             challenge.Attempts++;
-            await db.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-            return new(AuthStatus.Invalid);
+            return await RecordLoginFailure(ipHash, deviceHash, now, ct);
         }
 
-        // Serialize first registration for this email across API instances.
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended({email}, 0))", ct);
         var user = await db.Users.FirstOrDefaultAsync(x => x.Email.ToLower() == email, ct);
-        if (user?.DeletedAt is not null) return new(AuthStatus.Invalid);
+        if (user?.DeletedAt is not null)
+            return await RecordLoginFailure(ipHash, deviceHash, now, ct);
         if (user is null)
         {
             user = new AuthUserRow { Id = Guid.NewGuid(), Email = email };
@@ -160,6 +173,21 @@ public sealed class AuthService(
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return new(AuthStatus.Success, new(issuer.Issue(user.Id, session.Id), refresh, AccessSeconds));
+    }
+
+    private async Task<AuthResult> RecordLoginFailure(string ipHash, string deviceHash,
+        DateTimeOffset now, CancellationToken ct)
+    {
+        db.LoginFailures.Add(new LoginFailureRow
+        {
+            Id = Guid.NewGuid(),
+            IpHash = ipHash,
+            DeviceHash = deviceHash,
+            CreatedAt = now
+        });
+        await db.SaveChangesAsync(ct);
+        await db.Database.CurrentTransaction!.CommitAsync(ct);
+        return new(AuthStatus.Invalid);
     }
 
     public async Task<AuthResult> RefreshAsync(string refreshToken, CancellationToken ct)

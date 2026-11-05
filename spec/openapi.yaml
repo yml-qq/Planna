@@ -75,6 +75,9 @@ paths:
       tags: [Identity]
       operationId: login
       security: []
+      description: Verify a one-time code. Failed attempts across emails are limited to 10 per device and 40 per source IP within 15 minutes; each challenge also allows at most five wrong codes. A successful login does not consume the failure budget.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
       requestBody:
         required: true
         content:
@@ -95,7 +98,16 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/AuthResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
-        '429': {$ref: '#/components/responses/ErrorResponse'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '429':
+          description: Source has too many failed login attempts; retry after the indicated seconds.
+          headers:
+            Retry-After:
+              description: Seconds until the oldest failure in the limiting window expires.
+              schema: {type: integer, minimum: 1, maximum: 900}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorBody'}
   /auth/refresh:
     post:
       tags: [Identity]

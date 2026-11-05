@@ -28,6 +28,8 @@
 
 先核对 API 实际 TCP 对端及 `AUTH_TRUSTED_PROXIES` 是否匹配直接上游代理，确认是否因共享代理 IP 把用户合并到同一限额；再看正常共享出口 IP、真实突发流量及数据库锁等待。不要通过信任任意 `X-Forwarded-For`、删除挑战记录或轮换 `AUTH_CODE_PEPPER` 临时绕过限流；阈值调整应经流量核验并复测并发与误伤。
 
+验证码校验接口的 `429` 另检查 `auth_login_failures` 聚合数量与 Worker 的 `deleted_login_failures` 心跳字段。该表只存 HMAC 摘要，排查时不要反查、打印或导出真实来源。Worker 故障会延迟 24 小时清理，但 15 分钟窗口仍按事件时间过滤；恢复 Worker 后按批清理。
+
 ## 5. AI 批量错误操作
 
 冻结有问题的 AI plan/apply 路径；根据 `ai_action_audit` 确定受影响 task IDs、before/after、关联计划和版本；优先给用户明确通知与受控撤销（再次校验当前版本，不能盲目覆盖用户后续修改）；调查 scope/validator/prompt/tool 变更并补充回归案例。

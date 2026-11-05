@@ -16,9 +16,9 @@ internal sealed class LoginEmailWorker(
                     var snapshot = await scope.ServiceProvider.GetRequiredService<AuthQueueMaintenance>()
                         .RunOnceAsync(stoppingToken);
                     logger.LogInformation(
-                        "AUTH_EMAIL_QUEUE_HEARTBEAT pending={Pending} leased={Leased} failed={Failed} oldest_waiting_seconds={OldestWaitingSeconds} deleted_challenges={DeletedChallenges} deleted_revoked_tokens={DeletedRevokedTokens}",
+                        "AUTH_EMAIL_QUEUE_HEARTBEAT pending={Pending} leased={Leased} failed={Failed} oldest_waiting_seconds={OldestWaitingSeconds} deleted_challenges={DeletedChallenges} deleted_revoked_tokens={DeletedRevokedTokens} deleted_login_failures={DeletedLoginFailures}",
                         snapshot.Pending, snapshot.Leased, snapshot.Failed, snapshot.OldestWaitingSeconds,
-                        snapshot.DeletedChallenges, snapshot.DeletedRevokedTokens);
+                        snapshot.DeletedChallenges, snapshot.DeletedRevokedTokens, snapshot.DeletedLoginFailures);
                     if (snapshot.BacklogAlert)
                         logger.LogError(
                             "AUTH_EMAIL_QUEUE_BACKLOG pending={Pending} leased={Leased} oldest_waiting_seconds={OldestWaitingSeconds}",

@@ -51,6 +51,7 @@ Main：镜像构建+SBOM/签名 → staging 部署 → smoke+迁移测试 → �
 - Reminder：due backlog、job retries、provider errors、发出延迟。
 - Auth email：`AUTH_EMAIL_QUEUE_HEARTBEAT` 每分钟出现；`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 需告警；心跳缺失五分钟需告警。日志只包含聚合计数与挑战 ID。
 - Auth rate：监控验证码申请的 `429` 比例、按来源的误伤反馈、数据库 advisory lock 等待和挑战表增长；经代理部署时配置 `AUTH_TRUSTED_PROXIES`，只列出可信直接上游 IP，避免把所有用户算作同一来源或信任伪造转发头。
+- Auth login：分别监控验证码申请与校验的 `429` 比例、登录失败事件表增长及 24 小时清理数；不记录邮箱、验证码、原始 IP 或设备 ID。登录失败事件表清理依赖 Worker，停机时需关注表增长。
 - AI：Provider timeout、schema-invalid、cost/user/day、plan_stale、action_denied、model quality regression。
 - 客户端：crash/ANR、离线操作失败、通知授权率、异常同步重试。
 

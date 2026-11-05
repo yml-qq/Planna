@@ -59,6 +59,8 @@
 
 `AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`，同邮箱同键在 24 小时保留窗口内不重复排队。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。`AUTH-04` 要求申请携带非空 `X-Device-Id` UUID，按 15 分钟窗口限制每邮箱 3 次、每设备 5 次、每源 IP 20 次；同邮箱同幂等键重试不增加计数。`429 RATE_LIMITED` 携带秒数形式的 `Retry-After`，客户端应等待，不应换设备 ID 绕过限制。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
+`AUTH-05` 要求 `POST /auth/login` 同样携带非空 `X-Device-Id` UUID。合法格式但验证失败的请求按 15 分钟窗口跨邮箱累计：每设备 10 次、每源 IP 40 次；达到阈值后返回 `429 RATE_LIMITED` 和秒数形式的 `Retry-After`，即使本次验证码正确也需等待。未触发来源限额的失败仍返回统一的 `401 INVALID_CODE`，成功登录不计入失败次数。每条挑战自身的五次错误码上限继续生效。
+
 ## 3. Task 示例
 
 ### POST /tasks

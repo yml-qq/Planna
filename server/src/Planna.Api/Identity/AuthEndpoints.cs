@@ -39,10 +39,17 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         HttpContext http, LoginRequest request, IAuthService auth, CancellationToken ct)
     {
-        var result = await auth.LoginAsync(request, ct);
-        return result.Status == AuthStatus.Success
-            ? TypedResults.Ok(result.Tokens)
-            : Error(http, 401, "INVALID_CODE");
+        if (!Guid.TryParse(http.Request.Headers["X-Device-Id"], out var deviceId) || deviceId == Guid.Empty)
+            return Error(http, 400, "INVALID_DEVICE_ID");
+        var result = await auth.LoginAsync(request, deviceId, http.Connection.RemoteIpAddress, ct);
+        if (result.Status == AuthStatus.RateLimited && result.RetryAfterSeconds is { } seconds)
+            http.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return result.Status switch
+        {
+            AuthStatus.Success => TypedResults.Ok(result.Tokens),
+            AuthStatus.RateLimited => Error(http, 429, "RATE_LIMITED"),
+            _ => Error(http, 401, "INVALID_CODE")
+        };
     }
 
     private static async Task<IResult> Refresh(

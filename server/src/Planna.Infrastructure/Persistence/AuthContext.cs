@@ -9,6 +9,7 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
     public DbSet<DeviceSessionRow> Sessions => Set<DeviceSessionRow>();
     public DbSet<RefreshTokenRow> RefreshTokens => Set<RefreshTokenRow>();
     public DbSet<LoginEmailOutboxRow> EmailOutbox => Set<LoginEmailOutboxRow>();
+    public DbSet<LoginFailureRow> LoginFailures => Set<LoginFailureRow>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -75,6 +76,15 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
             e.Property(x => x.SentAt).HasColumnName("sent_at");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
+        model.Entity<LoginFailureRow>(e =>
+        {
+            e.ToTable("auth_login_failures", t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.IpHash).HasColumnName("ip_hash");
+            e.Property(x => x.DeviceHash).HasColumnName("device_hash");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+        });
     }
 }
 
@@ -130,5 +140,13 @@ public sealed class LoginEmailOutboxRow
     public Guid? LeaseToken { get; set; }
     public DateTimeOffset? LeaseUntil { get; set; }
     public DateTimeOffset? SentAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class LoginFailureRow
+{
+    public Guid Id { get; set; }
+    public string IpHash { get; set; } = "";
+    public string DeviceHash { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; }
 }

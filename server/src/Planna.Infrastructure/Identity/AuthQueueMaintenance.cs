@@ -5,7 +5,7 @@ namespace Planna.Infrastructure.Identity;
 
 public sealed record AuthQueueSnapshot(
     int Pending, int Leased, int Failed, long OldestWaitingSeconds,
-    int DeletedChallenges, int DeletedRevokedTokens)
+    int DeletedChallenges, int DeletedRevokedTokens, int DeletedLoginFailures)
 {
     public bool BacklogAlert => Pending + Leased >= 100 || OldestWaitingSeconds >= 120;
 }
@@ -19,6 +19,7 @@ public sealed class AuthQueueMaintenance(AuthContext db, TimeProvider clock)
         var now = clock.GetUtcNow();
         var challengeCutoff = now.AddHours(-24);
         var revokedCutoff = now.AddDays(-30);
+        var failureCutoff = now.AddHours(-24);
 
         // Deleting a challenge cascades to its email job and removes any remaining encrypted code.
         var deletedChallenges = await db.Database.ExecuteSqlInterpolatedAsync($"""
@@ -37,6 +38,13 @@ public sealed class AuthQueueMaintenance(AuthContext db, TimeProvider clock)
                 WHERE s.revoked_at IS NOT NULL AND s.revoked_at < {revokedCutoff}
                 ORDER BY h.created_at LIMIT {BatchSize} FOR UPDATE OF h SKIP LOCKED)
             """, ct);
+        var deletedLoginFailures = await db.Database.ExecuteSqlInterpolatedAsync($"""
+            DELETE FROM auth_login_failures
+            WHERE id IN (
+                SELECT id FROM auth_login_failures
+                WHERE created_at < {failureCutoff}
+                ORDER BY created_at LIMIT {BatchSize} FOR UPDATE SKIP LOCKED)
+            """, ct);
 
         var waiting = await db.EmailOutbox.AsNoTracking()
             .Where(x => x.Status == "pending" || x.Status == "leased")
@@ -51,6 +59,6 @@ public sealed class AuthQueueMaintenance(AuthContext db, TimeProvider clock)
         var oldestSeconds = waiting is null ? 0 :
             Math.Max(0, (long)(now - waiting.Oldest).TotalSeconds);
         return new AuthQueueSnapshot(waiting?.Pending ?? 0, waiting?.Leased ?? 0,
-            failed, oldestSeconds, deletedChallenges, deletedTokens);
+            failed, oldestSeconds, deletedChallenges, deletedTokens, deletedLoginFailures);
     }
 }

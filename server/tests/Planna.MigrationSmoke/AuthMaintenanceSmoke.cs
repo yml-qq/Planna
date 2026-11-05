@@ -10,6 +10,8 @@ internal static class AuthMaintenanceSmoke
         var oldChallenge = Guid.NewGuid();
         var freshChallenge = Guid.NewGuid();
         var waitingChallenge = Guid.NewGuid();
+        var oldFailure = Guid.NewGuid();
+        var freshFailure = Guid.NewGuid();
         await Execute(connection, """
             INSERT INTO auth_login_challenges(id,email,request_key,code_hash,created_at,expires_at)
             VALUES ($1,'old-maintenance@example.test',$2,'synthetic',now()-interval '25 hours',now()-interval '24 hours'),
@@ -23,6 +25,11 @@ internal static class AuthMaintenanceSmoke
                    ($2,decode('010203040506','hex'),decode('000000000000000000000000','hex'),
                 decode('00000000000000000000000000000000','hex'),now()-interval '3 minutes',now()-interval '3 minutes')
             """, oldChallenge, waitingChallenge);
+        await Execute(connection, """
+            INSERT INTO auth_login_failures(id,ip_hash,device_hash,created_at)
+            VALUES ($1,repeat('A',64),repeat('B',64),now()-interval '25 hours'),
+                   ($2,repeat('A',64),repeat('B',64),now()-interval '23 hours')
+            """, oldFailure, freshFailure);
 
         var owner = Guid.NewGuid();
         var revokedSession = Guid.NewGuid();
@@ -49,11 +56,14 @@ internal static class AuthMaintenanceSmoke
         var maintenance = new AuthQueueMaintenance(db, TimeProvider.System);
         var snapshot = await maintenance.RunOnceAsync(CancellationToken.None);
         if (snapshot.DeletedChallenges < 1 || snapshot.DeletedRevokedTokens < 1 ||
+            snapshot.DeletedLoginFailures < 1 ||
             !snapshot.BacklogAlert || snapshot.OldestWaitingSeconds < 170)
             throw new InvalidOperationException("Maintenance did not clean records or detect backlog.");
         if (await Scalar(connection, "SELECT count(*) FROM auth_login_challenges WHERE id=$1", oldChallenge) != 0 ||
             await Scalar(connection, "SELECT count(*) FROM auth_email_outbox WHERE challenge_id=$1", oldChallenge) != 0 ||
             await Scalar(connection, "SELECT count(*) FROM auth_login_challenges WHERE id=$1", freshChallenge) != 1 ||
+            await Scalar(connection, "SELECT count(*) FROM auth_login_failures WHERE id=$1", oldFailure) != 0 ||
+            await Scalar(connection, "SELECT count(*) FROM auth_login_failures WHERE id=$1", freshFailure) != 1 ||
             await Scalar(connection, "SELECT count(*) FROM refresh_token_history WHERE token_hash=$1", revokedHash) != 0 ||
             await Scalar(connection, "SELECT count(*) FROM refresh_token_history WHERE token_hash=$1", activeHash) != 1)
             throw new InvalidOperationException("Maintenance crossed a retention or replay-safety boundary.");
@@ -63,9 +73,10 @@ internal static class AuthMaintenanceSmoke
             WHERE challenge_id=$1
             """, waitingChallenge);
         var second = await maintenance.RunOnceAsync(CancellationToken.None);
-        if (second.DeletedChallenges != 0 || second.DeletedRevokedTokens != 0 || second.BacklogAlert)
+        if (second.DeletedChallenges != 0 || second.DeletedRevokedTokens != 0 ||
+            second.DeletedLoginFailures != 0 || second.BacklogAlert)
             throw new InvalidOperationException("Maintenance was not idempotent or backlog did not clear.");
-        Console.WriteLine("PASS: auth queue backlog signal, 24h challenge cleanup, revoked-only token cleanup");
+        Console.WriteLine("PASS: auth queue backlog signal, 24h challenge/failure cleanup, revoked-only token cleanup");
     }
 
     private static async Task Execute(NpgsqlConnection connection, string sql, params object[] values)
