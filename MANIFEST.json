@@ -201,8 +201,8 @@
     },
     {
       "file": "docs/34-AUTH-04.md",
-      "bytes": 2451,
-      "sha256": "0ca703b372e7ad405e34b7ca0337c936a1e70cdb36da62185e9e69f4fb3f7f94"
+      "bytes": 2531,
+      "sha256": "c84e94c92b6754e42050443cce47c2a7ba41ba66da876c37de436173139c9bb6"
     },
     {
       "file": "examples/ai-plan-preview.json",
@@ -241,8 +241,8 @@
     },
     {
       "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 175766,
-      "sha256": "9444b24d5dc136c75761f2b88b7b4d65a5961f5cd4ea215eaf056ffa9fe4ee27"
+      "bytes": 175846,
+      "sha256": "29c7cb811c266702b28d3a467b6848a0fddd2ff9b12464ffe99e260297f0434e"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -526,8 +526,8 @@
     },
     {
       "file": "VALIDATION.md",
-      "bytes": 8379,
-      "sha256": "c4be896fc6e7e7dc854685576c173cb4af3480406905eb3ec09b0811d16f6373"
+      "bytes": 8557,
+      "sha256": "921f6a79533dd76c6977911e656c1d6e36bdd21fddd4a19949f80994afae3014"
     }
   ]
 }
