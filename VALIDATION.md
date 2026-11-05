@@ -72,3 +72,9 @@
 - Worker 每分钟输出无个人信息的队列心跳；积压或终止投递失败输出错误级事件。外部告警接收方尚未配置，部署时需按 `docs/33-AUTH-03.md` 接入。
 - 验证码挑战及队列记录保留 24 小时，撤销超过 30 天的设备会话才清理其刷新令牌历史；活跃会话历史保留以继续识别旧令牌重放。
 - 本地 .NET 构建零警告、`dotnet format --verify-no-changes`、7 项静态契约测试和 OpenAPI 3.1 校验通过。[PostgreSQL 18 CI 运行 41855739984](https://github.com/yml-qq/Planna/actions/runs/41855739984) 已通过迁移、构建、格式、契约和隔离库冒烟，覆盖清理边界、重复运行与积压阈值。
+
+## AUTH-04 登录申请来源限流检查（2026-11-05）
+
+- 新增 `202611050005_AuthChallengeRateLimits` 迁移和完整审阅 SQL；只在挑战记录保存 IP/设备 HMAC 摘要，不保存明文来源。
+- 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告；`dotnet format server/Planna.slnx --verify-no-changes --no-restore`、7 项 Python 契约测试和 OpenAPI 3.1 校验通过。
+- PostgreSQL 18 隔离库的限流、并发、伪造转发头和迁移验证待当前提交 CI 运行；未在 `planna_db_dev` 插入合成数据。

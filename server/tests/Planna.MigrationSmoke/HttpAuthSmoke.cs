@@ -154,6 +154,7 @@ internal static class HttpAuthSmoke
         count.Parameters.AddWithValue(email);
         if ((long)(await count.ExecuteScalarAsync() ?? 0L) != 1)
             throw new InvalidOperationException("Verified login did not create exactly one account.");
+        await RateLimitChecks(client, database);
         Console.WriteLine("PASS: OTP login, durable mail retry/crash/concurrency/expiry/tamper, refresh rotation and access revocation");
     }
 
@@ -198,13 +199,62 @@ internal static class HttpAuthSmoke
         return await client.SendAsync(request);
     }
 
-    private static async Task<HttpResponseMessage> Challenge(HttpClient client, string email, Guid key)
+    private static async Task RateLimitChecks(HttpClient client, NpgsqlConnection database)
+    {
+        Check(await Challenge(client, "invalid-device@example.test", Guid.NewGuid(), Guid.Empty),
+            HttpStatusCode.BadRequest);
+        var device = Guid.NewGuid();
+        var firstKey = Guid.NewGuid();
+        for (var i = 0; i < 5; i++)
+            Check(await Challenge(client, $"device-limit-{i}@example.test",
+                i == 0 ? firstKey : Guid.NewGuid(), device), HttpStatusCode.Accepted);
+        var deviceBlocked = await Challenge(client, "device-limit-blocked@example.test", Guid.NewGuid(), device);
+        AssertLimited(deviceBlocked);
+        Check(await Challenge(client, "device-limit-0@example.test", firstKey, device),
+            HttpStatusCode.Accepted);
+
+        for (var i = 0; i < 3; i++)
+            Check(await Challenge(client, "email-limit@example.test", Guid.NewGuid(), Guid.NewGuid()),
+                HttpStatusCode.Accepted);
+        AssertLimited(await Challenge(client, "email-limit@example.test", Guid.NewGuid(), Guid.NewGuid()));
+
+        await using var count = new NpgsqlCommand("""
+            SELECT count(*) FROM auth_login_challenges
+            WHERE ip_hash IS NOT NULL AND created_at > now() - interval '15 minutes'
+            """, database);
+        var existing = (long)(await count.ExecuteScalarAsync() ?? -1L);
+        if (existing >= 18) throw new InvalidOperationException("IP limit fixture exceeded its setup budget.");
+        for (var i = existing; i < 18; i++)
+            Check(await Challenge(client, $"ip-limit-{i}@example.test", Guid.NewGuid(),
+                Guid.NewGuid(), $"203.0.113.{i}"), HttpStatusCode.Accepted);
+        var concurrent = await Task.WhenAll(Enumerable.Range(0, 3).Select(i =>
+            Challenge(client, $"ip-concurrent-{i}@example.test", Guid.NewGuid(),
+                Guid.NewGuid(), $"203.0.113.{i + 30}")));
+        if (concurrent.Count(x => x.StatusCode == HttpStatusCode.Accepted) != 2 ||
+            concurrent.Count(x => x.StatusCode == HttpStatusCode.TooManyRequests) != 1)
+            throw new InvalidOperationException("Concurrent IP requests exceeded the shared limit.");
+        AssertLimited(concurrent.Single(x => x.StatusCode == HttpStatusCode.TooManyRequests));
+        Console.WriteLine("PASS: email, device and IP challenge limits, retry header, idempotent replay and concurrent cap");
+    }
+
+    private static void AssertLimited(HttpResponseMessage response)
+    {
+        Check(response, HttpStatusCode.TooManyRequests);
+        if (!response.Headers.TryGetValues("Retry-After", out var values) ||
+            !int.TryParse(values.SingleOrDefault(), out var seconds) || seconds is < 1 or > 900)
+            throw new InvalidOperationException("Rate limit response has no valid Retry-After.");
+    }
+
+    private static async Task<HttpResponseMessage> Challenge(HttpClient client, string email, Guid key,
+        Guid? deviceId = null, string? forwardedFor = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/auth/login/challenges")
         {
             Content = JsonContent.Create(new LoginChallengeRequest(email))
         };
         request.Headers.Add("Idempotency-Key", key.ToString());
+        request.Headers.Add("X-Device-Id", (deviceId ?? key).ToString());
+        if (forwardedFor is not null) request.Headers.Add("X-Forwarded-For", forwardedFor);
         return await client.SendAsync(request);
     }
 

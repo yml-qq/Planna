@@ -102,6 +102,8 @@ class Spec01Contracts(unittest.TestCase):
         self.assertIn("202", challenge["responses"])
         self.assertIn("pending", challenge["responses"]["202"]["description"])
         self.assertIn("24 hours", challenge["description"])
+        self.assertIn({"$ref": "#/components/parameters/DeviceId"}, challenge["parameters"])
+        self.assertIn("Retry-After", challenge["responses"]["429"]["headers"])
         self.assertNotIn("503", challenge["responses"])
         for path, method in (
             ("/auth/login/challenges", "post"),

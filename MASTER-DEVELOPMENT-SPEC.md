@@ -39,6 +39,7 @@
 - 31-AUTH-01
 - 32-AUTH-02
 - 33-AUTH-03
+- 34-AUTH-04
 
 ---
 
@@ -636,7 +637,7 @@ EF Core migration 只前向增加；上线前数据库快照+恢复演练；破�
 
 `SPEC-01` 已定义任务拆解、导出和账号删除的 V1.0 契约，详见 `28-SPEC-01.md`、`../spec/openapi.yaml` 及对应 JSON Schema；这些仍是设计契约，未部署。
 
-`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`，同邮箱同键在 24 小时保留窗口内不重复排队。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
+`AUTH-01` 将邮箱验证码申请定义为 `POST /auth/login/challenges`，已验证验证码的首次登录自动建立个人账号和 Inbox；重复申请使用 `Idempotency-Key`，同邮箱同键在 24 小时保留窗口内不重复排队。`POST /auth/refresh` 单次轮换，旧令牌再次提交会撤销对应设备会话。`AUTH-02` 将验证码及加密邮件队列原子提交；`202` 表示已排队，不保证已投递。独立 Worker 使用 SMTP STARTTLS 异步发送和有限重试；客户端按邮件到达情况输入验证码，未收到可在限流范围内使用新的幂等键重新申请。`AUTH-04` 要求申请携带非空 `X-Device-Id` UUID，按 15 分钟窗口限制每邮箱 3 次、每设备 5 次、每源 IP 20 次；同邮箱同幂等键重试不增加计数。`429 RATE_LIMITED` 携带秒数形式的 `Retry-After`，客户端应等待，不应换设备 ID 绕过限制。注册页面可复用验证码登录流程，独立 `/auth/register` 尚未实现。
 
 ## 3. Task 示例
 
@@ -1563,6 +1564,7 @@ Main：镜像构建+SBOM/签名 → staging 部署 → smoke+迁移测试 → �
 - Sync：push failure、conflict rate、cursor lag、device pending mutations。
 - Reminder：due backlog、job retries、provider errors、发出延迟。
 - Auth email：`AUTH_EMAIL_QUEUE_HEARTBEAT` 每分钟出现；`AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 需告警；心跳缺失五分钟需告警。日志只包含聚合计数与挑战 ID。
+- Auth rate：监控验证码申请的 `429` 比例、按来源的误伤反馈、数据库 advisory lock 等待和挑战表增长；经代理部署时配置 `AUTH_TRUSTED_PROXIES`，只列出可信直接上游 IP，避免把所有用户算作同一来源或信任伪造转发头。
 - AI：Provider timeout、schema-invalid、cost/user/day、plan_stale、action_denied、model quality regression。
 - 客户端：crash/ANR、离线操作失败、通知授权率、异常同步重试。
 
@@ -1892,6 +1894,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 
 验证码挑战及其邮件队列记录保留 24 小时，之后按批删除；同邮箱同幂等键仅在该窗口内保证不重复排队。已撤销设备会话满 30 天后可删其刷新令牌历史，因为会话已拒绝所有令牌；活跃会话的历史不得清理，否则会削弱旧令牌重放检测。Worker 每分钟输出无个人信息的队列心跳，积压达到 100 条或最旧待处理记录超过 120 秒发错误事件；投递终止失败单独发错误事件。外部日志平台需要按这些事件建告警，并检测心跳缺失。详见 `33-AUTH-03.md`。
 
+## ADR-019：验证码申请的数据库共享来源限流（Accepted）
+
+沿用挑战记录作为 15 分钟滑动窗口计数源，新增 IP 与设备 ID 的 HMAC 摘要和索引；每邮箱 3、每设备 5、每 IP 20 次，并通过 PostgreSQL 事务级锁防止多实例并发越限。重复的同邮箱幂等键先返回原接受结果，`429` 给出 `Retry-After`。仅从 TCP 对端或显式可信单跳代理取得 IP；设备 ID 属于可伪造的客户端信号，不用于授权。选择该方案避免引入新的缓存依赖，同时保留 24 小时清理路径。共享 IP 误伤与数据库写入压力须以真实流量复核，边缘防护仍独立需要。详见 `34-AUTH-04.md`。
+
 ---
 
 # 22｜视觉、组件、交互 Token 与无障碍规范
@@ -2149,6 +2155,10 @@ UI 本地单一数据来源，本地 CRUD 与 outbox 在一个事务里完成；
 ## 4.1 登录邮件积压或失败
 
 `AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 触发后，先检查 Worker 存活、PostgreSQL 连接、SMTP 配置与供应商状态。五分钟没有 `AUTH_EMAIL_QUEUE_HEARTBEAT` 也需按 Worker 停止排查。不要手工清空或改写待发队列；恢复后让租约和退避机制自动处理。排查日志只使用挑战 ID 和聚合计数，不复制邮箱、验证码或令牌。
+
+## 4.2 登录申请大面积返回 429
+
+先核对 API 实际 TCP 对端及 `AUTH_TRUSTED_PROXIES` 是否匹配直接上游代理，确认是否因共享代理 IP 把用户合并到同一限额；再看正常共享出口 IP、真实突发流量及数据库锁等待。不要通过信任任意 `X-Forwarded-For`、删除挑战记录或轮换 `AUTH_CODE_PEPPER` 临时绕过限流；阈值调整应经流量核验并复测并发与误伤。
 
 ## 5. AI 批量错误操作
 
@@ -2420,7 +2430,7 @@ API：`PLANNADB_CONNECTION`、`AUTH_CODE_PEPPER`、`AUTH_OUTBOX_KEY` 和现有 J
 
 ## 限制与后续
 
-SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复发送；幂等键和一次性消费仍保护登录。`202` 仅表示持久化排队；未启动 Worker 或 SMTP 长期故障时邮件不会到达。队列信号和历史清理在 `AUTH-03` 中补齐；当前仍无用户可见的投递状态接口、IP/设备层限流或密钥版本轮换。本任务不修改任务同步、AI 或通知逻辑。
+SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复发送；幂等键和一次性消费仍保护登录。`202` 仅表示持久化排队；未启动 Worker 或 SMTP 长期故障时邮件不会到达。队列信号和历史清理在 `AUTH-03` 中补齐，IP/设备层限流在 `AUTH-04` 中补齐；当前仍无用户可见的投递状态接口或密钥版本轮换。本任务不修改任务同步、AI 或通知逻辑。
 
 ---
 
@@ -2438,3 +2448,24 @@ SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复�
 ## 运维边界
 
 日志事件是告警输入，仓库尚未连接具体告警接收方。Worker 停止时不会产生自身心跳，所以必须由外部日志平台检测缺失。积压排查先看 Worker 存活、PostgreSQL 连接、SMTP 配置和供应商状态；不要清空队列来解除告警。当前未清理长期活跃设备的刷新令牌历史，因为这会失去旧令牌重放证据；后续需要会话最长寿命或令牌族设计后再确定上限。历史备份与日志的保留仍按发布前审定的隐私政策执行。
+
+---
+
+# 34｜AUTH-04：登录验证码申请的来源限流
+
+状态：代码与迁移已实现；PostgreSQL 18 隔离库 CI 待验证。生产代理与真实流量仍需部署环境验证。
+
+## 范围与验收
+
+- `POST /auth/login/challenges` 必须带稳定、非空的 `X-Device-Id` UUID。服务端按滚动 15 分钟窗口限制新挑战：每邮箱 3 次、每设备 5 次、每源 IP 20 次。相同邮箱和 `Idempotency-Key` 在 24 小时保留期内重试仍返回 `202`，不重复排队或计数。
+- 触发限流返回 `429 RATE_LIMITED` 和整数秒 `Retry-After`，即最早一条相关记录离开窗口的时间。设备 ID 是客户端自报的安装标识，不能作为身份或授权依据；IP 限制是其兜底。IPv4 按单地址，IPv6 按 /64 前缀统计。来源地址缺失时使用共享 `unknown` 桶并受限。
+- 数据库只存来源 IP 和设备 ID 的 HMAC-SHA256 摘要，使用 `AUTH_CODE_PEPPER` 加用途前缀隔离；不存明文，也不把来源写入应用日志。已有挑战记录的两个新字段允许为空，因此迁移不需要回填，迁移前旧记录不会计入新维度。24 小时挑战清理同时删除摘要。
+- 邮箱、IP 和设备检查在一个 PostgreSQL 事务内执行；事务级 advisory lock 使多 API 实例的并发申请不能越过限额。验证码挑战和加密邮件 outbox 仍原子提交。
+
+## 部署顺序与代理边界
+
+先应用 `202611050005_AuthChallengeRateLimits`，再发布新 API 和发送 `X-Device-Id` 的客户端。完整迁移审阅 SQL 为 `server/auth-rate-limit-migrations.sql`。`AUTH_TRUSTED_PROXIES` 可配置以逗号分隔的可信反向代理 IP；仅接受这些直接上游的单跳 `X-Forwarded-For`。未配置时仅使用 TCP 对端地址，绝不信任客户端自带的转发头。经反向代理部署时必须正确配置，否则所有用户会落入代理 IP 的同一限额。代理链超过一跳需单独评估。
+
+## 验证和边界
+
+隔离库冒烟覆盖无效设备 ID、设备第六次申请、同键重试、`Retry-After`、跨设备/邮箱的 IP 限额、并发抢限额和伪造转发头。静态契约检查验证必需请求头与 `429` 响应头。本切片不增加 Redis、边缘 WAF、设备指纹、验证码登录失败的 IP 限流或用户可见投递状态；高流量恶意请求仍需要网关层保护。共享出口 IP 可能影响正常用户，需要根据真实流量调整阈值并提供支持渠道。

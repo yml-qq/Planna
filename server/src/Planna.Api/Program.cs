@@ -1,5 +1,7 @@
+using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Planna.Application.Tasks;
@@ -27,6 +29,23 @@ if (Encoding.UTF8.GetByteCount(codePepper) < 32)
     throw new InvalidOperationException("AUTH_CODE_PEPPER must contain at least 32 bytes.");
 var outboxKey = builder.Configuration["AUTH_OUTBOX_KEY"]
     ?? throw new InvalidOperationException("AUTH_OUTBOX_KEY is required.");
+var trustedProxies = (builder.Configuration["AUTH_TRUSTED_PROXIES"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(value => IPAddress.TryParse(value, out var address) ? address :
+        throw new InvalidOperationException("AUTH_TRUSTED_PROXIES must contain IP addresses."))
+    .ToArray();
+if (trustedProxies.Length > 0)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+        options.ForwardLimit = 1;
+        options.KnownProxies.Clear();
+        options.KnownIPNetworks.Clear();
+        foreach (var proxy in trustedProxies)
+            options.KnownProxies.Add(proxy);
+    });
+}
 
 builder.Services.AddDbContext<TaskWriteContext>(options => options.UseNpgsql(connection));
 builder.Services.AddDbContext<AuthContext>(options => options.UseNpgsql(connection));
@@ -95,6 +114,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+if (trustedProxies.Length > 0) app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));

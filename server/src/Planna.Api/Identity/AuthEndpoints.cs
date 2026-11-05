@@ -19,7 +19,12 @@ public static class AuthEndpoints
     {
         if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var key))
             return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
-        var result = await auth.ChallengeAsync(request.Email, key, ct);
+        if (!Guid.TryParse(http.Request.Headers["X-Device-Id"], out var deviceId) || deviceId == Guid.Empty)
+            return Error(http, 400, "INVALID_DEVICE_ID");
+        var result = await auth.ChallengeAsync(request.Email, key, deviceId,
+            http.Connection.RemoteIpAddress, ct);
+        if (result.Status == AuthStatus.RateLimited && result.RetryAfterSeconds is { } seconds)
+            http.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return result.Status switch
         {
             AuthStatus.Accepted => TypedResults.Accepted((string?)null, new
@@ -53,6 +58,6 @@ public static class AuthEndpoints
         TypedResults.Json(new
         {
             request_id = http.TraceIdentifier,
-            error = new { code, message = code, retryable = status == 503 }
+            error = new { code, message = code, retryable = status is 429 or 503 }
         }, statusCode: status);
 }

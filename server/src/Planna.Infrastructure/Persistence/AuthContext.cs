@@ -32,6 +32,8 @@ public sealed class AuthContext(DbContextOptions<AuthContext> options) : DbConte
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.ConsumedAt).HasColumnName("consumed_at");
             e.Property(x => x.Attempts).HasColumnName("attempts");
+            e.Property(x => x.IpHash).HasColumnName("ip_hash");
+            e.Property(x => x.DeviceHash).HasColumnName("device_hash");
         });
         model.Entity<DeviceSessionRow>(e =>
         {
@@ -93,6 +95,8 @@ public sealed class LoginChallengeRow
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
     public int Attempts { get; set; }
+    public string? IpHash { get; set; }
+    public string? DeviceHash { get; set; }
 }
 
 public sealed class DeviceSessionRow

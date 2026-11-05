@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,20 +13,39 @@ public sealed class AuthService(
     TimeProvider clock, string codePepper) : IAuthService
 {
     private const int AccessSeconds = 600;
+    private const int ChallengeWindowMinutes = 15;
+    private readonly byte[] rateKey = Encoding.UTF8.GetBytes(codePepper);
 
-    public async Task<AuthResult> ChallengeAsync(string email, Guid requestKey, CancellationToken ct)
+    public async Task<AuthResult> ChallengeAsync(string email, Guid requestKey, Guid deviceId,
+        IPAddress? remoteAddress, CancellationToken ct)
     {
         var normalized = Normalize(email);
-        if (normalized is null || requestKey == Guid.Empty) return new(AuthStatus.Invalid);
+        if (normalized is null || requestKey == Guid.Empty || deviceId == Guid.Empty)
+            return new(AuthStatus.Invalid);
+        var ipHash = RateHash("ip", NormalizeAddress(remoteAddress));
+        var deviceHash = RateHash("device", deviceId.ToString("N"));
         var now = clock.GetUtcNow();
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({normalized}, 0))", ct);
         if (await db.Challenges.AnyAsync(x => x.Email == normalized && x.RequestKey == requestKey, ct))
             return new(AuthStatus.Accepted);
-        var recent = await db.Challenges.CountAsync(x => x.Email == normalized &&
-            x.CreatedAt > now.AddMinutes(-15), ct);
-        if (recent >= 3) return new(AuthStatus.RateLimited);
+        var since = now.AddMinutes(-ChallengeWindowMinutes);
+        var emailWindow = db.Challenges.Where(x => x.Email == normalized && x.CreatedAt > since);
+        if (await emailWindow.CountAsync(ct) >= 3)
+            return await RateLimited(emailWindow, now, ct);
+
+        // The locks serialize the limits across all API instances before counting or inserting.
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-ip:" + ipHash}, 0))", ct);
+        var ipWindow = db.Challenges.Where(x => x.IpHash == ipHash && x.CreatedAt > since);
+        if (await ipWindow.CountAsync(ct) >= 20)
+            return await RateLimited(ipWindow, now, ct);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({"auth-device:" + deviceHash}, 0))", ct);
+        var deviceWindow = db.Challenges.Where(x => x.DeviceHash == deviceHash && x.CreatedAt > since);
+        if (await deviceWindow.CountAsync(ct) >= 5)
+            return await RateLimited(deviceWindow, now, ct);
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
         var challenge = new LoginChallengeRow
         {
@@ -34,7 +54,9 @@ public sealed class AuthService(
             RequestKey = requestKey,
             CodeHash = CodeHash(normalized, code),
             ExpiresAt = now.AddMinutes(10),
-            CreatedAt = now
+            CreatedAt = now,
+            IpHash = ipHash,
+            DeviceHash = deviceHash
         };
         var encrypted = cipher.Encrypt(challenge.Id, normalized, code);
         db.Challenges.Add(challenge);
@@ -50,6 +72,26 @@ public sealed class AuthService(
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return new(AuthStatus.Accepted);
+    }
+
+    private async Task<AuthResult> RateLimited(IQueryable<LoginChallengeRow> window,
+        DateTimeOffset now, CancellationToken ct)
+    {
+        var oldest = await window.MinAsync(x => x.CreatedAt, ct);
+        var seconds = Math.Max(1, (int)Math.Ceiling((oldest.AddMinutes(ChallengeWindowMinutes) - now).TotalSeconds));
+        return new(AuthStatus.RateLimited, RetryAfterSeconds: seconds);
+    }
+
+    private string RateHash(string purpose, string value) => Convert.ToHexString(
+        HMACSHA256.HashData(rateKey, Encoding.UTF8.GetBytes("auth-rate:" + purpose + ":" + value)));
+
+    private static string NormalizeAddress(IPAddress? address)
+    {
+        if (address is null) return "unknown";
+        if (address.IsIPv4MappedToIPv6) address = address.MapToIPv4();
+        if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            return Convert.ToHexString(address.GetAddressBytes().AsSpan(0, 8));
+        return address.ToString();
     }
 
     public async Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken ct)

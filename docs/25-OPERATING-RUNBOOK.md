@@ -24,6 +24,10 @@
 
 `AUTH_EMAIL_QUEUE_BACKLOG` 或 `AUTH_EMAIL_DELIVERY_TERMINAL` 触发后，先检查 Worker 存活、PostgreSQL 连接、SMTP 配置与供应商状态。五分钟没有 `AUTH_EMAIL_QUEUE_HEARTBEAT` 也需按 Worker 停止排查。不要手工清空或改写待发队列；恢复后让租约和退避机制自动处理。排查日志只使用挑战 ID 和聚合计数，不复制邮箱、验证码或令牌。
 
+## 4.2 登录申请大面积返回 429
+
+先核对 API 实际 TCP 对端及 `AUTH_TRUSTED_PROXIES` 是否匹配直接上游代理，确认是否因共享代理 IP 把用户合并到同一限额；再看正常共享出口 IP、真实突发流量及数据库锁等待。不要通过信任任意 `X-Forwarded-For`、删除挑战记录或轮换 `AUTH_CODE_PEPPER` 临时绕过限流；阈值调整应经流量核验并复测并发与误伤。
+
 ## 5. AI 批量错误操作
 
 冻结有问题的 AI plan/apply 路径；根据 `ai_action_audit` 确定受影响 task IDs、before/after、关联计划和版本；优先给用户明确通知与受控撤销（再次校验当前版本，不能盲目覆盖用户后续修改）；调查 scope/validator/prompt/tool 变更并补充回归案例。

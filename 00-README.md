@@ -44,6 +44,7 @@
 | 31 | `docs/31-AUTH-01.md` | 邮箱验证码登录、设备会话与刷新令牌轮换 |
 | 32 | `docs/32-AUTH-02.md` | 登录邮件加密 outbox、独立 Worker 与重试边界 |
 | 33 | `docs/33-AUTH-03.md` | 认证队列告警信号与历史清理边界 |
+| 34 | `docs/34-AUTH-04.md` | 登录验证码申请的 IP/设备限流与代理边界 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
@@ -56,7 +57,7 @@
 | - | `prompts/*.md` | 后端、同步、AI、桌面、Android、iOS 开发 Prompt |
 | - | `examples/` | 请求与同步示例 |
 | - | `tests/contract/` | SPEC-01 OpenAPI/Schema/合成样例静态契约检查 |
-| - | `server/` | .NET 10 迁移工程、生成 SQL 与数据库冒烟检查；业务服务尚未实现 |
+| - | `server/` | .NET 10 迁移工程、任务创建与认证 API、邮件 Worker、生成 SQL 和数据库冒烟检查；其他业务服务仍待实现 |
 
 ## 02. 产品边界：必须遵守
 

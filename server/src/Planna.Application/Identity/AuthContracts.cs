@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json.Serialization;
 
 namespace Planna.Application.Identity;
@@ -23,11 +24,12 @@ public sealed record AuthResponse(
     [property: JsonPropertyName("expires_in")] int ExpiresIn);
 
 public enum AuthStatus { Success, Accepted, Invalid, RateLimited }
-public sealed record AuthResult(AuthStatus Status, AuthResponse? Tokens = null);
+public sealed record AuthResult(AuthStatus Status, AuthResponse? Tokens = null, int? RetryAfterSeconds = null);
 
 public interface IAuthService
 {
-    Task<AuthResult> ChallengeAsync(string email, Guid requestKey, CancellationToken ct);
+    Task<AuthResult> ChallengeAsync(string email, Guid requestKey, Guid deviceId,
+        IPAddress? remoteAddress, CancellationToken ct);
     Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken ct);
     Task<AuthResult> RefreshAsync(string refreshToken, CancellationToken ct);
     Task<bool> SessionActiveAsync(Guid ownerId, Guid sessionId, CancellationToken ct);

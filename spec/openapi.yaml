@@ -35,9 +35,10 @@ paths:
       tags: [Identity]
       operationId: createLoginChallenge
       security: []
-      description: Queue an encrypted six-digit, ten-minute email code for delivery; a repeated idempotency key within 24 hours does not queue or send again. Delivery is asynchronous and may be retried.
+      description: Queue an encrypted six-digit, ten-minute email code for delivery; a repeated email and idempotency key within 24 hours does not queue or send again. New requests are limited to 3 per email, 5 per device and 20 per source IP within 15 minutes. Delivery is asynchronous and may be retried.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/DeviceId'
       requestBody:
         required: true
         content:
@@ -60,7 +61,15 @@ paths:
                   expires_at: {type: string, format: date-time}
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
-        '429': {$ref: '#/components/responses/ErrorResponse'}
+        '429':
+          description: Challenge request rate limited; retry after the indicated number of seconds.
+          headers:
+            Retry-After:
+              description: Seconds until the oldest request in the limiting window expires.
+              schema: {type: integer, minimum: 1, maximum: 900}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorBody'}
   /auth/login:
     post:
       tags: [Identity]
@@ -636,6 +645,12 @@ components:
       required: true
       schema: {type: string, format: uuid}
       description: Stable key reused for retries of the same write.
+    DeviceId:
+      name: X-Device-Id
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+      description: Stable, non-empty client installation ID; it is an abuse signal, not proof of identity.
     TaskId:
       name: id
       in: path
