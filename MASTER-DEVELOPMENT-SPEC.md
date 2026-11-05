@@ -2484,7 +2484,7 @@ SMTP 发送成功但在标记 `sent` 前崩溃时，同一验证码可能重复�
 
 # 35｜AUTH-05：验证码校验失败的来源限流
 
-状态：代码与迁移已实现；PostgreSQL 18 隔离库 CI 待验证。生产流量阈值仍需验证。
+状态：代码与迁移已实现；[PostgreSQL 18 隔离库 CI 运行 41951346325](https://github.com/yml-qq/Planna/actions/runs/41951346325) 已通过。`planna_db_dev` 已应用第六条迁移并复核；生产流量阈值仍需验证。
 
 ## 范围与验收
 

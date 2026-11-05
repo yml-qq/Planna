@@ -82,4 +82,5 @@
 ## AUTH-05 登录校验失败来源限流检查（2026-11-05）
 
 - 新增 `202611050006_LoginFailureRateLimits` 迁移、完整审阅 SQL、Worker 的 24 小时分批清理与 `POST /auth/login` 的 `X-Device-Id`/`429 Retry-After` 契约。
-- 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore`、7 项 Python 契约测试和 OpenAPI 3.1 校验通过。PostgreSQL 18 隔离库冒烟待当前提交 CI 验证；未在 `planna_db_dev` 运行合成请求。
+- 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore`、7 项 Python 契约测试和 OpenAPI 3.1 校验通过。[PostgreSQL 18 CI 运行 41951346325](https://github.com/yml-qq/Planna/actions/runs/41951346325) 通过迁移重放、构建、格式、契约及 HTTP 冒烟，覆盖跨邮箱设备/IP 限额、并发抢限额、正确码保留与 24 小时清理。
+- `planna_db_dev` 在迁移前只读核对显示第六条待应用；执行 `dotnet ef database update` 后再次只读复核，六条迁移均已应用。未在该库插入合成数据或查询业务记录。
