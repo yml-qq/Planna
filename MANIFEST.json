@@ -532,7 +532,7 @@
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpDeviceSmoke.cs",
       "bytes": 8189,
-      "sha256": "745c8e8f18ff01ce836ba9af0a6e71d96895c531a5439530fbf933fab2d711b2"
+      "sha256": "f5213cba287c2c23525bfefdac469719433a311b1853a8a59bccf1e30cd9d01c"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",

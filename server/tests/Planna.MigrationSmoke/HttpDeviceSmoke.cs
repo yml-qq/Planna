@@ -14,8 +14,8 @@ internal static class HttpDeviceSmoke
 {
     public static async Task RunAsync(NpgsqlConnection db)
     {
-        var owner = await User(db, "http-one@example.test");
-        var foreignOwner = await User(db, "http-two@example.test");
+        var owner = await User(db, "http-two@example.test");
+        var foreignOwner = await User(db, "http-one@example.test");
         var actor = Guid.NewGuid();
         var target = Guid.NewGuid();
         var raceTarget = Guid.NewGuid();
