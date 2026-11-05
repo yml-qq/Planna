@@ -89,4 +89,5 @@
 
 - 新增 `202611050007_DeviceSessionManagement` 迁移和完整审阅 SQL；设备列表使用独立 Dapper 只读查询，撤销和退出使用 EF Core 事务写入。
 - 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过；8 项 Python 静态契约测试及 OpenAPI 3.1 校验通过。
-- 本机 Docker Linux 引擎不可连接，PostgreSQL 18 隔离库 HTTP 冒烟待 CI 执行；开发库迁移待 CI 通过后应用。不能将未运行的数据库行为称为已验证。
+- 本机 Docker Linux 引擎不可连接；[PostgreSQL 18 CI 运行 41984550425](https://github.com/yml-qq/Planna/actions/runs/41984550425) 已通过完整迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖 Dapper 分页、owner 隔离、版本/幂等/并发撤销和退出后访问及刷新令牌拒绝。
+- `planna_db_dev` 迁移前只读核对显示第七条待应用；执行 `dotnet ef database update` 后再次只读复核，七条迁移均已应用。未在该库插入合成数据或查询业务记录。
