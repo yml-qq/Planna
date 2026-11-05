@@ -77,4 +77,4 @@
 
 - 新增 `202611050005_AuthChallengeRateLimits` 迁移和完整审阅 SQL；只在挑战记录保存 IP/设备 HMAC 摘要，不保存明文来源。
 - 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告；`dotnet format server/Planna.slnx --verify-no-changes --no-restore`、7 项 Python 契约测试和 OpenAPI 3.1 校验通过。
-- [PostgreSQL 18 CI 运行 41949028398](https://github.com/yml-qq/Planna/actions/runs/41949028398) 通过迁移重放、构建、格式、契约与 HTTP 冒烟，覆盖邮箱、设备和 IP 限额、并发抢限额、伪造转发头及清理回归。新迁移尚未应用到 `planna_db_dev`；未在该库插入合成数据。
+- [PostgreSQL 18 CI 运行 41949028398](https://github.com/yml-qq/Planna/actions/runs/41949028398) 通过迁移重放、构建、格式、契约与 HTTP 冒烟，覆盖邮箱、设备和 IP 限额、并发抢限额、伪造转发头及清理回归。`planna_db_dev` 迁移前只读核对显示第五条待应用；执行 `dotnet ef database update` 后只读复核显示五条迁移均已应用。未在该库插入合成数据或查询业务记录。
