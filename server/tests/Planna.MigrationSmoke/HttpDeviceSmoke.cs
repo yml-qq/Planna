@@ -96,9 +96,12 @@ internal static class HttpDeviceSmoke
         var refresh = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refresh)));
         await using var command = new NpgsqlCommand("""
-            INSERT INTO device_sessions(id,user_id,device_name,platform,refresh_token_hash)
-            VALUES($1,$2,$3,'windows',$4);
-            INSERT INTO refresh_token_history(token_hash,session_id) VALUES($4,$1)
+            WITH inserted AS (
+                INSERT INTO device_sessions(id,user_id,device_name,platform,refresh_token_hash)
+                VALUES($1,$2,$3,'windows',$4) RETURNING id
+            )
+            INSERT INTO refresh_token_history(token_hash,session_id)
+            SELECT $4,id FROM inserted
             """, db);
         command.Parameters.AddWithValue(id);
         command.Parameters.AddWithValue(owner);
