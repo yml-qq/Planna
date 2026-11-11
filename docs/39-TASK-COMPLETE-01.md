@@ -1,6 +1,6 @@
 # 39｜TASK-COMPLETE-01：任务完成与撤销完成
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 TASK-COMPLETE-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43039556958](https://github.com/yml-qq/Planna/actions/runs/43039556958) 已通过。
 
 ## 范围与验收
 
