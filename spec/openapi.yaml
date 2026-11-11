@@ -714,7 +714,7 @@ paths:
     post:
       tags: [Tasks]
       operationId: reopenTask
-      description: Reopen a completed non-recurring task back to todo and clear completed_at with a version check. Not-completed tasks return 409 NOT_COMPLETED, archived returns 422. The same idempotency key replays the original response.
+      description: Reopen a completed non-recurring task back to todo and clear completed_at with a version check; for RRULE tasks the request must name occurrence_id and reopens that completed occurrence instead (the task row is unchanged). Not-completed targets return 409 NOT_COMPLETED, archived tasks return 422. The same idempotency key replays the original response.
       parameters:
         - $ref: '#/components/parameters/TaskId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -728,12 +728,16 @@ paths:
               required: [expected_version]
               properties:
                 expected_version: {type: integer, minimum: 1}
+                occurrence_id: {type: [string, 'null'], format: uuid}
       responses:
         '200':
-          description: Reopened task
+          description: Reopened task, or the reopened occurrence when occurrence_id targets a recurring instance.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Task'}
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Task'
+                  - $ref: '#/components/schemas/Occurrence'
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}

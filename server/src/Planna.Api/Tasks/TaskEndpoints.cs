@@ -116,11 +116,16 @@ public static class TaskEndpoints
         var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
         return result.Status switch
         {
-            ReopenTaskStatus.Reopened or ReopenTaskStatus.Replayed => TypedResults.Ok(result.Task),
+            ReopenTaskStatus.Reopened or ReopenTaskStatus.Replayed =>
+                result.Occurrence is not null
+                    ? TypedResults.Ok(result.Occurrence)
+                    : TypedResults.Ok(result.Task),
             ReopenTaskStatus.NotFound => Error(http, 404, result.Code!),
             ReopenTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
             ReopenTaskStatus.NotCompleted => Error(http, 409, result.Code!),
             ReopenTaskStatus.InvalidState => Error(http, 422, result.Code!),
+            ReopenTaskStatus.RecurringTask => Error(http, 422, result.Code!),
+            ReopenTaskStatus.InvalidOccurrence => Error(http, 422, result.Code!),
             ReopenTaskStatus.Invalid => Error(http, 422, result.Code!),
             ReopenTaskStatus.Conflict => Error(http, 409, result.Code!),
             ReopenTaskStatus.AccountDeleted => Error(http, 401, result.Code!),

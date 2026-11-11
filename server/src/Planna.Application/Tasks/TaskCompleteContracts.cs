@@ -10,7 +10,8 @@ public sealed record CompleteTaskRequest(
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ReopenTaskRequest(
-    [property: JsonPropertyName("expected_version")] long ExpectedVersion);
+    [property: JsonPropertyName("expected_version")] long ExpectedVersion,
+    [property: JsonPropertyName("occurrence_id")] Guid? OccurrenceId);
 
 public enum CompleteTaskStatus
 {
@@ -30,11 +31,11 @@ public interface ICompleteTask
 public enum ReopenTaskStatus
 {
     Reopened, Replayed, Invalid, NotFound, VersionConflict, NotCompleted,
-    InvalidState, Conflict, AccountDeleted
+    InvalidState, RecurringTask, InvalidOccurrence, Conflict, AccountDeleted
 }
 
 public sealed record ReopenTaskResult(ReopenTaskStatus Status, TaskReadView? Task = null,
-    string? Code = null, VersionConflictDetails? Details = null);
+    string? Code = null, VersionConflictDetails? Details = null, OccurrenceView? Occurrence = null);
 
 public interface IReopenTask
 {

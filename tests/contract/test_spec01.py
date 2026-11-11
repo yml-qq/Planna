@@ -216,6 +216,11 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual({item["$ref"] for item in completion_schema["oneOf"]},
                          {"#/components/schemas/Task", "#/components/schemas/Occurrence"})
         reopen = api["paths"]["/tasks/{id}/reopen"]["post"]
+        self.assertIn("occurrence_id", reopen["requestBody"]["content"]["application/json"]["schema"]["properties"])
+        reopen_schema = reopen["responses"]["200"]["content"]["application/json"]["schema"]
+        self.assertEqual({item["$ref"] for item in reopen_schema["oneOf"]},
+                         {"#/components/schemas/Task", "#/components/schemas/Occurrence"})
+        reopen = api["paths"]["/tasks/{id}/reopen"]["post"]
         self.assertIn("NOT_COMPLETED", reopen["description"])
 
     def test_list_contract(self):

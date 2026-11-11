@@ -99,6 +99,8 @@
 
 `PRIV-EXPORT-01` 实现云端导出：`POST /me/exports` 在 `REPEATABLE READ` 快照内生成 `account-export-v1` JSON（account/lists/tasks/steps/tags/reminders/time_blocks/ai_consents，`source=cloud`、`pending_mutation_ids=[]`），MVP 同步生成并返回 `202` job，同键重放；`GET /me/exports` 列表、`GET /me/exports/{id}` 状态、`GET /me/exports/{id}/download` 仅 owner 且 ready 未过期（24 小时）返回附件，过期 `410 EXPORT_EXPIRED`、未就绪 `409 EXPORT_NOT_READY`。详见 `53-PRIV-EXPORT-01.md`。
 
+`TIME-01D` 扩展 `POST /tasks/{id}/reopen`：RRULE 任务必须用 `occurrence_id` 撤销已完成的 occurrence（`done → todo`、清空 `completed_at`、版本 +1），响应返回 `Occurrence`；缺失 `occurrence_id` `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 `422 INVALID_OCCURRENCE`，未完成 `409 NOT_COMPLETED`；普通任务保持任务级 reopen。详见 `54-TIME-01D.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks
