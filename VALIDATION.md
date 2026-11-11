@@ -306,3 +306,11 @@
 - 前端测试增至 **14 项**（新增后台同步创建/触发/登出取消、禁用后台同步），`pnpm build` 通过；`cargo fmt/clippy/check` 通过；无服务端契约变更。
 - [Desktop core 43111436820](https://github.com/yml-qq/Planna/actions/runs/43111436820)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43111436800](https://github.com/yml-qq/Planna/actions/runs/43111436800) 均 **success**。
 - 未连接生产库、未提交凭据；`tauri build` 安装包/签名、网络恢复触发与真机窗口冒烟留待 `DESK-01H`。
+
+## DESK-01H 网络恢复与发布构建检查（2026-11-12）
+
+- 前端：登录/恢复后订阅 `online` 事件（可注入 `watchOnline`），网络恢复且持有 access token 时立即同步；登出/恢复失败退订。前端测试增至 **15 项**（新增恢复后同步一次、登出退订），`pnpm build` 通过。
+- Rust：`cargo build --release`（Tauri 2.12 + reqwest/keyring/rusqlite）在本地 **3m08s 成功**（exit 0），验证桌面应用二进制可编译链接；未执行 `tauri build` 打包/签名。
+- 文档：`67-DESK-01H.md` 给出发布清单（前端/Rust 校验、`cargo tauri build` 三平台产物、Authenticode/Developer ID/notarization、updater 公钥与私钥管理、干净系统安装/升级/卸载冒烟、商店合规），明确签名凭据不得入库。
+- [Desktop core 43113570657](https://github.com/yml-qq/Planna/actions/runs/43113570657)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43113570578](https://github.com/yml-qq/Planna/actions/runs/43113570578) 均 **success**；无服务端契约变更。
+- 未连接生产库、未提交凭据；签名安装包与自动更新（需发布凭据）为 `DESK-01I` 部署任务。

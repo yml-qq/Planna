@@ -1,6 +1,6 @@
 # 67｜DESK-01H：网络恢复同步与桌面发布构建
 
-状态：代码已实现并本地验证；`pnpm test`（15 项）、`pnpm build`、`cargo build --release`（3m08s）通过。签名安装包/自动更新属发布部署任务（`DESK-01I`），需要发布密钥，不在仓库内执行。
+状态：代码已实现并本地验证；`pnpm test`（15 项）、`pnpm build`、`cargo build --release`（3m08s，exit 0）通过；[Desktop core 43113570657](https://github.com/yml-qq/Planna/actions/runs/43113570657) 与 [Server integration 43113570578](https://github.com/yml-qq/Planna/actions/runs/43113570578) 均 **success**。签名安装包/自动更新属发布部署任务（`DESK-01I`），需要发布密钥，不在仓库内执行。
 
 ## 范围与验收
 
