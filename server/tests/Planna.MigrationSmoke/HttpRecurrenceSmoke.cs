@@ -128,7 +128,9 @@ internal static class HttpRecurrenceSmoke
         Check(await PutRecurrence(client, token, t3, Guid.NewGuid(),
             Body(0, "rrule", "FREQ=DAILY", "America/New_York", "2027-11-07T01:30:00")), HttpStatusCode.OK);
         var fall = await Occurrences(client, token, t3, "2027-11-06", "2027-11-08");
-        if (fall.Count != 3)
+        if (fall.Count != 2 ||
+            !fall.Select(x => x.OriginalLocalStart.Date).SequenceEqual(
+                new[] { new DateTime(2027, 11, 7), new DateTime(2027, 11, 8) }))
             throw new InvalidOperationException("DST fall-back occurrence count mismatch.");
         if (fall.Single(x => x.OriginalLocalStart.Date == new DateTime(2027, 11, 7)).DueAt !=
             new DateTimeOffset(2027, 11, 7, 5, 30, 0, TimeSpan.Zero))
