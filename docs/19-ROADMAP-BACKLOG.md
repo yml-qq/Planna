@@ -29,7 +29,8 @@
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |
 | E07 | TIME-01A | 循环规则 CRUD 与 occurrence 窗口物化（已交付，见 `47-TIME-01A.md`） | TASK-COMPLETE-01 | DST fixtures |
 | E07 | TIME-01B | occurrence 完成与受信时间（已交付，见 `48-TIME-01B.md`） | TIME-01A | DST fixtures |
-| E07 | TIME-01C | after_completion/法定工作日规则与 occurrence 撤销 | TIME-01B | recurrence tests |
+| E07 | TIME-01C | after_completion 规则与下一次 occurrence 生成（已交付，见 `49-TIME-01C.md`） | TIME-01B | recurrence tests |
+| E07 | TIME-01D | 法定工作日规则、occurrence 撤销与编辑范围 | TIME-01C | policy tests |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
 | E08 | AI-01 | Provider/structured parse | E02,TASK-COMPLETE-01 | golden tests |

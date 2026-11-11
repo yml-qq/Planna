@@ -6,7 +6,8 @@ namespace Planna.Application.Tasks;
 public sealed record RecurrenceView(
     [property: JsonPropertyName("task_id")] Guid TaskId,
     [property: JsonPropertyName("kind")] string Kind,
-    [property: JsonPropertyName("rrule")] string Rrule,
+    [property: JsonPropertyName("rrule")] string? Rrule,
+    [property: JsonPropertyName("interval_days")] int? IntervalDays,
     [property: JsonPropertyName("time_zone")] string TimeZone,
     [property: JsonPropertyName("dtstart_local")] DateTime DtstartLocal,
     [property: JsonPropertyName("version")] long Version);
@@ -15,7 +16,8 @@ public sealed record RecurrenceView(
 public sealed record PutRecurrenceRequest(
     [property: JsonPropertyName("expected_version")] long ExpectedVersion,
     [property: JsonPropertyName("kind")] string Kind,
-    [property: JsonPropertyName("rrule")] string Rrule,
+    [property: JsonPropertyName("rrule")] string? Rrule,
+    [property: JsonPropertyName("interval_days")] int? IntervalDays,
     [property: JsonPropertyName("time_zone")] string TimeZone,
     [property: JsonPropertyName("dtstart_local")] string DtstartLocal);
 

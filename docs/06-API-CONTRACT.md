@@ -89,6 +89,8 @@
 
 `TIME-01B` 实现循环任务按 occurrence 完成：`POST /tasks/{id}/complete` 对存在 RRULE 规则的任务要求 `occurrence_id`，完成写 `task_occurrences.status='done'`/`completed_at`（受信时间钳制）与 `version+1`，响应返回 `Occurrence`（普通任务返回 `Task`，200 为 `oneOf`），并推进 revision、写 `sync_changes(entity_type='occurrence')`。缺失 occurrence 返回 `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 occurrence 返回 `422 INVALID_OCCURRENCE`，已完成返回 `409 ALREADY_COMPLETED`。`after_completion`/`legal_workday` 与 occurrence 撤销留待 `TIME-01C`。详见 `48-TIME-01B.md`。
 
+`TIME-01C` 支持 `kind="after_completion"` 规则（`interval_days` 1..3650、`rrule` 必须为空；与 rrule 混用 `422`）：任务按任务完成（不接受 occurrence_id），完成时在同一事务内生成下一次 occurrence（本地日期 = 完成时刻规则时区本地日期 + N 天，时刻取 `dtstart_local`，DST 不存在时刻跳过）。同键重放不重复生成，任务再次完成返回 `409 ALREADY_COMPLETED`。`legal_workday` 与 occurrence 撤销/编辑范围留待 `TIME-01D`。详见 `49-TIME-01C.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

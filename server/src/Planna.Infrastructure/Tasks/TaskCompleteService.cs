@@ -4,6 +4,8 @@ using System.Text.Json;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using NpgsqlTypes;
 using Planna.Application.Tasks;
 using Planna.Infrastructure.Persistence;
 
@@ -46,9 +48,13 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
                 Details: new VersionConflictDetails(taskId, row.Version, []));
         if (row.Status == "done") return new(CompleteTaskStatus.AlreadyCompleted, Code: "ALREADY_COMPLETED");
         if (row.Status == "archived") return new(CompleteTaskStatus.InvalidState, Code: "INVALID_TASK_STATE");
-        var recurring = await db.Database.SqlQuery<bool>(
-            $"SELECT EXISTS(SELECT 1 FROM recurrences WHERE owner_id={ownerId} AND task_id={taskId}) AS \"Value\"").SingleAsync(ct);
-        if (recurring)
+        var rule = await LoadRuleAsync(db, ownerId, taskId, ct);
+        if (rule is { Kind: "after_completion" })
+        {
+            if (request.OccurrenceId is not null)
+                return new(CompleteTaskStatus.InvalidOccurrence, Code: "INVALID_OCCURRENCE");
+        }
+        else if (rule is not null)
         {
             if (request.OccurrenceId is null)
                 return new(CompleteTaskStatus.RecurringTask, Code: "RECURRING_TASK_REQUIRES_OCCURRENCE");
@@ -102,7 +108,8 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
             await transaction.CommitAsync(ct);
             return new(CompleteTaskStatus.Completed, Occurrence: occurrenceView);
         }
-        if (request.OccurrenceId is not null) return new(CompleteTaskStatus.InvalidOccurrence, Code: "INVALID_OCCURRENCE");
+        if (rule is null && request.OccurrenceId is not null)
+            return new(CompleteTaskStatus.InvalidOccurrence, Code: "INVALID_OCCURRENCE");
 
         var now = clock.GetUtcNow();
         var completedAt = request.CompletedAt?.ToUniversalTime() ?? now;
@@ -112,6 +119,8 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
         var newVersion = row.Version + 1;
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE tasks SET status='done', completed_at={completedAt}, version={newVersion}, updated_at={now} WHERE id={taskId}", ct);
+        if (rule is { Kind: "after_completion", IntervalDays: { } intervalDays })
+            await GenerateNextOccurrenceAsync(db, ownerId, taskId, rule, intervalDays, completedAt, ct);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE owner_sync_clocks SET revision=revision+1 WHERE owner_id={ownerId}", ct);
         var revision = await db.Database.SqlQuery<long>(
@@ -150,6 +159,50 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
         public string TimeZone { get; set; } = "";
         public DateTime? DueAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+    }
+
+    private sealed class RecurrenceRuleRow
+    {
+        public string Kind { get; set; } = "rrule";
+        public int? IntervalDays { get; set; }
+        public DateTime DtstartLocal { get; set; }
+        public string TimeZone { get; set; } = "Asia/Shanghai";
+    }
+
+    private static Task<RecurrenceRuleRow?> LoadRuleAsync(TaskWriteContext db, Guid ownerId, Guid taskId,
+        CancellationToken ct) =>
+        db.Database.GetDbConnection().QuerySingleOrDefaultAsync<RecurrenceRuleRow>(new CommandDefinition(
+            """
+            SELECT kind AS "Kind", interval_days AS "IntervalDays", dtstart_local AS "DtstartLocal",
+                time_zone AS "TimeZone"
+            FROM recurrences WHERE owner_id = @Owner AND task_id = @Task
+            """, new { Owner = ownerId, Task = taskId },
+            db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+
+    private static async Task GenerateNextOccurrenceAsync(TaskWriteContext db, Guid ownerId,
+        Guid taskId, RecurrenceRuleRow rule, int intervalDays, DateTimeOffset completedAt, CancellationToken ct)
+    {
+        TimeZoneInfo zone;
+        try { zone = TimeZoneInfo.FindSystemTimeZoneById(rule.TimeZone); }
+        catch (TimeZoneNotFoundException) { return; }
+        catch (InvalidTimeZoneException) { return; }
+        var localDate = TimeZoneInfo.ConvertTime(completedAt, zone).Date;
+        var nextLocal = DateTime.SpecifyKind(
+            localDate.AddDays(intervalDays) + rule.DtstartLocal.TimeOfDay, DateTimeKind.Unspecified);
+        if (!RecurrenceExpander.TryResolveInstant(zone, nextLocal, out var dueAt)) return;
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = """
+            INSERT INTO task_occurrences(owner_id, series_task_id, original_local_start, time_zone, due_at)
+            VALUES(@owner, @task, @local, @tz, @due)
+            ON CONFLICT (series_task_id, original_local_start) DO NOTHING
+            """;
+        command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
+        command.Parameters.Add(new NpgsqlParameter("owner", ownerId));
+        command.Parameters.Add(new NpgsqlParameter("task", taskId));
+        command.Parameters.Add(new NpgsqlParameter("local", NpgsqlDbType.Timestamp) { Value = nextLocal });
+        command.Parameters.Add(new NpgsqlParameter("tz", rule.TimeZone));
+        command.Parameters.Add(new NpgsqlParameter("due", NpgsqlDbType.TimestampTz) { Value = dueAt.UtcDateTime });
+        await command.ExecuteNonQueryAsync(ct);
     }
 
     private static DateTimeOffset? AsInstant(DateTime? value) =>

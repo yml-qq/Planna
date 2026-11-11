@@ -16,14 +16,15 @@ public sealed class RecurrenceQuery(string connectionString) : IRecurrenceQuery
         if (!await TaskExists(connection, ownerId, taskId, ct))
             return (GetOccurrenceListStatus.TaskNotFound, null);
         var row = await connection.QuerySingleOrDefaultAsync<RecurrenceDbRow>(new CommandDefinition(
-            "SELECT task_id AS \"TaskId\", kind AS \"Kind\", rrule AS \"Rrule\", time_zone AS \"TimeZone\", " +
+            "SELECT task_id AS \"TaskId\", kind AS \"Kind\", rrule AS \"Rrule\", " +
+            "interval_days AS \"IntervalDays\", time_zone AS \"TimeZone\", " +
             "dtstart_local AS \"DtstartLocal\", version AS \"Version\" FROM recurrences " +
             "WHERE owner_id = @OwnerId AND task_id = @TaskId",
             new { OwnerId = ownerId, TaskId = taskId }, cancellationToken: ct));
         return row is null
             ? (GetOccurrenceListStatus.RecurrenceNotFound, null)
             : (GetOccurrenceListStatus.Ok, new RecurrenceView(row.TaskId, row.Kind, row.Rrule,
-                row.TimeZone, row.DtstartLocal, row.Version));
+                row.IntervalDays, row.TimeZone, row.DtstartLocal, row.Version));
     }
 
     public async Task<GetOccurrenceListResult> ListOccurrencesAsync(Guid ownerId, Guid taskId,
@@ -36,13 +37,12 @@ public sealed class RecurrenceQuery(string connectionString) : IRecurrenceQuery
         if (!await TaskExists(connection, ownerId, taskId, ct))
             return new(GetOccurrenceListStatus.TaskNotFound);
         var rule = await connection.QuerySingleOrDefaultAsync<RecurrenceDbRow>(new CommandDefinition(
-            "SELECT task_id AS \"TaskId\", kind AS \"Kind\", rrule AS \"Rrule\", time_zone AS \"TimeZone\", " +
+            "SELECT task_id AS \"TaskId\", kind AS \"Kind\", rrule AS \"Rrule\", " +
+            "interval_days AS \"IntervalDays\", time_zone AS \"TimeZone\", " +
             "dtstart_local AS \"DtstartLocal\", version AS \"Version\" FROM recurrences " +
             "WHERE owner_id = @OwnerId AND task_id = @TaskId",
             new { OwnerId = ownerId, TaskId = taskId }, cancellationToken: ct));
         if (rule is null) return new(GetOccurrenceListStatus.RecurrenceNotFound);
-        if (!RecurrenceExpander.TryParse(rule.Rrule, out var parsed))
-            return new(GetOccurrenceListStatus.RecurrenceNotFound);
         TimeZoneInfo zone;
         try { zone = TimeZoneInfo.FindSystemTimeZoneById(rule.TimeZone); }
         catch (TimeZoneNotFoundException) { return new(GetOccurrenceListStatus.RecurrenceNotFound); }
@@ -50,27 +50,32 @@ public sealed class RecurrenceQuery(string connectionString) : IRecurrenceQuery
 
         var fromLocal = from.ToDateTime(TimeOnly.MinValue);
         var toLocalExclusive = to.AddDays(1).ToDateTime(TimeOnly.MinValue);
-        var candidates = RecurrenceExpander.Expand(parsed, rule.DtstartLocal, fromLocal, toLocalExclusive, zone);
-        await using (var transaction = await connection.BeginTransactionAsync(ct))
+        if (rule.Kind == "rrule")
         {
-            foreach (var local in candidates)
+            if (!RecurrenceExpander.TryParse(rule.Rrule ?? "", out var parsed))
+                return new(GetOccurrenceListStatus.RecurrenceNotFound);
+            var candidates = RecurrenceExpander.Expand(parsed, rule.DtstartLocal, fromLocal, toLocalExclusive, zone);
+            await using (var transaction = await connection.BeginTransactionAsync(ct))
             {
-                if (!RecurrenceExpander.TryResolveInstant(zone, local, out var dueAt)) continue;
-                await using var insert = connection.CreateCommand();
-                insert.Transaction = transaction;
-                insert.CommandText = """
-                    INSERT INTO task_occurrences(owner_id, series_task_id, original_local_start, time_zone, due_at)
-                    VALUES(@owner, @task, @local, @tz, @due)
-                    ON CONFLICT (series_task_id, original_local_start) DO NOTHING
-                    """;
-                insert.Parameters.Add(new NpgsqlParameter("owner", ownerId));
-                insert.Parameters.Add(new NpgsqlParameter("task", taskId));
-                insert.Parameters.Add(new NpgsqlParameter("local", NpgsqlDbType.Timestamp) { Value = local });
-                insert.Parameters.Add(new NpgsqlParameter("tz", rule.TimeZone));
-                insert.Parameters.Add(new NpgsqlParameter("due", NpgsqlDbType.TimestampTz) { Value = dueAt.UtcDateTime });
-                await insert.ExecuteNonQueryAsync(ct);
+                foreach (var local in candidates)
+                {
+                    if (!RecurrenceExpander.TryResolveInstant(zone, local, out var dueAt)) continue;
+                    await using var insert = connection.CreateCommand();
+                    insert.Transaction = transaction;
+                    insert.CommandText = """
+                        INSERT INTO task_occurrences(owner_id, series_task_id, original_local_start, time_zone, due_at)
+                        VALUES(@owner, @task, @local, @tz, @due)
+                        ON CONFLICT (series_task_id, original_local_start) DO NOTHING
+                        """;
+                    insert.Parameters.Add(new NpgsqlParameter("owner", ownerId));
+                    insert.Parameters.Add(new NpgsqlParameter("task", taskId));
+                    insert.Parameters.Add(new NpgsqlParameter("local", NpgsqlDbType.Timestamp) { Value = local });
+                    insert.Parameters.Add(new NpgsqlParameter("tz", rule.TimeZone));
+                    insert.Parameters.Add(new NpgsqlParameter("due", NpgsqlDbType.TimestampTz) { Value = dueAt.UtcDateTime });
+                    await insert.ExecuteNonQueryAsync(ct);
+                }
+                await transaction.CommitAsync(ct);
             }
-            await transaction.CommitAsync(ct);
         }
 
         var items = new List<OccurrenceView>();
@@ -113,7 +118,8 @@ public sealed class RecurrenceQuery(string connectionString) : IRecurrenceQuery
     {
         public Guid TaskId { get; set; }
         public string Kind { get; set; } = "rrule";
-        public string Rrule { get; set; } = "";
+        public string? Rrule { get; set; }
+        public int? IntervalDays { get; set; }
         public string TimeZone { get; set; } = "Asia/Shanghai";
         public DateTime DtstartLocal { get; set; }
         public long Version { get; set; }

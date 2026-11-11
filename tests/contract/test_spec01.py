@@ -331,9 +331,14 @@ class Spec01Contracts(unittest.TestCase):
         body = put["requestBody"]["content"]["application/json"]["schema"]
         self.assertFalse(body["additionalProperties"])
         self.assertEqual(set(body["required"]),
-                         {"expected_version", "kind", "rrule", "time_zone", "dtstart_local"})
-        self.assertEqual(body["properties"]["kind"]["const"], "rrule")
+                         {"expected_version", "kind", "time_zone", "dtstart_local"})
+        self.assertEqual(body["properties"]["kind"]["enum"], ["rrule", "after_completion"])
         self.assertEqual(body["properties"]["expected_version"]["minimum"], 0)
+        self.assertEqual(body["properties"]["interval_days"]["maximum"], 3650)
+        recurrence = api["components"]["schemas"]["Recurrence"]
+        self.assertEqual(set(recurrence["required"]),
+                         {"task_id", "kind", "time_zone", "dtstart_local", "version"})
+        self.assertEqual(recurrence["properties"]["kind"]["enum"], ["rrule", "after_completion"])
         delete = rule["delete"]
         self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
         occurrences = api["paths"]["/tasks/{id}/occurrences"]["get"]

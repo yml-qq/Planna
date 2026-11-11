@@ -16,13 +16,23 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
     public async Task<PutRecurrenceResult> ExecuteAsync(Guid ownerId, Guid mutationId, Guid taskId,
         PutRecurrenceRequest request, CancellationToken ct)
     {
-        if (request.Kind != "rrule") return new(PutRecurrenceStatus.Unsupported, Code: "UNSUPPORTED_RECURRENCE");
+        if (request.Kind is not ("rrule" or "after_completion"))
+            return new(PutRecurrenceStatus.Unsupported, Code: "UNSUPPORTED_RECURRENCE");
         if (ownerId == Guid.Empty || mutationId == Guid.Empty || taskId == Guid.Empty ||
-            request.ExpectedVersion < 0 || string.IsNullOrWhiteSpace(request.Rrule) ||
-            string.IsNullOrWhiteSpace(request.TimeZone) ||
-            !RecurrenceExpander.TryParse(request.Rrule, out _) ||
+            request.ExpectedVersion < 0 || string.IsNullOrWhiteSpace(request.TimeZone) ||
             !RecurrenceFormats.TryParseLocal(request.DtstartLocal, out var dtstartLocal))
             return new(PutRecurrenceStatus.Invalid, Code: "INVALID_RECURRENCE");
+        if (request.Kind == "rrule")
+        {
+            if (string.IsNullOrWhiteSpace(request.Rrule) || request.IntervalDays is not null ||
+                !RecurrenceExpander.TryParse(request.Rrule, out _))
+                return new(PutRecurrenceStatus.Invalid, Code: "INVALID_RECURRENCE");
+        }
+        else
+        {
+            if (request.IntervalDays is not (>= 1 and <= 3650) || !string.IsNullOrWhiteSpace(request.Rrule))
+                return new(PutRecurrenceStatus.Invalid, Code: "INVALID_RECURRENCE");
+        }
         try { _ = TimeZoneInfo.FindSystemTimeZoneById(request.TimeZone); }
         catch (TimeZoneNotFoundException) { return new(PutRecurrenceStatus.Invalid, Code: "INVALID_TIME_ZONE"); }
         catch (InvalidTimeZoneException) { return new(PutRecurrenceStatus.Invalid, Code: "INVALID_TIME_ZONE"); }
@@ -52,13 +62,15 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
         {
             if (existingVersion > 0) return new(PutRecurrenceStatus.Exists, Code: "RECURRENCE_EXISTS");
             await ExecuteTimestampSql(db, """
-                INSERT INTO recurrences(owner_id, task_id, kind, rrule, dtstart_local, time_zone)
-                VALUES(@owner, @task, 'rrule', @rrule, @dtstart, @tz)
+                INSERT INTO recurrences(owner_id, task_id, kind, rrule, interval_days, dtstart_local, time_zone)
+                VALUES(@owner, @task, @kind, @rrule, @interval, @dtstart, @tz)
                 """, p =>
             {
                 p.Add(new NpgsqlParameter("owner", ownerId));
                 p.Add(new NpgsqlParameter("task", taskId));
-                p.Add(new NpgsqlParameter("rrule", request.Rrule));
+                p.Add(new NpgsqlParameter("kind", request.Kind));
+                p.Add(new NpgsqlParameter("rrule", (object?)request.Rrule ?? DBNull.Value));
+                p.Add(new NpgsqlParameter("interval", (object?)request.IntervalDays ?? DBNull.Value));
                 p.Add(new NpgsqlParameter("dtstart", NpgsqlDbType.Timestamp) { Value = dtstartLocal });
                 p.Add(new NpgsqlParameter("tz", request.TimeZone));
             }, ct);
@@ -72,13 +84,16 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
                     Details: new VersionConflictDetails(taskId, existingVersion, []));
             newVersion = existingVersion + 1;
             await ExecuteTimestampSql(db, """
-                UPDATE recurrences SET rrule=@rrule, dtstart_local=@dtstart, time_zone=@tz,
+                UPDATE recurrences SET kind=@kind, rrule=@rrule, interval_days=@interval,
+                    dtstart_local=@dtstart, time_zone=@tz,
                     version=@version, updated_at=now() WHERE owner_id=@owner AND task_id=@task
                 """, p =>
             {
                 p.Add(new NpgsqlParameter("owner", ownerId));
                 p.Add(new NpgsqlParameter("task", taskId));
-                p.Add(new NpgsqlParameter("rrule", request.Rrule));
+                p.Add(new NpgsqlParameter("kind", request.Kind));
+                p.Add(new NpgsqlParameter("rrule", (object?)request.Rrule ?? DBNull.Value));
+                p.Add(new NpgsqlParameter("interval", (object?)request.IntervalDays ?? DBNull.Value));
                 p.Add(new NpgsqlParameter("dtstart", NpgsqlDbType.Timestamp) { Value = dtstartLocal });
                 p.Add(new NpgsqlParameter("tz", request.TimeZone));
                 p.Add(new NpgsqlParameter("version", newVersion));
@@ -90,7 +105,8 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
         var revision = await db.Database.SqlQuery<long>(
             $"SELECT revision AS \"Value\" FROM owner_sync_clocks WHERE owner_id={ownerId}").SingleAsync(ct);
         var now = clock.GetUtcNow();
-        var view = new RecurrenceView(taskId, "rrule", request.Rrule, request.TimeZone, dtstartLocal, newVersion);
+        var view = new RecurrenceView(taskId, request.Kind, request.Rrule, request.IntervalDays,
+            request.TimeZone, dtstartLocal, newVersion);
         db.Changes.Add(new SyncChangeRow
         {
             OwnerId = ownerId,
