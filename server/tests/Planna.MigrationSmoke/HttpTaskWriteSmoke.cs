@@ -62,7 +62,9 @@ internal static class HttpTaskWriteSmoke
 
         Check(await Get(client, foreignToken, t1), HttpStatusCode.NotFound);
         Check(await Get(client, token, t2), HttpStatusCode.NotFound);
-        await AssertCode(await Patch(client, token, t1, null, "{}"), HttpStatusCode.BadRequest, "INVALID_IDEMPOTENCY_KEY");
+        await AssertCode(await Patch(client, token, t1, null,
+            "{\"expected_version\":5,\"patch\":{\"title\":\"X\"}}"),
+            HttpStatusCode.BadRequest, "INVALID_IDEMPOTENCY_KEY");
         foreach (var etag in new[] { "", "\"5\"", "\"v0\"", "\"vx\"" })
             await AssertCode(await Delete(client, token, t1, Guid.NewGuid(), etag), HttpStatusCode.BadRequest, "INVALID_VERSION");
 
@@ -151,12 +153,14 @@ internal static class HttpTaskWriteSmoke
             race.Count(x => x.StatusCode == HttpStatusCode.Conflict) != 1)
             throw new InvalidOperationException("Concurrent patch was not serialized.");
 
-        // Soft delete with If-Match, replay and stale version.
+        // Soft delete with If-Match, stale version, replay and post-delete 404.
+        await AssertCode(await Delete(client, token, t1, Guid.NewGuid(), "\"v8\""),
+            HttpStatusCode.Conflict, "VERSION_CONFLICT");
         var deleteKey = Guid.NewGuid();
         Check(await Delete(client, token, t1, deleteKey, "\"v9\""), HttpStatusCode.NoContent);
         Check(await Delete(client, token, t1, deleteKey, "\"v9\""), HttpStatusCode.NoContent);
         await AssertCode(await Delete(client, token, t1, Guid.NewGuid(), "\"v9\""),
-            HttpStatusCode.Conflict, "VERSION_CONFLICT");
+            HttpStatusCode.NotFound, "TASK_NOT_FOUND");
         await AssertCode(await Get(client, token, t1), HttpStatusCode.NotFound, "TASK_NOT_FOUND");
         var tombstone = await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_id=$2 AND op='delete' AND entity_version=10", owner, t1);
         if (tombstone != 1 || await Scalar(db, "SELECT version FROM tasks WHERE id=$1", t1) != 10 ||
