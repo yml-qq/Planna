@@ -239,3 +239,10 @@
 - 迭代修复：`ai_consents.updated_at` 微秒精度导致 PUT 响应与 GET 不一致（更新时截断到微秒）。
 - [PostgreSQL 18 CI 运行 43086547322](https://github.com/yml-qq/Planna/actions/runs/43086547322) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、初始空授权、幂等重放、scope 交集与拒绝、撤销即时生效、未知 scope、缺幂等键、跨 owner 隔离、删除账号与不写同步状态。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。真实 Provider 的细粒度 scope 与“仅本次”授权审计留待后续切片。
+
+## PRIV-CLEANUP-01 删除后保留期清理检查（2026-11-12）
+
+- 实现 `AccountCleanupService.RunOnceAsync(now, retention)`：按外键顺序在单事务内清理超过保留期的已接受删除请求对应账号数据（任务/清单/标签/步骤/提醒/时间块/同步/幂等/授权/导出/审计/AI 计划与草案/step-up 队列/登录挑战与邮件/refresh 历史/设备会话），保留 `users` 墓碑、`account_deletion_requests` 审计并写 `completed_at`；失败回滚并写 `last_error_code`。Worker 新增 `PrivacyCleanupWorker`（`PRIVACY_DELETION_RETENTION_DAYS` 默认 30、`PRIVACY_CLEANUP_INTERVAL_MINUTES` 默认 60）。
+- 无 schema/API/OpenAPI 变更、无新迁移。迭代修复：Npgsql 打开连接后 `ConnectionString` 会移除密码，冒烟改为传入原始连接串。
+- [PostgreSQL 18 CI 运行 43088906012](https://github.com/yml-qq/Planna/actions/runs/43088906012) 已通过迁移重放、构建、格式、静态契约与全部冒烟，新增覆盖：40 天与恰好 30 天请求被清理、近期账号不受影响、墓碑/审计保留、各表清零与会话刷新历史清理、重复运行幂等。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。对象存储/备份/日志清理与保留策略仍需运维与法务配套。

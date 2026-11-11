@@ -1,6 +1,6 @@
 # 58｜PRIV-CLEANUP-01：账号删除后的保留期清理
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 PRIV-CLEANUP-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43088906012](https://github.com/yml-qq/Planna/actions/runs/43088906012) 已通过。
 
 ## 范围与验收
 
