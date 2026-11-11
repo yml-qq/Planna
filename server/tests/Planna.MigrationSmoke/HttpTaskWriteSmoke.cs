@@ -189,14 +189,14 @@ internal static class HttpTaskWriteSmoke
         Console.WriteLine("PASS: task detail read, versioned patch/replay/null-clear, conflict details, soft delete tombstone, concurrency, owner isolation");
     }
 
-    private static Task<HttpResponseMessage> Get(HttpClient client, string? token, Guid id)
+    private static async Task<HttpResponseMessage> Get(HttpClient client, string? token, Guid id)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "/tasks/" + id);
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client.SendAsync(request);
+        return await client.SendAsync(request);
     }
 
-    private static Task<HttpResponseMessage> Patch(HttpClient client, string? token, Guid id, Guid? key, string json)
+    private static async Task<HttpResponseMessage> Patch(HttpClient client, string? token, Guid id, Guid? key, string json)
     {
         using var request = new HttpRequestMessage(HttpMethod.Patch, "/tasks/" + id)
         {
@@ -204,16 +204,16 @@ internal static class HttpTaskWriteSmoke
         };
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (key is not null) request.Headers.Add("Idempotency-Key", key.Value.ToString());
-        return client.SendAsync(request);
+        return await client.SendAsync(request);
     }
 
-    private static Task<HttpResponseMessage> Delete(HttpClient client, string? token, Guid id, Guid? key, string etag)
+    private static async Task<HttpResponseMessage> Delete(HttpClient client, string? token, Guid id, Guid? key, string etag)
     {
         using var request = new HttpRequestMessage(HttpMethod.Delete, "/tasks/" + id);
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (key is not null) request.Headers.Add("Idempotency-Key", key.Value.ToString());
         if (etag.Length > 0) request.Headers.TryAddWithoutValidation("If-Match", etag);
-        return client.SendAsync(request);
+        return await client.SendAsync(request);
     }
 
     private static async Task AddSession(NpgsqlConnection db, Guid owner, Guid id)

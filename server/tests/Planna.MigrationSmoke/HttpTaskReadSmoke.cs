@@ -155,11 +155,11 @@ internal static class HttpTaskReadSmoke
             ?? throw new InvalidOperationException("Task page missing.");
     }
 
-    private static Task<HttpResponseMessage> Get(HttpClient client, string? token, string? query = null)
+    private static async Task<HttpResponseMessage> Get(HttpClient client, string? token, string? query = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "/tasks" + (query is null ? "" : "?" + query));
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client.SendAsync(request);
+        return await client.SendAsync(request);
     }
 
     private static string Encode(string value) =>
