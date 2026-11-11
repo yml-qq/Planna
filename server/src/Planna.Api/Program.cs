@@ -54,6 +54,8 @@ builder.Services.AddScoped<ICreateTask, CreateTaskService>();
 builder.Services.AddScoped<ITaskReadQuery>(_ => new TaskReadQuery(connection));
 builder.Services.AddScoped<IUpdateTask, TaskUpdateService>();
 builder.Services.AddScoped<IDeleteTask, TaskDeleteService>();
+builder.Services.AddScoped<ICompleteTask, TaskCompleteService>();
+builder.Services.AddScoped<IReopenTask, TaskReopenService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));

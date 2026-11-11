@@ -15,7 +15,7 @@
 | E04 | TASK-01 | Task 创建写入 `POST /tasks` + owner 权限 + 幂等（已交付，见 `30-TASK-01.md`） | E02,E03 | owner tests |
 | E04 | TASK-READ-01 | Task 分页读取 `GET /tasks`（owner 过滤 + 游标分页，已交付） | TASK-01 | pagination tests |
 | E04 | TASK-UPDATE-01 | Task 详情/更新/软删（`GET/PATCH/DELETE /tasks/{id}`，版本化 + 幂等） | TASK-READ-01 | state tests |
-| E04 | TASK-COMPLETE-01 | Task 完成/撤销完成 | TASK-UPDATE-01 | state tests |
+| E04 | TASK-COMPLETE-01 | Task 完成/撤销完成（已交付，见 `39-TASK-COMPLETE-01.md`） | TASK-UPDATE-01 | state tests |
 | E04 | TASK-03 | List CRUD + Tags/Steps/查询 | TASK-COMPLETE-01 | filter tests |
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-02 | push/outbox/幂等 | SYNC-01,TASK-02 | replay tests |

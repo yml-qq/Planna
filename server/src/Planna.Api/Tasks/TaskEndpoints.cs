@@ -14,7 +14,69 @@ public static class TaskEndpoints
         group.MapGet("/{id}", GetTask).WithName("GetTask");
         group.MapPatch("/{id}", PatchTask).WithName("PatchTask");
         group.MapDelete("/{id}", DeleteTask).WithName("DeleteTask");
+        group.MapPost("/{id}/complete", CompleteTask).WithName("CompleteTask");
+        group.MapPost("/{id}/reopen", ReopenTask).WithName("ReopenTask");
         return app;
+    }
+
+    private static Task<IResult> CompleteTask(HttpContext http, string id, CompleteTaskRequest request,
+        ICompleteTask command, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? CompleteTaskCore(http, taskId, request, command, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> CompleteTaskCore(HttpContext http, Guid taskId,
+        CompleteTaskRequest request, ICompleteTask command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+
+        var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
+        return result.Status switch
+        {
+            CompleteTaskStatus.Completed or CompleteTaskStatus.Replayed => TypedResults.Ok(result.Task),
+            CompleteTaskStatus.NotFound => Error(http, 404, result.Code!),
+            CompleteTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            CompleteTaskStatus.AlreadyCompleted => Error(http, 409, result.Code!),
+            CompleteTaskStatus.InvalidState => Error(http, 422, result.Code!),
+            CompleteTaskStatus.RecurringTask => Error(http, 422, result.Code!),
+            CompleteTaskStatus.InvalidOccurrence => Error(http, 422, result.Code!),
+            CompleteTaskStatus.Invalid => Error(http, 422, result.Code!),
+            CompleteTaskStatus.Conflict => Error(http, 409, result.Code!),
+            CompleteTaskStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static Task<IResult> ReopenTask(HttpContext http, string id, ReopenTaskRequest request,
+        IReopenTask command, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? ReopenTaskCore(http, taskId, request, command, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> ReopenTaskCore(HttpContext http, Guid taskId,
+        ReopenTaskRequest request, IReopenTask command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+
+        var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
+        return result.Status switch
+        {
+            ReopenTaskStatus.Reopened or ReopenTaskStatus.Replayed => TypedResults.Ok(result.Task),
+            ReopenTaskStatus.NotFound => Error(http, 404, result.Code!),
+            ReopenTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            ReopenTaskStatus.NotCompleted => Error(http, 409, result.Code!),
+            ReopenTaskStatus.InvalidState => Error(http, 422, result.Code!),
+            ReopenTaskStatus.Invalid => Error(http, 422, result.Code!),
+            ReopenTaskStatus.Conflict => Error(http, 409, result.Code!),
+            ReopenTaskStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static Task<IResult> GetTask(HttpContext http, string id, ITaskReadQuery query, CancellationToken ct) =>

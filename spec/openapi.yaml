@@ -484,6 +484,7 @@ paths:
     post:
       tags: [Tasks]
       operationId: completeTask
+      description: Complete a non-recurring task from todo/in_progress to done with a server-trusted completed_at (missing uses server time, values outside created_at..now are clamped). Already completed returns 409 ALREADY_COMPLETED, archived returns 422, recurring tasks require occurrence semantics and return 422 until TIME-01. The same idempotency key replays the original response.
       parameters:
         - $ref: '#/components/parameters/TaskId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -493,6 +494,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [expected_version]
               properties:
                 expected_version: {type: integer, minimum: 1}
@@ -504,7 +506,40 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/reopen:
+    post:
+      tags: [Tasks]
+      operationId: reopenTask
+      description: Reopen a completed non-recurring task back to todo and clear completed_at with a version check. Not-completed tasks return 409 NOT_COMPLETED, archived returns 422. The same idempotency key replays the original response.
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Reopened task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /sync/push:
     post:
       tags: [Sync]

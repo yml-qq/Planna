@@ -195,6 +195,26 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
         self.assertIn("changed_fields", patch["description"])
 
+    def test_task_complete_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        for path in ("/tasks/{id}/complete", "/tasks/{id}/reopen"):
+            operation = api["paths"][path]["post"]
+            self.assertEqual(set(operation["responses"]), {"200", "400", "401", "404", "409", "422"})
+            params = {p["$ref"] if "$ref" in p else p.get("name"): p for p in operation["parameters"]}
+            self.assertIn("#/components/parameters/IdempotencyKey", params)
+            self.assertIn("#/components/parameters/TaskId", params)
+            body = operation["requestBody"]["content"]["application/json"]["schema"]
+            self.assertEqual(set(body["required"]), {"expected_version"})
+            self.assertFalse(body["additionalProperties"])
+        complete = api["paths"]["/tasks/{id}/complete"]["post"]
+        props = complete["requestBody"]["content"]["application/json"]["schema"]["properties"]
+        self.assertEqual(props["occurrence_id"]["type"], ["string", "null"])
+        self.assertEqual(props["completed_at"]["type"], ["string", "null"])
+        self.assertIn("ALREADY_COMPLETED", complete["description"])
+        self.assertIn("clamped", complete["description"])
+        reopen = api["paths"]["/tasks/{id}/reopen"]["post"]
+        self.assertIn("NOT_COMPLETED", reopen["description"])
+
 
 if __name__ == "__main__":
     unittest.main()
