@@ -246,3 +246,11 @@
 - 无 schema/API/OpenAPI 变更、无新迁移。迭代修复：Npgsql 打开连接后 `ConnectionString` 会移除密码，冒烟改为传入原始连接串。
 - [PostgreSQL 18 CI 运行 43088906012](https://github.com/yml-qq/Planna/actions/runs/43088906012) 已通过迁移重放、构建、格式、静态契约与全部冒烟，新增覆盖：40 天与恰好 30 天请求被清理、近期账号不受影响、墓碑/审计保留、各表清零与会话刷新历史清理、重复运行幂等。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。对象存储/备份/日志清理与保留策略仍需运维与法务配套。
+
+## SEC-01A 服务端安全基线检查（2026-11-12）
+
+- 实现统一安全头（`X-Content-Type-Options`/`X-Frame-Options`/`Referrer-Policy`，默认 `Cache-Control: no-store`）、未处理异常安全兜底（保留框架 `BadHttpRequestException` 的 400/413 语义、500 不含堆栈）、1 MiB 请求体上限（`413 PAYLOAD_TOO_LARGE`）、`/ai/*` 按 owner 固定窗口限流（默认 60 次/分钟，`AI_RATE_LIMIT_PER_MINUTE` 可配置，超限 `429 RATE_LIMITED` + `Retry-After`）。
+- `spec/openapi.yaml` 为 7 个 AI 操作补充 429；契约测试同步更新（仍 26 项）。无 schema 变更、无迁移。
+- 迭代修复：大小限制中间件短路导致 413 响应缺少安全头（将安全头中间件置于最外层）；异常兜底曾把框架 400 变成 500（按 `BadHttpRequestException.StatusCode` 映射）。
+- [PostgreSQL 18 CI 运行 43092508558](https://github.com/yml-qq/Planna/actions/runs/43092508558) 已通过迁移重放、构建、格式、静态契约与全部冒烟，新增覆盖：健康/401/413/429 安全头、错误体无内部诊断、超限请求不写业务状态、按 owner AI 限流与 `Retry-After`。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。正式 `SEC-01` 审核（依赖漏洞/配置审计/渗透测试/多实例限流）仍待办。
