@@ -216,3 +216,11 @@
 - `spec/openapi.yaml` 更新 reopen 请求/响应与语义；契约测试保持 23 项并通过。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43077888174](https://github.com/yml-qq/Planna/actions/runs/43077888174) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、规则→occurrence→完成→撤销端到端、重放、重复撤销、非法/缺失 occurrence、非循环任务 reopen、跨 owner、删除账号与 revision/变更记录一致性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、23 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`legal_workday`、提醒调度与编辑范围留待 `TIME-01E`。
+
+## PRIV-STEPUP-01 敏感操作复核检查（2026-11-12）
+
+- 实现 `POST /auth/step-up/challenges`（6 位一次性码只存 HMAC 哈希、10 分钟有效、每账号 15 分钟 3 次、同键重放原过期时间不重发、`202` 不泄露验证码）与 `POST /auth/step-up`（只接受最新未消费挑战、最多 5 次尝试、成功返回绑定 owner 与 `account_delete` 用途的 10 分钟 HMAC 签名 token）。
+- 新增迁移 `202611120010_StepUpChallenges`（`auth_step_up_challenges` + `auth_step_up_email_outbox`，租赁/退避/5 次上限）与审阅 SQL `server/stepup-migrations.sql`；Worker 新增 `StepUpEmailWorker` 消费队列，登录验证码队列与限流不受影响。
+- `spec/openapi.yaml` 补充语义/400/422 与 token 约束；契约测试增至 24 项。迭代修复：移除 API 中误注册的仅 Worker 依赖 `StepUpEmailDispatcher`（DI 校验失败）；挑战过期时间截断到微秒使重放响应与首次一致。
+- [PostgreSQL 18 CI 运行 43081769119](https://github.com/yml-qq/Planna/actions/runs/43081769119) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、队列投递与幂等重放、验证码消费、token 绑定/篡改/过期、过期挑战、尝试上限、挑战限流、删除账号，以及不写 revision/`sync_changes`/`client_mutations`。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、24 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。账号删除（`PRIV-DELETE-01`）留待后续切片。
