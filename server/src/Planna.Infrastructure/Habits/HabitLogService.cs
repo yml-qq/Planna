@@ -15,7 +15,7 @@ namespace Planna.Infrastructure.Habits;
 // Daily habit logs: one row per (habit, local date); PUT is an idempotent upsert that also
 // supports explicit backfill. Logs stay out of the sync log in HAB-01B (server-only aggregate).
 public sealed class HabitLogService(TaskWriteContext db, TimeProvider clock)
-    : IHabitLogUpsert, IHabitLogQuery
+    : IHabitLogUpsert, IHabitLogQuery, IHabitStreakQuery
 {
     private static readonly string[] Statuses = ["done", "skipped"];
 
@@ -117,6 +117,44 @@ public sealed class HabitLogService(TaskWriteContext db, TimeProvider clock)
         return new(HabitLogStatus.Ok, Logs: new HabitLogList(rows.Select(ToView).ToList()));
     }
 
+    public async Task<HabitLogResult> GetStreakAsync(Guid ownerId, Guid habitId, DateOnly through,
+        CancellationToken ct)
+    {
+        if (ownerId == Guid.Empty || habitId == Guid.Empty || through == default)
+            return new(HabitLogStatus.Invalid, Code: "INVALID_HABIT_LOG");
+        var habit = await db.Database.GetDbConnection().QuerySingleOrDefaultAsync<StreakHabitRow>(
+            new CommandDefinition("""
+                SELECT target_quantity AS "TargetQuantity"
+                FROM habits WHERE id=@Id AND owner_id=@Owner AND deleted_at IS NULL
+                """, new { Id = habitId, Owner = ownerId }, cancellationToken: ct));
+        if (habit is null) return new(HabitLogStatus.NotFound, Code: "HABIT_NOT_FOUND");
+        var dates = (await db.Database.GetDbConnection().QueryAsync<DateOnly>(new CommandDefinition("""
+            SELECT log_date FROM habit_logs
+            WHERE owner_id=@Owner AND habit_id=@Habit AND status='done'
+              AND quantity >= @Target AND log_date <= @Through
+            ORDER BY log_date
+            """, new { Owner = ownerId, Habit = habitId, Target = habit.TargetQuantity, Through = through },
+            cancellationToken: ct))).ToHashSet();
+        var current = 0;
+        var cursor = through;
+        while (dates.Contains(cursor))
+        {
+            current += 1;
+            cursor = cursor.AddDays(-1);
+        }
+        var longest = 0;
+        var run = 0;
+        DateOnly? previous = null;
+        foreach (var date in dates.Order())
+        {
+            run = previous is not null && date == previous.Value.AddDays(1) ? run + 1 : 1;
+            longest = Math.Max(longest, run);
+            previous = date;
+        }
+        return new(HabitLogStatus.Ok, Streak: new HabitStreakView(habitId, through, current, longest,
+            habit.TargetQuantity));
+    }
+
     private async Task<LogRow?> LoadForUpdateAsync(Guid ownerId, Guid habitId, DateOnly logDate,
         CancellationToken ct) =>
         await db.Database.GetDbConnection().QuerySingleOrDefaultAsync<LogRow>(new CommandDefinition("""
@@ -159,6 +197,11 @@ public sealed class HabitLogService(TaskWriteContext db, TimeProvider clock)
         command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         addParameters(command.Parameters);
         await command.ExecuteNonQueryAsync(ct);
+    }
+
+    private sealed class StreakHabitRow
+    {
+        public int TargetQuantity { get; set; }
     }
 
     private sealed class LogRow

@@ -115,6 +115,7 @@ builder.Services.AddScoped<IHabitDelete, HabitService>();
 builder.Services.AddScoped<IHabitQuery, HabitService>();
 builder.Services.AddScoped<IHabitLogUpsert, HabitLogService>();
 builder.Services.AddScoped<IHabitLogQuery, HabitLogService>();
+builder.Services.AddScoped<IHabitStreakQuery, HabitLogService>();
 builder.Services.AddScoped<IAccountDeletionService>(sp => new AccountDeletionService(
     sp.GetRequiredService<TaskWriteContext>(), sp.GetRequiredService<IStepUpService>(),
     sp.GetRequiredService<TimeProvider>()));

@@ -20,10 +20,12 @@ internal static class HttpHabitLogSmoke
         var foreign = Guid.NewGuid();
         var habit = Guid.NewGuid();
         var foreignHabit = Guid.NewGuid();
+        var streakHabit = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,'habit-log-one@example.test'),($2,'habit-log-two@example.test')", owner, foreign);
         await Exec(db, "INSERT INTO owner_sync_clocks(owner_id) VALUES($1),($2)", owner, foreign);
-        await Exec(db, "INSERT INTO habits(id,owner_id,title,schedule_type,time_zone) VALUES($1,$2,'Read','daily','Asia/Shanghai'),($3,$4,'Foreign','daily','Asia/Shanghai')",
-            habit, owner, foreignHabit, foreign);
+        await Exec(db, "INSERT INTO habits(id,owner_id,title,schedule_type,time_zone) VALUES($1,$2,'Read','daily','Asia/Shanghai'),($3,$4,'Foreign','daily','Asia/Shanghai'),($5,$2,'Streak','daily','Asia/Shanghai')",
+            habit, owner, foreignHabit, foreign, streakHabit);
+        await Exec(db, "UPDATE habits SET target_quantity=2 WHERE id=$1", streakHabit);
         var ownerSession = Guid.NewGuid();
         var foreignSession = Guid.NewGuid();
         await AddSession(db, owner, ownerSession);
@@ -98,11 +100,49 @@ internal static class HttpHabitLogSmoke
         await AssertCode(await GetLogs(client, foreignToken, foreignHabit, "2026-11-01", "2026-11-30"),
             HttpStatusCode.Unauthorized, "ACCOUNT_DELETED");
 
+        // Streak: only done days at/above target count, and only up to `through`.
+        var streakLogs = new (string Date, int Quantity, string Status)[]
+        {
+            ("2026-11-01", 2, "done"),
+            ("2026-11-02", 2, "done"),
+            ("2026-11-03", 1, "done"),
+            ("2026-11-04", 1, "skipped"),
+            ("2026-11-05", 2, "done"),
+            ("2026-11-06", 2, "done"),
+            ("2026-11-07", 2, "done"),
+            ("2026-11-08", 2, "done")
+        };
+        foreach (var (date, quantity, status) in streakLogs)
+            Check(await Put(client, token, streakHabit, date, Guid.NewGuid(),
+                "{\"quantity\":" + quantity + ",\"status\":\"" + status + "\"}"), HttpStatusCode.OK);
+        var streakAt8 = await (await GetStreak(client, token, streakHabit, "2026-11-08"))
+            .Content.ReadFromJsonAsync<HabitStreakView>()
+            ?? throw new InvalidOperationException("Streak missing.");
+        if (streakAt8.CurrentStreak != 4 || streakAt8.LongestStreak != 4 || streakAt8.TargetQuantity != 2)
+            throw new InvalidOperationException("Streak through 11-08 mismatch.");
+        var streakAt3 = await (await GetStreak(client, token, streakHabit, "2026-11-03"))
+            .Content.ReadFromJsonAsync<HabitStreakView>()
+            ?? throw new InvalidOperationException("Streak missing.");
+        if (streakAt3.CurrentStreak != 0 || streakAt3.LongestStreak != 2)
+            throw new InvalidOperationException("Streak through 11-03 mismatch.");
+        var streakAt5 = await (await GetStreak(client, token, streakHabit, "2026-11-05"))
+            .Content.ReadFromJsonAsync<HabitStreakView>()
+            ?? throw new InvalidOperationException("Streak missing.");
+        if (streakAt5.CurrentStreak != 1 || streakAt5.LongestStreak != 2)
+            throw new InvalidOperationException("Streak through 11-05 mismatch.");
+        Check(await GetStreakWithoutQuery(client, token, streakHabit), HttpStatusCode.BadRequest);
+        await AssertCode(await GetStreak(client, token, streakHabit, "2026-13-01"),
+            HttpStatusCode.BadRequest, "INVALID_DATE");
+        await AssertCode(await GetStreak(client, token, Guid.NewGuid(), "2026-11-08"),
+            HttpStatusCode.NotFound, "HABIT_NOT_FOUND");
+        await AssertCode(await GetStreak(client, foreignToken, streakHabit, "2026-11-08"),
+            HttpStatusCode.NotFound, "HABIT_NOT_FOUND");
+
         // Logs are server-only: no revision/sync changes; idempotency records match successful writes.
         if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 0 ||
             await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1", owner) != 0 ||
-            await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 3 ||
-            await Scalar(db, "SELECT count(*) FROM habit_logs WHERE owner_id=$1", owner) != 2)
+            await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 11 ||
+            await Scalar(db, "SELECT count(*) FROM habit_logs WHERE owner_id=$1", owner) != 10)
             throw new InvalidOperationException("Habit log writes broke sync isolation or idempotency accounting.");
         Console.WriteLine("PASS: habit log upsert by date, replay, backfill, window listing, owner isolation");
     }
@@ -125,6 +165,23 @@ internal static class HttpHabitLogSmoke
         using var request = new HttpRequestMessage(HttpMethod.Get,
             "/habits/" + habitId + "/logs?from=" + from + "&to=" + to);
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> GetStreak(HttpClient client, string? token, Guid habitId,
+        string through)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            "/habits/" + habitId + "/streak?through=" + through);
+        if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> GetStreakWithoutQuery(HttpClient client, string token,
+        Guid habitId)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/habits/" + habitId + "/streak");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await client.SendAsync(request);
     }
 

@@ -22,7 +22,7 @@ public sealed record HabitLogList([property: JsonPropertyName("items")] IReadOnl
 public enum HabitLogStatus { Ok, Upserted, Replayed, Invalid, NotFound, Conflict, AccountDeleted }
 
 public sealed record HabitLogResult(HabitLogStatus Status, HabitLogView? Log = null,
-    HabitLogList? Logs = null, string? Code = null);
+    HabitLogList? Logs = null, HabitStreakView? Streak = null, string? Code = null);
 
 public interface IHabitLogUpsert
 {
@@ -34,4 +34,16 @@ public interface IHabitLogQuery
 {
     Task<HabitLogResult> ListAsync(Guid ownerId, Guid habitId, DateOnly from, DateOnly to,
         CancellationToken ct);
+}
+
+public sealed record HabitStreakView(
+    [property: JsonPropertyName("habit_id")] Guid HabitId,
+    [property: JsonPropertyName("through")] DateOnly Through,
+    [property: JsonPropertyName("current_streak")] int CurrentStreak,
+    [property: JsonPropertyName("longest_streak")] int LongestStreak,
+    [property: JsonPropertyName("target_quantity")] int TargetQuantity);
+
+public interface IHabitStreakQuery
+{
+    Task<HabitLogResult> GetStreakAsync(Guid ownerId, Guid habitId, DateOnly through, CancellationToken ct);
 }

@@ -503,6 +503,14 @@ class Spec01Contracts(unittest.TestCase):
         self.assertFalse(body["additionalProperties"])
         self.assertEqual(body["properties"]["status"]["enum"], ["done", "skipped"])
         self.assertEqual(body["properties"]["quantity"]["maximum"], 1000)
+        streak = api["paths"]["/habits/{id}/streak"]["get"]
+        self.assertEqual(set(streak["responses"]), {"200", "400", "401", "404", "422"})
+        streak_params = {parameter["name"]: parameter for parameter in streak["parameters"]}
+        self.assertEqual(set(streak_params), {"id", "through"})
+        self.assertTrue(streak_params["through"]["required"])
+        streak_schema = api["components"]["schemas"]["HabitStreak"]
+        self.assertEqual(set(streak_schema["required"]),
+                         {"habit_id", "through", "current_streak", "longest_streak", "target_quantity"})
         log = api["components"]["schemas"]["HabitLog"]
         self.assertEqual(set(log["required"]),
                          {"id", "habit_id", "log_date", "quantity", "status", "version",

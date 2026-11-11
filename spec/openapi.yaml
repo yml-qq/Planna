@@ -713,6 +713,24 @@ paths:
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
+  /habits/{id}/streak:
+    get:
+      tags: [Habits]
+      operationId: getHabitStreak
+      description: Consecutive-day summary through an explicit local date. A day counts only when its log is status=done and quantity >= target_quantity; skipped or below-target days break the streak; only dates on or before `through` are considered. No holiday or pause exceptions are applied.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: through, in: query, required: true, schema: {type: string, format: date}}
+      responses:
+        '200':
+          description: Current and longest streak through the given date
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HabitStreak'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /habits/{id}/logs/{date}:
     put:
       tags: [Habits]
@@ -1787,6 +1805,16 @@ components:
         version: {type: integer, minimum: 1}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+    HabitStreak:
+      type: object
+      additionalProperties: false
+      required: [habit_id, through, current_streak, longest_streak, target_quantity]
+      properties:
+        habit_id: {type: string, format: uuid}
+        through: {type: string, format: date}
+        current_streak: {type: integer, minimum: 0}
+        longest_streak: {type: integer, minimum: 0}
+        target_quantity: {type: integer, minimum: 1}
     HabitPatch:
       type: object
       additionalProperties: false

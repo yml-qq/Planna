@@ -80,6 +80,7 @@
 | 67 | `docs/67-DESK-01H.md` | 网络恢复同步、release 构建与桌面发布清单 |
 | 68 | `docs/68-HAB-01A.md` | 习惯 CRUD：schedule 校验、版控与幂等 |
 | 69 | `docs/69-HAB-01B.md` | 打卡日志：同日唯一、补签与窗口查询 |
+| 70 | `docs/70-HAB-01C.md` | 连续天数规则与 streak 查询 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -16,7 +16,26 @@ public static class HabitEndpoints
         group.MapDelete("/{id}", Delete).WithName("DeleteHabit");
         group.MapPut("/{id}/logs/{date}", UpsertLog).WithName("UpsertHabitLog");
         group.MapGet("/{id}/logs", ListLogs).WithName("ListHabitLogs");
+        group.MapGet("/{id}/streak", GetStreak).WithName("GetHabitStreak");
         return app;
+    }
+
+    private static async Task<IResult> GetStreak(HttpContext http, string id, IHabitStreakQuery query,
+        CancellationToken ct)
+    {
+        if (!Guid.TryParse(id, out var habitId) || habitId == Guid.Empty)
+            return Error(http, 400, "INVALID_HABIT_ID");
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryDate(http, "through", out var through)) return Error(http, 400, "INVALID_DATE");
+        var result = await query.GetStreakAsync(owner, habitId, through, ct);
+        return result.Status switch
+        {
+            HabitLogStatus.Ok => TypedResults.Ok(result.Streak),
+            HabitLogStatus.NotFound => Error(http, 404, result.Code!),
+            HabitLogStatus.Invalid => Error(http, 422, result.Code!),
+            HabitLogStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static async Task<IResult> UpsertLog(HttpContext http, string id, string date,
