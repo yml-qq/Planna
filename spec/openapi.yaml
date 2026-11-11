@@ -381,23 +381,30 @@ paths:
     get:
       tags: [Tasks]
       operationId: listTasks
+      description: List the authenticated owner's non-deleted tasks using stable descending created_at/id keyset pagination. Soft-deleted tasks are omitted. The optional list_id filter must reference an owned, non-deleted list; the optional status filter accepts todo/in_progress/done/archived. The cursor is opaque and must be passed back unchanged.
       parameters:
-        - {name: cursor, in: query, schema: {type: string}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
-        - {name: list_id, in: query, schema: {type: string, format: uuid}}
-        - {name: status, in: query, schema: {type: string, enum: [todo, in_progress, done, archived]}}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+        - name: cursor
+          in: query
+          schema: {type: string}
+          description: Opaque next_cursor from the preceding page.
+        - name: list_id
+          in: query
+          schema: {type: string, format: uuid}
+        - name: status
+          in: query
+          schema: {type: string, enum: [todo, in_progress, done, archived]}
       responses:
         '200':
           description: Paged tasks
           content:
             application/json:
-              schema:
-                type: object
-                required: [items, next_cursor]
-                properties:
-                  items: {type: array, items: {$ref: '#/components/schemas/Task'}}
-                  next_cursor: {type: [string, 'null']}
+              schema: {$ref: '#/components/schemas/TaskPage'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
     post:
       tags: [Tasks]
       operationId: createTask
@@ -818,6 +825,13 @@ components:
         completed_at: {type: [string, 'null'], format: date-time}
         version: {type: integer, minimum: 1}
         deleted_at: {type: [string, 'null'], format: date-time}
+    TaskPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Task'}}
+        next_cursor: {type: [string, 'null'], description: Null when no further pages exist.}
     CreateTask:
       type: object
       additionalProperties: false

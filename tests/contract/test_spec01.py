@@ -151,6 +151,25 @@ class Spec01Contracts(unittest.TestCase):
                 self.assertIn(status, operation["responses"])
         self.assertIn("404", api["paths"]["/auth/devices/{id}/revoke"]["post"]["responses"])
 
+    def test_task_read_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        listing = api["paths"]["/tasks"]["get"]
+        self.assertEqual({p["name"] for p in listing["parameters"]},
+                         {"limit", "cursor", "list_id", "status"})
+        self.assertEqual(set(listing["responses"]), {"200", "400", "401", "404"})
+        page = listing["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        self.assertEqual(page, "#/components/schemas/TaskPage")
+        schema = api["components"]["schemas"]["TaskPage"]
+        self.assertEqual(set(schema["required"]), {"items", "next_cursor"})
+        self.assertEqual(schema["properties"]["items"]["items"]["$ref"], "#/components/schemas/Task")
+        self.assertEqual(schema["properties"]["next_cursor"]["type"], ["string", "null"])
+        params = {p["name"]: p for p in listing["parameters"]}
+        self.assertEqual(params["limit"]["schema"]["minimum"], 1)
+        self.assertEqual(params["limit"]["schema"]["maximum"], 200)
+        self.assertEqual(params["limit"]["schema"]["default"], 50)
+        self.assertEqual(params["list_id"]["schema"]["format"], "uuid")
+        self.assertEqual(params["status"]["schema"]["enum"], ["todo", "in_progress", "done", "archived"])
+
 
 if __name__ == "__main__":
     unittest.main()

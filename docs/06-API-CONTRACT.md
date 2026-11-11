@@ -65,6 +65,8 @@
 
 `AUTH-06` 实现 `GET /auth/devices`、`POST /auth/devices/{id}/revoke` 与 `POST /auth/logout`。列表只返回 JWT `sub` 对应的活跃会话，按 `created_at,id` 降序游标分页，默认 50、最多 200，包含 `version` 和 `is_current`；无效游标返回 `400`。撤销和退出必须带稳定 UUID `Idempotency-Key` 与强格式 `If-Match: "<version>"`，版本来自列表。跨 owner 的目标返回 `404`；旧版本或不同键重复撤销返回 `409`；相同键重复撤销指定设备返回 `204`。当前设备退出后其 JWT 立即失效，因此同一 JWT 重试退出返回 `401`；客户端应将 `204` 或随后 `401` 都视为本地退出完成，并清除本机凭据。服务端不接受请求体 `user_id`。详见 `36-AUTH-06.md`。
 
+`TASK-READ-01` 实现 `GET /tasks`。列表只返回 JWT `sub` 对应的未软删任务，按 `created_at,id` 降序游标分页，默认 50、最多 200；游标不透明，客户端原样传回，非法 `limit`/`cursor`/`list_id`/`status` 返回 `400`。可选 `list_id` 只接受当前 owner 未删除的清单，否则 `404 LIST_NOT_FOUND`；可选 `status` 限 `todo/in_progress/done/archived`。响应为 `items + next_cursor`，`next_cursor` 为 `null` 表示没有更多页；列表不是时间点快照，翻页期间的新写入可能出现在更早的页。详见 `37-TASK-READ-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

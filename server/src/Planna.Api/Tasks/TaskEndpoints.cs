@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Planna.Application.Tasks;
 
@@ -7,9 +8,48 @@ public static class TaskEndpoints
 {
     public static IEndpointRouteBuilder MapTaskEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGroup("/tasks").WithTags("Tasks").RequireAuthorization()
-            .MapPost("", CreateTask).WithName("CreateTask");
+        var group = app.MapGroup("/tasks").WithTags("Tasks").RequireAuthorization();
+        group.MapPost("", CreateTask).WithName("CreateTask");
+        group.MapGet("", ListTasks).WithName("ListTasks");
         return app;
+    }
+
+    private static async Task<IResult> ListTasks(HttpContext http, ITaskReadQuery query, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+
+        var limit = 50;
+        if (http.Request.Query.TryGetValue("limit", out var rawLimit) &&
+            (rawLimit.Count != 1 || !int.TryParse(rawLimit[0], NumberStyles.None,
+                CultureInfo.InvariantCulture, out limit) || limit is < 1 or > 200))
+            return Error(http, 400, "INVALID_LIMIT");
+
+        TaskPageCursor? cursor = null;
+        if (http.Request.Query.TryGetValue("cursor", out var rawCursor) &&
+            (rawCursor.Count != 1 || !TaskPageCursor.TryDecode(rawCursor[0], out cursor)))
+            return Error(http, 400, "INVALID_CURSOR");
+
+        Guid? listId = null;
+        if (http.Request.Query.TryGetValue("list_id", out var rawList))
+        {
+            if (rawList.Count != 1 || !Guid.TryParse(rawList[0], out var parsedList) || parsedList == Guid.Empty)
+                return Error(http, 400, "INVALID_LIST_ID");
+            listId = parsedList;
+        }
+
+        string? status = null;
+        if (http.Request.Query.TryGetValue("status", out var rawStatus))
+        {
+            if (rawStatus.Count != 1 || rawStatus[0] is not ("todo" or "in_progress" or "done" or "archived"))
+                return Error(http, 400, "INVALID_STATUS");
+            status = rawStatus[0];
+        }
+
+        var result = await query.ListAsync(owner, cursor, limit, listId, status, ct);
+        return result.Status == TaskReadStatus.Ok
+            ? TypedResults.Ok(result.Page)
+            : Error(http, 404, "LIST_NOT_FOUND");
     }
 
     private static async Task<IResult> CreateTask(

@@ -47,6 +47,7 @@
 | 34 | `docs/34-AUTH-04.md` | 登录验证码申请的 IP/设备限流与代理边界 |
 | 35 | `docs/35-AUTH-05.md` | 验证码校验失败的跨邮箱 IP/设备限流 |
 | 36 | `docs/36-AUTH-06.md` | 设备会话列表、版本化撤销与当前设备退出 |
+| 37 | `docs/37-TASK-READ-01.md` | 任务分页读取 API、owner 过滤与游标分页 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
@@ -59,7 +60,7 @@
 | - | `prompts/*.md` | 后端、同步、AI、桌面、Android、iOS 开发 Prompt |
 | - | `examples/` | 请求与同步示例 |
 | - | `tests/contract/` | SPEC-01 OpenAPI/Schema/合成样例静态契约检查 |
-| - | `server/` | .NET 10 迁移工程、任务创建与认证 API、邮件 Worker、生成 SQL 和数据库冒烟检查；其他业务服务仍待实现 |
+| - | `server/` | .NET 10 迁移工程、任务创建与分页读取 API、认证 API、邮件 Worker、生成 SQL 和数据库冒烟检查；其他业务服务仍待实现 |
 
 ## 02. 产品边界：必须遵守
 

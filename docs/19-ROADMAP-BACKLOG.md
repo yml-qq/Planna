@@ -12,9 +12,10 @@
 | E01 | INFRA-01 | .NET solution/CI/Compose/health | E00 | clean build |
 | E02 | AUTH-01 | 用户/设备/refresh token | E01 | session tests |
 | E03 | DATA-01 | EF Core schema/migrations/索引 + Dapper 查询契约 | E01 | 空库迁移和查询集成测试 |
-| E04 | TASK-01 | List CRUD + 权限 | E02,E03 | owner tests |
-| E04 | TASK-02 | Task CRUD/完成/删除 | TASK-01 | state tests |
-| E04 | TASK-03 | Tags/Steps/查询 | TASK-02 | filter tests |
+| E04 | TASK-01 | Task 创建写入 `POST /tasks` + owner 权限 + 幂等（已交付，见 `30-TASK-01.md`） | E02,E03 | owner tests |
+| E04 | TASK-READ-01 | Task 分页读取 `GET /tasks`（owner 过滤 + 游标分页） | TASK-01 | pagination tests |
+| E04 | TASK-02 | Task 更新/完成/软删 | TASK-READ-01 | state tests |
+| E04 | TASK-03 | List CRUD + Tags/Steps/查询 | TASK-02 | filter tests |
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-02 | push/outbox/幂等 | SYNC-01,TASK-02 | replay tests |
 | E05 | SYNC-03 | pull/bootstrap/conflict | SYNC-02 | data-loss tests |
@@ -37,6 +38,8 @@
 | E11 | PRIV-01 | 数据导出与账号删除（V1.0） | AUTH-01,SYNC-03 | 导出/删除/离线设备回连测试 |
 | E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
+
+E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03`。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`），先于更新/完成/软删（`TASK-02`）交付。
 
 ## 3. V1.0 交付范围
 
