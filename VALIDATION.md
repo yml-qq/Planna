@@ -118,3 +118,10 @@
 - `spec/openapi.yaml` 补齐 `docs/06` 总览中缺失的 `/lists/{id}` get/patch/delete 路径，并为 `POST /lists` 增加 `400/401` 与 `additionalProperties: false`；契约测试增至 12 项。
 - 首轮 CI 因冒烟在「缺幂等键」用例误传有效 key 而失败，修正后通过；最终 [PostgreSQL 18 CI 运行 43047563939](https://github.com/yml-qq/Planna/actions/runs/43047563939) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、id/键/If-Match/名称错误、跨 owner 404、归档清单重命名、非空清单与 inbox 删除保护、幂等重放与换键冲突、版本冲突 details、软删 tombstone 与 revision/变更/幂等记录原子性、删除账号 401。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过，12 项 Python 静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库；本切片无 schema 变更、无新迁移。
+
+## TASK-TAG-01A 标签 CRUD 检查（2026-11-11）
+
+- 实现 `GET/POST /tags` 与 `GET/PATCH/DELETE /tags/{id}`：只返回 JWT `sub` 的未软删标签；`POST` 名称在 owner 内大小写不敏感唯一（软删后可重建同名），同键重放原 `201`、ID/名称冲突 `409 TAG_ID_CONFLICT`/`TAG_NAME_CONFLICT`；`PATCH` 支持改名/改色与 `null` 清空 color，版本化；`DELETE` 软删写 `sync_changes(entity_type='tag')` tombstone。所有标签写入沿用 owner 时钟行锁串行化并原子写 revision/`sync_changes`/`client_mutations`；读取走独立 Dapper 查询，写入为 EF Core 服务。
+- `spec/openapi.yaml` 新增 `/tags` 与 `/tags/{id}` 路径及 `Tag` schema（原机器契约缺失，按 `docs/02` F02 的 name/color 语义补齐）；契约测试增至 13 项。本切片无 schema 变更、无新迁移。
+- 首轮 CI 在应用启动阶段失败：`TagPatch` 同时使用自定义 `JsonConverter` 与 `[JsonUnmappedMemberHandling]`，STJ 在 kind=None 的转换器类型上抛 `Invalid JsonTypeInfo operation`；移除该特性（转换器已拒绝未知字段）后通过。最终 [PostgreSQL 18 CI 运行 43050992171](https://github.com/yml-qq/Planna/actions/runs/43050992171) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、id/键/If-Match/名称/颜色错误、跨 owner 404、大小写不敏感重名冲突、幂等重放与换键冲突、版本冲突 details、颜色清空、软删 tombstone 与 revision 完整性、删除账号 401。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、13 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。任务标签关联与按标签过滤留待 `TASK-TAG-01B`。
