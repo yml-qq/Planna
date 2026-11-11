@@ -41,6 +41,10 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.OwnerId).HasColumnName("owner_id");
+            e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.Kind).HasColumnName("kind");
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.ArchivedAt).HasColumnName("archived_at");
             e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
         });
         model.Entity<MutationRow>(e =>
@@ -97,6 +101,10 @@ public sealed class TaskListRow
 {
     public Guid Id { get; set; }
     public Guid OwnerId { get; set; }
+    public string Name { get; set; } = "";
+    public string Kind { get; set; } = "custom";
+    public long Version { get; set; } = 1;
+    public DateTimeOffset? ArchivedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
 }
 

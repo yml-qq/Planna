@@ -215,6 +215,34 @@ class Spec01Contracts(unittest.TestCase):
         reopen = api["paths"]["/tasks/{id}/reopen"]["post"]
         self.assertIn("NOT_COMPLETED", reopen["description"])
 
+    def test_list_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        listing = api["paths"]["/lists"]["get"]
+        self.assertEqual(set(listing["responses"]), {"200", "401"})
+        items = listing["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["items"]["items"]
+        self.assertEqual(items["$ref"], "#/components/schemas/TaskList")
+        create = api["paths"]["/lists"]["post"]
+        self.assertEqual(set(create["responses"]), {"201", "400", "401", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+        body = create["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(set(body["required"]), {"id", "name"})
+        detail = api["paths"]["/lists/{id}"]
+        self.assertEqual(set(detail["get"]["responses"]), {"200", "400", "401", "404"})
+        patch = detail["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, patch["parameters"])
+        patch_body = patch["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(patch_body["required"]), {"expected_version", "patch"})
+        self.assertEqual(set(patch_body["properties"]["patch"]["required"]), {"name"})
+        delete = detail["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409", "422"})
+        self.assertIn("LIST_NOT_EMPTY", delete["description"])
+        self.assertIn("LIST_INBOX_PROTECTED", delete["description"])
+        schema = api["components"]["schemas"]["TaskList"]
+        self.assertEqual(set(schema["required"]), {"id", "name", "kind", "version"})
+        self.assertEqual(schema["properties"]["kind"]["enum"], ["inbox", "custom"])
+
 
 if __name__ == "__main__":
     unittest.main()

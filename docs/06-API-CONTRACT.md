@@ -71,6 +71,8 @@
 
 `TASK-COMPLETE-01` 实现 `POST /tasks/{id}/complete` 与 `POST /tasks/{id}/reopen`。两者必须带 UUID `Idempotency-Key`，body 为 `{expected_version}`（complete 另有可空 `occurrence_id` 与 `completed_at`）。普通任务 complete 由 `todo/in_progress` 变为 `done`；`completed_at` 缺失取服务器时间，早于创建时间或晚于当前时间会被受信时间修正（钳制）。已完成任务再次 complete 返回 `409 ALREADY_COMPLETED`，归档任务返回 `422 INVALID_TASK_STATE`；循环任务必须按 TIME-01 的 occurrence 语义完成，本切片返回 `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，普通任务携带 `occurrence_id` 返回 `422 INVALID_OCCURRENCE`。reopen 由 `done` 回到 `todo` 并清空 `completed_at`，未完成任务返回 `409 NOT_COMPLETED`。两者均版本化（`409 VERSION_CONFLICT`）且同键重放原响应。详见 `39-TASK-COMPLETE-01.md`。
 
+`TASK-LIST-01` 实现 `GET/POST /lists` 与 `GET/PATCH/DELETE /lists/{id}`。列表只返回 JWT `sub` 对应的未软删清单（含 inbox 与归档清单），响应为 `items` 数组（`id/name/kind/version`）。`POST` 必须带 UUID `Idempotency-Key`，body 为 `{id, name}`，服务端固定 `kind=custom`（inbox 只由注册流程建立），重名允许；同键重放原 `201`，换键复用或 ID 冲突返回 `409`。`PATCH` 只允许 `{expected_version, patch:{name}}` 重命名（含归档清单），版本不符返回 `409 VERSION_CONFLICT`。`DELETE` 必须带 `Idempotency-Key` 与 `If-Match: "vN"`，软删写 tombstone；清单内仍有未软删任务时返回 `409 LIST_NOT_EMPTY`，inbox 返回 `422 LIST_INBOX_PROTECTED`，相同键重试返回 `204`。所有清单写入按 owner 时钟行锁串行化并写 `sync_changes(entity_type='list')`。详见 `40-TASK-LIST-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

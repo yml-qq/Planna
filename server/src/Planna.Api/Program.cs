@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Planna.Application.Tasks;
 using Planna.Application.Identity;
 using Planna.Api.Identity;
+using Planna.Api.Lists;
 using Planna.Api.Tasks;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
@@ -56,6 +57,10 @@ builder.Services.AddScoped<IUpdateTask, TaskUpdateService>();
 builder.Services.AddScoped<IDeleteTask, TaskDeleteService>();
 builder.Services.AddScoped<ICompleteTask, TaskCompleteService>();
 builder.Services.AddScoped<IReopenTask, TaskReopenService>();
+builder.Services.AddScoped<ITaskListReadQuery>(_ => new TaskListQuery(connection));
+builder.Services.AddScoped<ICreateTaskList, ListCreateService>();
+builder.Services.AddScoped<IUpdateTaskList, ListUpdateService>();
+builder.Services.AddScoped<IDeleteTaskList, ListDeleteService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -128,6 +133,7 @@ app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));
 app.MapTaskEndpoints();
 app.MapAuthEndpoints();
 app.MapDeviceEndpoints();
+app.MapListEndpoints();
 app.Run();
 
 public partial class Program;

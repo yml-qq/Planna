@@ -341,6 +341,7 @@ paths:
     get:
       tags: [Lists]
       operationId: listTaskLists
+      description: All non-deleted lists of the authenticated owner, including the inbox and archived lists, ordered by sort_order then id.
       responses:
         '200':
           description: Lists for current user
@@ -357,6 +358,7 @@ paths:
     post:
       tags: [Lists]
       operationId: createTaskList
+      description: Create a custom list; the server always sets kind=custom because the inbox is only created during registration. Duplicate names are allowed. The same idempotency key replays the original 201.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -365,6 +367,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [id, name]
               properties:
                 id: {type: string, format: uuid}
@@ -375,6 +378,74 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/TaskList'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /lists/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      tags: [Lists]
+      operationId: getTaskList
+      description: Return one owned, non-deleted list; foreign or soft-deleted lists return 404.
+      responses:
+        '200':
+          description: List
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskList'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    patch:
+      tags: [Lists]
+      operationId: updateTaskList
+      description: Rename an owned non-deleted list (archived lists included) with a version check. A stale expected_version returns 409 with error.details containing entity_id, server_version and changed_fields. The same idempotency key replays the original response.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, patch]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                patch:
+                  type: object
+                  additionalProperties: false
+                  required: [name]
+                  properties:
+                    name: {type: string, minLength: 1, maxLength: 120}
+      responses:
+        '200':
+          description: Renamed list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskList'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Lists]
+      operationId: deleteTaskList
+      description: Soft-delete an owned empty non-deleted list with a strong If-Match version. Lists still containing non-deleted tasks return 409 LIST_NOT_EMPTY and the inbox returns 422 LIST_INBOX_PROTECTED. Writes deleted_at, bumps version and records a sync_changes op=delete tombstone in one transaction; the same idempotency key replays as 204.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        '204': {description: Soft-deleted list or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
   /tasks:

@@ -16,7 +16,8 @@
 | E04 | TASK-READ-01 | Task 分页读取 `GET /tasks`（owner 过滤 + 游标分页，已交付） | TASK-01 | pagination tests |
 | E04 | TASK-UPDATE-01 | Task 详情/更新/软删（`GET/PATCH/DELETE /tasks/{id}`，版本化 + 幂等） | TASK-READ-01 | state tests |
 | E04 | TASK-COMPLETE-01 | Task 完成/撤销完成（已交付，见 `39-TASK-COMPLETE-01.md`） | TASK-UPDATE-01 | state tests |
-| E04 | TASK-03 | List CRUD + Tags/Steps/查询 | TASK-COMPLETE-01 | filter tests |
+| E04 | TASK-LIST-01 | List CRUD（`GET/POST /lists` + `GET/PATCH/DELETE /lists/{id}`，owner 权限 + 幂等） | TASK-COMPLETE-01 | owner tests |
+| E04 | TASK-TAG-01 | Tags/Steps/查询 | TASK-LIST-01 | filter tests |
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-02 | push/outbox/幂等 | SYNC-01,TASK-02 | replay tests |
 | E05 | SYNC-03 | pull/bootstrap/conflict | SYNC-02 | data-loss tests |
@@ -40,7 +41,7 @@
 | E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
 
-E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03`。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成）。
+E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03` 后拆分为 `TASK-LIST-01`（清单 CRUD）与 `TASK-TAG-01`（Tags/Steps/查询）。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成，`39-TASK-COMPLETE-01.md`）。
 
 ## 3. V1.0 交付范围
 
