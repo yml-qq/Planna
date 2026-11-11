@@ -1,6 +1,6 @@
 # 38｜TASK-UPDATE-01：任务详情、版本化更新与软删
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 TASK-UPDATE-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43034113302](https://github.com/yml-qq/Planna/actions/runs/43034113302) 已通过。
 
 ## 范围与验收
 

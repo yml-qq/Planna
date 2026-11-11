@@ -99,3 +99,9 @@
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过，9 项 Python 静态契约测试与 OpenAPI 3.1 校验通过。
 - [PostgreSQL 18 CI 运行 43022227391](https://github.com/yml-qq/Planna/actions/runs/43022227391) 已通过迁移、构建、格式、静态契约与 HTTP 冒烟：覆盖未认证与已删除账号 401、非法 limit/cursor/list_id/status 与重复参数的 400、跨 owner 与已删除清单过滤的 404、软删与他人任务不泄漏、`limit=1` 全量遍历不重不漏且严格降序、默认与 `limit=200` 边界、status/list_id 过滤与过滤+游标组合、`version/completed_at/due_at/due_local_date/estimate_minutes` 投影。
 - 本会话没有 `planna_db_dev` 连接信息，第八条迁移未在开发库应用；上线前需按 `docs/37-TASK-READ-01.md` 先迁移后发布。未在开发库插入合成数据或查询业务记录。
+
+## TASK-UPDATE-01 任务详情、更新与软删检查（2026-11-11）
+
+- 实现 `GET/PATCH/DELETE /tasks/{id}`：单条读取走 Dapper；`PATCH` 支持 `{expected_version, patch}` 版本化更新（未列字段保持、可空字段 `null` 清空、合并后按创建规则校验），版本不符返回 `409 VERSION_CONFLICT` 且 `error.details` 含 `entity_id`/`server_version`/`changed_fields`，同键重放原响应、换键复用返回 `409 IDEMPOTENCY_KEY_REUSED`；`DELETE` 要求 `Idempotency-Key` 与 `If-Match: "vN"`，软删写 `deleted_at + version+1` 与 `sync_changes(op='delete')` tombstone。所有写入沿用 owner 同步时钟行锁串行化并原子写 revision/`sync_changes`/`client_mutations`。本切片无 schema 变更、无新迁移。
+- 冒烟测试首两轮 CI 因测试辅助方法的资源生命周期缺陷失败（发送请求后过早释放 `HttpRequestMessage` 内容、返回 `JsonDocument` 已释放的 `JsonElement`），已修复并推送；最终 [PostgreSQL 18 CI 运行 43034113302](https://github.com/yml-qq/Planna/actions/runs/43034113302) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、id/参数/键/If-Match 错误、跨 owner 与已软删 404、null 清空、422 校验、幂等重放与换键冲突、并发更新串行化、软删 tombstone 与 revision/变更/幂等记录的原子性、删除账号后 401。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过，10 项 Python 静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库；本会话没有 `planna_db_dev` 连接信息，开发库未应用变更（本切片无迁移）。
