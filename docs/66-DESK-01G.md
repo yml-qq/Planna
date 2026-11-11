@@ -1,6 +1,6 @@
 # 66｜DESK-01G：后台同步调度与服务端登出撤销
 
-状态：代码已实现；本地 `pnpm test`（14 项）、`pnpm build`、`cargo fmt/clippy/check` 通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01G 小节。安装包/签名、真机冒烟与网络恢复触发属 `DESK-01H`。
+状态：代码已实现；本地 `pnpm test`（14 项）、`pnpm build`、`cargo fmt/clippy/check` 通过；[Desktop core 43111436820](https://github.com/yml-qq/Planna/actions/runs/43111436820)（三个作业）与 [Server integration 43111436800](https://github.com/yml-qq/Planna/actions/runs/43111436800) 均 **success**。安装包/签名、真机冒烟与网络恢复触发属 `DESK-01H`。
 
 ## 范围与验收
 

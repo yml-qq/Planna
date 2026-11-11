@@ -298,3 +298,11 @@
 - 前端测试增至 **12 项**（新增 6 项会话：验证码请求、登录与 `3_540_000ms` 提前刷新、定时刷新轮换 token、登出取消、启动恢复成功/失败、同步错误），`pnpm build`（vue-tsc 严格检查 + vite）通过；无 Rust/服务端契约变更。
 - [Desktop core 43109615757](https://github.com/yml-qq/Planna/actions/runs/43109615757)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43109615758](https://github.com/yml-qq/Planna/actions/runs/43109615758) 均 **success**。
 - 未连接生产库、未提交凭据；后台/网络恢复自动调度、服务端登出撤销、安装包签名与真机冒烟留待 `DESK-01G`。
+
+## DESK-01G 后台同步与登出撤销检查（2026-11-12）
+
+- 前端：登录/恢复后按默认 5 分钟启动周期同步（`scheduleInterval` 可注入），登出/恢复失败取消，busy 时跳过，`autoSync:false` 可关闭；`signOut(baseUrl, token)` 有 token 调 `sign_out_server`、无 token 调 `sign_out_local`。
+- Rust 外壳：新增 `sign_out_server`（`GET /auth/devices?limit=50` 找 `is_current` → `POST /auth/devices/{id}/revoke` + `If-Match: "v{version}"` + 幂等键 → 清 refresh token；无当前会话仅清本地）。
+- 前端测试增至 **14 项**（新增后台同步创建/触发/登出取消、禁用后台同步），`pnpm build` 通过；`cargo fmt/clippy/check` 通过；无服务端契约变更。
+- [Desktop core 43111436820](https://github.com/yml-qq/Planna/actions/runs/43111436820)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43111436800](https://github.com/yml-qq/Planna/actions/runs/43111436800) 均 **success**。
+- 未连接生产库、未提交凭据；`tauri build` 安装包/签名、网络恢复触发与真机窗口冒烟留待 `DESK-01H`。
