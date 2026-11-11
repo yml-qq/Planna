@@ -27,9 +27,16 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
         var previous = await db.Mutations.AsNoTracking()
             .SingleOrDefaultAsync(x => x.OwnerId == ownerId && x.MutationId == mutationId, ct);
         if (previous is not null)
-            return previous.RequestHash == hash
-                ? new(CompleteTaskStatus.Replayed, JsonSerializer.Deserialize<TaskReadView>(previous.Response))
-                : new(CompleteTaskStatus.Conflict, Code: "IDEMPOTENCY_KEY_REUSED");
+        {
+            if (previous.RequestHash != hash)
+                return new(CompleteTaskStatus.Conflict, Code: "IDEMPOTENCY_KEY_REUSED");
+            using var stored = JsonDocument.Parse(previous.Response);
+            return stored.RootElement.TryGetProperty("original_local_start", out _)
+                ? new(CompleteTaskStatus.Replayed,
+                    Occurrence: JsonSerializer.Deserialize<OccurrenceView>(previous.Response))
+                : new(CompleteTaskStatus.Replayed,
+                    JsonSerializer.Deserialize<TaskReadView>(previous.Response));
+        }
 
         var row = await db.Tasks.AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == taskId && x.OwnerId == ownerId && x.DeletedAt == null, ct);
