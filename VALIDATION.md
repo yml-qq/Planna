@@ -267,5 +267,5 @@
 - 新增 Vue 3 + TypeScript + Vite 应用（`apps/desktop/src`）：`DesktopBridge` 边界（`MemoryBridge`/`TauriBridge`/`createBridge`）、任务 store（刷新/新增/错误映射/去重）、最小任务页与浅深色样式；Vitest 6 项单测覆盖桥过滤排序/幂等/校验、store 顺序、空/超长标题不发请求、加载与保存失败不污染状态、重复 id 替换。
 - 本地验证：`pnpm install --frozen-lockfile`（exit 0）、`pnpm test`（6 passed）、`pnpm build`（`vue-tsc -b` 严格类型检查 + `vite build` 成功）；`pnpm-workspace.yaml` 显式忽略 esbuild 安装脚本以免 CI 构建脚本策略失败。
 - `.github/workflows/desktop.yml` 新增 `desktop-web-ui` 作业（ubuntu、pnpm 11、Node 24）。
-- **CI 未完成**：提交 `4e4233a` 触发的 [Desktop core 43095420263](https://github.com/yml-qq/Planna/actions/runs/43095420263) 与 [Server integration 43095420374](https://github.com/yml-qq/Planna/actions/runs/43095420374) 在 GitHub Actions 侧排队约 1 小时且 0 job（同提交的旧运行亦排队），属外部 CI 排队/容量问题，非代码失败；本轮不声称 CI 通过，下一轮补验。
+- **CI 已完成**：早先提交 `4e4233a` 的运行在 GitHub Actions 侧排队近 1 小时后仍 0 job（外部容量问题）；改用最新提交 `1ea4b02` 触发后：[Desktop core 43102722257](https://github.com/yml-qq/Planna/actions/runs/43102722257)（Rust core + Desktop web UI 两个作业）与 [Server integration 43102722183](https://github.com/yml-qq/Planna/actions/runs/43102722183) 均 **success**（`pnpm install --frozen-lockfile`、`pnpm test`、`pnpm build`、`cargo fmt/clippy/test`、服务端迁移与冒烟）。
 - 未连接生产库、未提交凭据；Tauri 外壳与同步调度仍属 `DESK-01C`。
