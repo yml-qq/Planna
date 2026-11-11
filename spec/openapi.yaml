@@ -14,6 +14,7 @@ tags:
   - name: Identity
   - name: Tasks
   - name: Lists
+  - name: Tags
   - name: Sync
   - name: AI
 paths:
@@ -448,6 +449,118 @@ paths:
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tags:
+    get:
+      tags: [Tags]
+      operationId: listTags
+      description: All non-deleted tags of the authenticated owner ordered by name then id.
+      responses:
+        '200':
+          description: Tags for current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/Tag'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Tags]
+      operationId: createTag
+      description: Create a tag. Names are unique per owner case-insensitively among non-deleted tags; recreating a name after soft delete is allowed. The same idempotency key replays the original 201.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [id, name]
+              properties:
+                id: {type: string, format: uuid}
+                name: {type: string, minLength: 1, maxLength: 60}
+                color: {type: [string, 'null'], maxLength: 32}
+      responses:
+        '201':
+          description: Created tag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Tag'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tags/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      tags: [Tags]
+      operationId: getTag
+      description: Return one owned, non-deleted tag; foreign or soft-deleted tags return 404.
+      responses:
+        '200':
+          description: Tag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Tag'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    patch:
+      tags: [Tags]
+      operationId: updateTag
+      description: Rename or recolor an owned non-deleted tag with a version check; omitted fields keep their values and null clears color. A stale expected_version returns 409 with error.details containing entity_id, server_version and changed_fields. Name conflicts return 409 TAG_NAME_CONFLICT.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, patch]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                patch:
+                  type: object
+                  additionalProperties: false
+                  minProperties: 1
+                  properties:
+                    name: {type: string, minLength: 1, maxLength: 60}
+                    color: {type: [string, 'null'], maxLength: 32}
+      responses:
+        '200':
+          description: Updated tag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Tag'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Tags]
+      operationId: deleteTag
+      description: Soft-delete an owned tag with a strong If-Match version; task-tag associations are left for clients to reconcile. Writes deleted_at, bumps version and records a sync_changes op=delete tombstone in one transaction; the same idempotency key replays as 204.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        '204': {description: Soft-deleted tag or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
   /tasks:
     get:
       tags: [Tasks]
@@ -922,6 +1035,15 @@ components:
         id: {type: string, format: uuid}
         name: {type: string}
         kind: {type: string, enum: [inbox, custom]}
+        version: {type: integer, minimum: 1}
+    Tag:
+      type: object
+      additionalProperties: false
+      required: [id, name, version]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 60}
+        color: {type: [string, 'null'], maxLength: 32}
         version: {type: integer, minimum: 1}
     Task:
       type: object

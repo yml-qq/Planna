@@ -51,6 +51,7 @@
 | 38 | `docs/38-TASK-UPDATE-01.md` | 任务详情读取、版本化更新与软删 |
 | 39 | `docs/39-TASK-COMPLETE-01.md` | 任务完成与撤销完成 API、状态机与受信时间修正 |
 | 40 | `docs/40-TASK-LIST-01.md` | 清单 CRUD、owner 权限、软删与 inbox 保护 |
+| 41 | `docs/41-TAG-01A.md` | 标签 CRUD、名称唯一与软删 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -131,3 +131,4 @@ await HttpTaskReadSmoke.RunAsync(connection);
 await HttpTaskWriteSmoke.RunAsync(connection);
 await HttpTaskCompleteSmoke.RunAsync(connection);
 await HttpListSmoke.RunAsync(connection);
+await HttpTagSmoke.RunAsync(connection);

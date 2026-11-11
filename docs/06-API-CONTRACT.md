@@ -73,6 +73,8 @@
 
 `TASK-LIST-01` 实现 `GET/POST /lists` 与 `GET/PATCH/DELETE /lists/{id}`。列表只返回 JWT `sub` 对应的未软删清单（含 inbox 与归档清单），响应为 `items` 数组（`id/name/kind/version`）。`POST` 必须带 UUID `Idempotency-Key`，body 为 `{id, name}`，服务端固定 `kind=custom`（inbox 只由注册流程建立），重名允许；同键重放原 `201`，换键复用或 ID 冲突返回 `409`。`PATCH` 只允许 `{expected_version, patch:{name}}` 重命名（含归档清单），版本不符返回 `409 VERSION_CONFLICT`。`DELETE` 必须带 `Idempotency-Key` 与 `If-Match: "vN"`，软删写 tombstone；清单内仍有未软删任务时返回 `409 LIST_NOT_EMPTY`，inbox 返回 `422 LIST_INBOX_PROTECTED`，相同键重试返回 `204`。所有清单写入按 owner 时钟行锁串行化并写 `sync_changes(entity_type='list')`。详见 `40-TASK-LIST-01.md`。
 
+`TASK-TAG-01A` 实现 `GET/POST /tags` 与 `GET/PATCH/DELETE /tags/{id}`（原机器契约缺失，按 docs/02 F02 的 name/color 定义补齐）。`GET /tags` 只返回 JWT `sub` 的未软删标签，按名称排序。`POST` 带 UUID `Idempotency-Key` 与 `{id, name, color?}`；名称在 owner 内大小写不敏感唯一，软删后可重建同名；同键重放原 `201`，ID/名称冲突 `409 TAG_ID_CONFLICT/TAG_NAME_CONFLICT`，非法 `422 INVALID_TAG`。`PATCH` 为 `{expected_version, patch:{name?, color?}}`，至少一项，`null` 清空 color，版本不符 `409 VERSION_CONFLICT`。`DELETE` 需 `Idempotency-Key` 与 `If-Match: "vN"`，软删写 `sync_changes(entity_type='tag')` tombstone；任务标签关联的清理由客户端按 tombstone 处理。任务打标签与按标签过滤留待 `TASK-TAG-01B`。详见 `41-TAG-01A.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

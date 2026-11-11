@@ -8,6 +8,7 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
     public DbSet<TaskListRow> Lists => Set<TaskListRow>();
     public DbSet<MutationRow> Mutations => Set<MutationRow>();
     public DbSet<SyncChangeRow> Changes => Set<SyncChangeRow>();
+    public DbSet<TagRow> Tags => Set<TagRow>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -71,6 +72,17 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
             e.Property(x => x.Payload).HasColumnName("payload").HasColumnType("jsonb");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
+        model.Entity<TagRow>(e =>
+        {
+            e.ToTable("tags", t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.OwnerId).HasColumnName("owner_id");
+            e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.Color).HasColumnName("color");
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
+        });
     }
 }
 
@@ -128,4 +140,14 @@ public sealed class SyncChangeRow
     public long EntityVersion { get; set; }
     public string Payload { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class TagRow
+{
+    public Guid Id { get; set; }
+    public Guid OwnerId { get; set; }
+    public string Name { get; set; } = "";
+    public string? Color { get; set; }
+    public long Version { get; set; } = 1;
+    public DateTimeOffset? DeletedAt { get; set; }
 }

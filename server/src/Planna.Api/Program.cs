@@ -6,12 +6,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Planna.Application.Tasks;
 using Planna.Application.Identity;
+using Planna.Application.Tags;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
+using Planna.Api.Tags;
 using Planna.Api.Tasks;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
 using Planna.Infrastructure.Tasks;
+using Planna.Infrastructure.Tags;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration["PLANNADB_CONNECTION"]
@@ -61,6 +64,10 @@ builder.Services.AddScoped<ITaskListReadQuery>(_ => new TaskListQuery(connection
 builder.Services.AddScoped<ICreateTaskList, ListCreateService>();
 builder.Services.AddScoped<IUpdateTaskList, ListUpdateService>();
 builder.Services.AddScoped<IDeleteTaskList, ListDeleteService>();
+builder.Services.AddScoped<ITagReadQuery>(_ => new TagQuery(connection));
+builder.Services.AddScoped<ICreateTag, TagCreateService>();
+builder.Services.AddScoped<IUpdateTag, TagUpdateService>();
+builder.Services.AddScoped<IDeleteTag, TagDeleteService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -134,6 +141,7 @@ app.MapTaskEndpoints();
 app.MapAuthEndpoints();
 app.MapDeviceEndpoints();
 app.MapListEndpoints();
+app.MapTagEndpoints();
 app.Run();
 
 public partial class Program;

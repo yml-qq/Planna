@@ -243,6 +243,37 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(schema["required"]), {"id", "name", "kind", "version"})
         self.assertEqual(schema["properties"]["kind"]["enum"], ["inbox", "custom"])
 
+    def test_tag_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        listing = api["paths"]["/tags"]["get"]
+        self.assertEqual(set(listing["responses"]), {"200", "401"})
+        items = listing["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["items"]["items"]
+        self.assertEqual(items["$ref"], "#/components/schemas/Tag")
+        create = api["paths"]["/tags"]["post"]
+        self.assertEqual(set(create["responses"]), {"201", "400", "401", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+        body = create["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(set(body["required"]), {"id", "name"})
+        detail = api["paths"]["/tags/{id}"]
+        self.assertEqual(set(detail["get"]["responses"]), {"200", "400", "401", "404"})
+        patch = detail["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        patch_schema = patch["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(patch_schema["required"]), {"expected_version", "patch"})
+        self.assertEqual(patch_schema["properties"]["patch"]["minProperties"], 1)
+        self.assertIn("TAG_NAME_CONFLICT", patch["description"])
+        delete = detail["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
+        params = {}
+        for p in delete["parameters"]:
+            name = p["$ref"].rsplit("/", 1)[-1] if "$ref" in p else p["name"]
+            params[name] = p
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+        schema = api["components"]["schemas"]["Tag"]
+        self.assertEqual(set(schema["required"]), {"id", "name", "version"})
+        self.assertEqual(schema["properties"]["color"]["type"], ["string", "null"])
+
 
 if __name__ == "__main__":
     unittest.main()
