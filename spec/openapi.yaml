@@ -327,7 +327,7 @@ paths:
     post:
       tags: [Identity]
       operationId: requestAccountDeletion
-      description: Step-up authenticated final confirmation. Atomically disables account and revokes all device sessions.
+      description: Step-up authenticated final confirmation. Requires a fresh account_delete confirmation token from POST /auth/step-up and an explicit acknowledgement of offline devices; on success the account is disabled and every device session is revoked before the response, and the versioned deletion request is recorded for the later cleanup job. The same idempotency key replays the original accepted result; after deletion every retry with an old token returns ACCOUNT_DELETED.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -347,9 +347,11 @@ paths:
           content:
             application/json:
               schema: {$ref: './account-deletion.schema.json'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /lists:
     get:
       tags: [Lists]

@@ -10,6 +10,7 @@ using Planna.Application.Tags;
 using Planna.Application.Sync;
 using Planna.Application.Ai;
 using Planna.Application.Export;
+using Planna.Application.Privacy;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
 using Planna.Api.Me;
@@ -24,6 +25,7 @@ using Planna.Infrastructure.Tasks;
 using Planna.Infrastructure.Tags;
 using Planna.Infrastructure.Ai;
 using Planna.Infrastructure.Export;
+using Planna.Infrastructure.Privacy;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration["PLANNADB_CONNECTION"]
@@ -102,6 +104,9 @@ if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringCompariso
 }
 builder.Services.AddScoped<IAccountExportService>(sp =>
     new AccountExportService(connection, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<IAccountDeletionService>(sp => new AccountDeletionService(
+    sp.GetRequiredService<TaskWriteContext>(), sp.GetRequiredService<IStepUpService>(),
+    sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));

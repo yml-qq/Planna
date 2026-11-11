@@ -66,6 +66,7 @@
 | 53 | `docs/53-PRIV-EXPORT-01.md` | 云端数据导出、快照与 24 小时下载 |
 | 54 | `docs/54-TIME-01D.md` | occurrence 撤销完成、版本与同步记录 |
 | 55 | `docs/55-PRIV-STEPUP-01.md` | 敏感操作邮件复核、短期确认 token |
+| 56 | `docs/56-PRIV-DELETE-01.md` | 账号删除请求、会话撤销与离线设备 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -103,6 +103,8 @@
 
 `PRIV-STEPUP-01` 实现敏感操作复核：`POST /auth/step-up/challenges` 发送 6 位一次性码（只存哈希、10 分钟有效、每账号 15 分钟 3 次、同键重放不重发），`POST /auth/step-up` 校验最新挑战、最多 5 次尝试并返回绑定 owner 与 `account_delete` 用途的 10 分钟 HMAC token；投递走独立租赁重试队列，Worker 负责发送。详见 `55-PRIV-STEPUP-01.md`。
 
+`PRIV-DELETE-01` 实现账号删除请求：`POST /me/deletion-requests` 要求该 step-up token 与 `acknowledge_offline_devices=true`，在同一事务内标记账号不可用、撤销全部设备会话、写 `account_deletion_requests` 与幂等结果，返回 `202` `account-deletion` 契约对象；无效 token `403 STEP_UP_REQUIRED`、ack 缺失 `422`；删除后旧设备认证/同步/导出/重试均返回不可重试 `401 ACCOUNT_DELETED`。详见 `56-PRIV-DELETE-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

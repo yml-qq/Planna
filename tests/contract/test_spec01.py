@@ -444,6 +444,21 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(token["properties"]["confirmation_token"]["minLength"], 16)
         self.assertIn("account-deletion", challenge["description"])
 
+    def test_deletion_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        deletion = api["paths"]["/me/deletion-requests"]["post"]
+        self.assertEqual(set(deletion["responses"]), {"202", "400", "401", "403", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, deletion["parameters"])
+        body = deletion["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"confirmation_token", "acknowledge_offline_devices"})
+        self.assertFalse(body["properties"]["acknowledge_offline_devices"]["const"] is False)
+        schema = json.loads((ROOT / "spec/account-deletion.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(schema["required"]),
+                         {"deletion_request_id", "status", "requested_at", "policy_version"})
+        self.assertEqual(schema["properties"]["status"]["const"], "accepted")
+        response_ref = deletion["responses"]["202"]["content"]["application/json"]["schema"]["$ref"]
+        self.assertEqual(response_ref, "./account-deletion.schema.json")
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

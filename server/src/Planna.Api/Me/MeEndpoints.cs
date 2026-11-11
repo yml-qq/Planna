@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Planna.Application.Export;
+using Planna.Application.Privacy;
 
 namespace Planna.Api.Me;
 
@@ -12,7 +13,30 @@ public static class MeEndpoints
         group.MapGet("/exports", ListExports).WithName("ListAccountExports");
         group.MapGet("/exports/{id}", GetExport).WithName("GetAccountExport");
         group.MapGet("/exports/{id}/download", DownloadExport).WithName("DownloadAccountExport");
+        group.MapPost("/deletion-requests", DeleteAccount).WithName("RequestAccountDeletion");
         return app;
+    }
+
+    private static async Task<IResult> DeleteAccount(HttpContext http, DeleteAccountRequest request,
+        IAccountDeletionService service, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var result = await service.ExecuteAsync(owner, mutation, request, ct);
+        return result.Status switch
+        {
+            DeleteAccountStatus.Accepted or DeleteAccountStatus.Replayed =>
+                TypedResults.Json(result.Response, statusCode: StatusCodes.Status202Accepted),
+            DeleteAccountStatus.StepUpRequired => Error(http, 403, result.Code!),
+            DeleteAccountStatus.AlreadyDeleted => Error(http, 409, result.Code!),
+            DeleteAccountStatus.Unavailable => Error(http, 404, result.Code!),
+            DeleteAccountStatus.Invalid => Error(http, 422, result.Code!),
+            DeleteAccountStatus.Conflict => Error(http, 409, result.Code!),
+            DeleteAccountStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static async Task<IResult> CreateExport(HttpContext http, IAccountExportService service,
