@@ -202,3 +202,10 @@
 - `spec/openapi.yaml` 两个端点补充语义与 400/401/404/422 响应；契约测试增至 22 项。无 schema 变更、无新迁移、无凭据入库。
 - [PostgreSQL 18 CI 运行 43074823842](https://github.com/yml-qq/Planna/actions/runs/43074823842) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、范围/任务校验、冲突与 unplanned、错误快照/token/操作集合拒绝、原子时间块写入、重放、陈旧任务版本、过期计划、跨 owner、删除账号与 revision/变更/审计一致性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、22 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。多操作类型、consent 与配额限流留待后续切片。
+
+## PRIV-EXPORT-01 云端导出检查（2026-11-12）
+
+- 实现 `POST /me/exports`（幂等创建；`REPEATABLE READ` 快照内导出 account/lists/tasks/steps/tags/reminders/time_blocks/ai_consents，`source=cloud`、`pending_mutation_ids=[]`，MVP 同步生成 `ready` job 返回 202）、`GET /me/exports`、`GET /me/exports/{id}`、`GET /me/exports/{id}/download`（仅 owner、ready 且 24h 内；过期 `410 EXPORT_EXPIRED`、未就绪 `409 EXPORT_NOT_READY`、跨 owner `404`）。新增迁移 `202611120009_AccountExportPayload`（`account_exports.payload jsonb`）与审阅 SQL `server/export-migrations.sql`。
+- `spec/openapi.yaml` 补充导出语义与 400/401/404/409/410；契约测试增至 23 项（含 `account-export.schema.json` 引用与 `AccountExportJob` 必填字段）。
+- [PostgreSQL 18 CI 运行 43076494283](https://github.com/yml-qq/Planna/actions/runs/43076494283) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、快照内容（各表数据、排除软删）、同键重放、列表/状态、附件下载内容、跨 owner、过期、未就绪、非法/缺失 id、删除账号，以及导出不推进 revision/不写业务变更。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、23 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。账号删除（PRIV-DELETE-01）、step-up、对象存储与清理任务留待后续切片。
