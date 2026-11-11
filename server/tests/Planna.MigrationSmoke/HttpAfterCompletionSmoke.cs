@@ -87,7 +87,8 @@ internal static class HttpAfterCompletionSmoke
         Check(replay, HttpStatusCode.OK);
         if ((await Occurrences(client, token, t1, "2026-11-12", "2026-11-14")).Count != 1)
             throw new InvalidOperationException("Replay duplicated the generated occurrence.");
-        await AssertCode(await Complete(client, token, t1, Guid.NewGuid(), completeBody),
+        await AssertCode(await Complete(client, token, t1, Guid.NewGuid(),
+            "{\"expected_version\":2,\"occurrence_id\":null,\"completed_at\":\"2026-11-10T02:00:00Z\"}"),
             HttpStatusCode.Conflict, "ALREADY_COMPLETED");
 
         // Reopen, complete again with a later completion date: a second occurrence is appended.
