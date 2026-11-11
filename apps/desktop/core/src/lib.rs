@@ -12,5 +12,5 @@ pub use store::{
 };
 pub use sync::{
     PullChange, PullResponse, PushMutation, PushRequest, PushResponse, PushResult, SyncOutcome,
-    SyncTransport, sync_once,
+    SyncTransport, TransportError, sync_once, sync_with_retry,
 };

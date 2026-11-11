@@ -1,5 +1,6 @@
 use planna_desktop_core::{
-    NewTask, PullChange, PullResponse, PushResponse, PushResult, Store, SyncTransport, sync_once,
+    NewTask, PullChange, PullResponse, PushResponse, PushResult, Store, SyncTransport,
+    TransportError, sync_once, sync_with_retry,
 };
 
 fn task_payload(id: &str, title: &str, version: i64) -> serde_json::Value {
@@ -47,6 +48,8 @@ struct FakeTransport {
     pull_cursors: Vec<Option<String>>,
     fail_push: bool,
     fail_pull: bool,
+    retryable_push_failures: usize,
+    cursor_expired_pulls: usize,
 }
 
 impl FakeTransport {
@@ -58,6 +61,8 @@ impl FakeTransport {
             pull_cursors: Vec::new(),
             fail_push: false,
             fail_pull: false,
+            retryable_push_failures: 0,
+            cursor_expired_pulls: 0,
         }
     }
 }
@@ -66,20 +71,28 @@ impl SyncTransport for FakeTransport {
     fn push(
         &mut self,
         _request: &planna_desktop_core::PushRequest,
-    ) -> Result<PushResponse, String> {
+    ) -> Result<PushResponse, TransportError> {
         self.push_calls += 1;
         if self.fail_push {
-            return Err("offline".to_string());
+            return Err(TransportError::Fatal("offline".to_string()));
+        }
+        if self.retryable_push_failures > 0 {
+            self.retryable_push_failures -= 1;
+            return Err(TransportError::Retryable("network".to_string()));
         }
         Ok(PushResponse {
             results: self.push_results.clone(),
         })
     }
 
-    fn pull(&mut self, cursor: Option<&str>, _limit: i64) -> Result<PullResponse, String> {
+    fn pull(&mut self, cursor: Option<&str>, _limit: i64) -> Result<PullResponse, TransportError> {
         self.pull_cursors.push(cursor.map(str::to_string));
         if self.fail_pull {
-            return Err("offline".to_string());
+            return Err(TransportError::Fatal("offline".to_string()));
+        }
+        if self.cursor_expired_pulls > 0 {
+            self.cursor_expired_pulls -= 1;
+            return Err(TransportError::CursorExpired);
         }
         if self.pull_pages.is_empty() {
             return Ok(page(Vec::new(), cursor.unwrap_or("empty"), false));
@@ -187,7 +200,7 @@ fn transport_failure_keeps_outbox_and_skips_pull() {
     transport.fail_push = true;
     assert_eq!(
         sync_once(&mut store, &mut transport, "device-1", 3),
-        Err("offline".to_string())
+        Err(TransportError::Fatal("offline".to_string()))
     );
     assert_eq!(store.pending_mutations(10).expect("pending").len(), 1);
     assert!(transport.pull_cursors.is_empty());
@@ -270,5 +283,72 @@ fn empty_outbox_still_pulls_and_respects_page_budget() {
     assert_eq!(
         store.cursor_value().expect("cursor"),
         Some("c1".to_string())
+    );
+}
+
+#[test]
+fn retryable_push_failure_retries_with_backoff() {
+    let mut store = store_with_task();
+    let mut transport = FakeTransport::new(vec![accepted("mutation-1")], vec![]);
+    transport.retryable_push_failures = 2;
+    let mut attempts = Vec::new();
+    let outcome = sync_with_retry(&mut store, &mut transport, "device-1", 1, 3, |attempt| {
+        attempts.push(attempt);
+    })
+    .expect("sync");
+    assert_eq!(outcome.pushed, 1);
+    assert_eq!(transport.push_calls, 3);
+    assert_eq!(attempts, vec![0, 1]);
+}
+
+#[test]
+fn fatal_push_failure_is_not_retried() {
+    let mut store = store_with_task();
+    let mut transport = FakeTransport::new(vec![accepted("mutation-1")], vec![]);
+    transport.fail_push = true;
+    let mut attempts = Vec::new();
+    let result = sync_with_retry(&mut store, &mut transport, "device-1", 1, 5, |attempt| {
+        attempts.push(attempt);
+    });
+    assert!(matches!(result, Err(TransportError::Fatal(_))));
+    assert_eq!(transport.push_calls, 1);
+    assert!(attempts.is_empty());
+    assert_eq!(store.pending_mutations(10).expect("pending").len(), 1);
+}
+
+#[test]
+fn cursor_expired_clears_cursor_and_repulls() {
+    let mut store = store_with_task();
+    store.set_cursor_value("old-cursor").expect("cursor");
+    let mut transport = FakeTransport::new(
+        vec![accepted("mutation-1")],
+        vec![page(
+            vec![change("task-a", "A", 1, "upsert")],
+            "fresh",
+            false,
+        )],
+    );
+    transport.cursor_expired_pulls = 1;
+    let outcome = sync_once(&mut store, &mut transport, "device-1", 2).expect("sync");
+    assert_eq!(outcome.pulled, 1);
+    assert_eq!(outcome.cursor.as_deref(), Some("fresh"));
+    assert_eq!(
+        transport.pull_cursors,
+        vec![Some("old-cursor".to_string()), None]
+    );
+    assert_eq!(
+        store.cursor_value().expect("cursor"),
+        Some("fresh".to_string())
+    );
+}
+
+#[test]
+fn repeated_cursor_expiry_is_reported() {
+    let mut store = Store::open_in_memory().expect("store");
+    let mut transport = FakeTransport::new(vec![], vec![]);
+    transport.cursor_expired_pulls = 2;
+    assert_eq!(
+        sync_once(&mut store, &mut transport, "device-1", 1),
+        Err(TransportError::CursorExpired)
     );
 }

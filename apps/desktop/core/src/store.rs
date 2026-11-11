@@ -500,6 +500,12 @@ impl Store {
         Ok(())
     }
 
+    pub fn clear_cursor(&self) -> StoreResult<()> {
+        self.connection
+            .execute("DELETE FROM sync_state WHERE key = 'pull_cursor'", [])?;
+        Ok(())
+    }
+
     pub fn cursor_value(&self) -> StoreResult<Option<String>> {
         self.connection
             .query_row(

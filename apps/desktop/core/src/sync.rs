@@ -4,10 +4,6 @@
 use crate::store::{Change, Store};
 use serde::{Deserialize, Serialize};
 
-fn error(value: impl std::fmt::Display) -> String {
-    value.to_string()
-}
-
 #[derive(Debug, Clone, Serialize)]
 pub struct PushMutation {
     pub mutation_id: String,
@@ -61,10 +57,32 @@ pub struct PullResponse {
     pub has_more: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransportError {
+    /// Network/5xx/429 style failures worth retrying with backoff.
+    Retryable(String),
+    /// The pull cursor is older than the server retention window; the shell must reset it.
+    CursorExpired,
+    /// Authentication or validation failures that need user action.
+    Fatal(String),
+}
+
+impl std::fmt::Display for TransportError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransportError::Retryable(message) => write!(f, "retryable: {message}"),
+            TransportError::CursorExpired => write!(f, "cursor expired"),
+            TransportError::Fatal(message) => write!(f, "fatal: {message}"),
+        }
+    }
+}
+
+impl std::error::Error for TransportError {}
+
 /// The shell provides the network implementation; tests use a deterministic fake.
 pub trait SyncTransport {
-    fn push(&mut self, request: &PushRequest) -> Result<PushResponse, String>;
-    fn pull(&mut self, cursor: Option<&str>, limit: i64) -> Result<PullResponse, String>;
+    fn push(&mut self, request: &PushRequest) -> Result<PushResponse, TransportError>;
+    fn pull(&mut self, cursor: Option<&str>, limit: i64) -> Result<PullResponse, TransportError>;
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
@@ -85,9 +103,11 @@ pub fn sync_once(
     transport: &mut dyn SyncTransport,
     device_id: &str,
     max_pull_pages: usize,
-) -> Result<SyncOutcome, String> {
+) -> Result<SyncOutcome, TransportError> {
     let mut outcome = SyncOutcome::default();
-    let pending = store.pending_mutations(100).map_err(error)?;
+    let pending = store
+        .pending_mutations(100)
+        .map_err(|error| TransportError::Fatal(error.to_string()))?;
     if !pending.is_empty() {
         let mutations = pending
             .iter()
@@ -107,37 +127,53 @@ pub fn sync_once(
         for result in response.results {
             match result.status.as_str() {
                 "accepted" => {
-                    store.remove_mutation(&result.mutation_id).map_err(error)?;
+                    store
+                        .remove_mutation(&result.mutation_id)
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
                     outcome.pushed += 1;
                 }
                 "duplicate" => {
-                    store.remove_mutation(&result.mutation_id).map_err(error)?;
+                    store
+                        .remove_mutation(&result.mutation_id)
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
                     outcome.duplicates += 1;
                 }
                 "conflict" => {
                     store
                         .record_failure(&result.mutation_id, "VERSION_CONFLICT")
-                        .map_err(error)?;
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
                     outcome.conflicts.push(result.mutation_id.clone());
                 }
                 "rejected" => {
                     store
                         .record_failure(&result.mutation_id, "REJECTED")
-                        .map_err(error)?;
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
                     outcome.rejected += 1;
                 }
                 _ => {
                     store
                         .record_failure(&result.mutation_id, "UNKNOWN_STATUS")
-                        .map_err(error)?;
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
                 }
             }
         }
     }
 
     for _ in 0..max_pull_pages {
-        let cursor = store.cursor_value().map_err(error)?;
-        let page = transport.pull(cursor.as_deref(), 200)?;
+        let cursor = store
+            .cursor_value()
+            .map_err(|error| TransportError::Fatal(error.to_string()))?;
+        let page = match transport.pull(cursor.as_deref(), 200) {
+            Ok(page) => page,
+            Err(TransportError::CursorExpired) => {
+                // The server dropped the revision window: restart from the oldest available change.
+                store
+                    .clear_cursor()
+                    .map_err(|error| TransportError::Fatal(error.to_string()))?;
+                transport.pull(None, 200)?
+            }
+            Err(other) => return Err(other),
+        };
         let changes: Vec<Change> = page
             .changes
             .iter()
@@ -154,14 +190,40 @@ pub fn sync_once(
                     .to_string(),
             })
             .collect();
-        let applied = store.apply_pull(&changes).map_err(error)?;
+        let applied = store
+            .apply_pull(&changes)
+            .map_err(|error| TransportError::Fatal(error.to_string()))?;
         outcome.pulled += applied.applied;
         outcome.skipped_stale += applied.skipped_stale;
-        store.set_cursor_value(&page.next_cursor).map_err(error)?;
+        store
+            .set_cursor_value(&page.next_cursor)
+            .map_err(|error| TransportError::Fatal(error.to_string()))?;
         outcome.cursor = Some(page.next_cursor.clone());
         if !page.has_more {
             break;
         }
     }
     Ok(outcome)
+}
+
+/// Retries only retryable transport failures; backoff is injected so tests never sleep.
+pub fn sync_with_retry(
+    store: &mut Store,
+    transport: &mut dyn SyncTransport,
+    device_id: &str,
+    max_pull_pages: usize,
+    max_attempts: u32,
+    mut backoff: impl FnMut(u32),
+) -> Result<SyncOutcome, TransportError> {
+    let mut attempt = 0;
+    loop {
+        match sync_once(store, transport, device_id, max_pull_pages) {
+            Ok(outcome) => return Ok(outcome),
+            Err(TransportError::Retryable(_)) if attempt + 1 < max_attempts => {
+                backoff(attempt);
+                attempt += 1;
+            }
+            Err(other) => return Err(other),
+        }
+    }
 }

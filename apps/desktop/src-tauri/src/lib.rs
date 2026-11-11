@@ -2,10 +2,13 @@ use std::sync::Mutex;
 
 use planna_desktop_core::{
     NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse, Store, StoredTask, SyncOutcome,
-    SyncTransport, sync_once,
+    SyncTransport, TransportError, sync_with_retry,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
+
+const KEYRING_SERVICE: &str = "app.planna.desktop";
+const KEYRING_USER: &str = "refresh-token";
 
 struct AppState {
     store: Mutex<Store>,
@@ -129,26 +132,36 @@ impl HttpTransport {
             client: reqwest::blocking::Client::new(),
         }
     }
+
+    fn classify(status: reqwest::StatusCode) -> TransportError {
+        if status == reqwest::StatusCode::GONE {
+            return TransportError::CursorExpired;
+        }
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS || status.is_server_error() {
+            return TransportError::Retryable(format!("HTTP {}", status.as_u16()));
+        }
+        TransportError::Fatal(format!("HTTP {}", status.as_u16()))
+    }
 }
 
 impl SyncTransport for HttpTransport {
-    fn push(&mut self, request: &PushRequest) -> Result<PushResponse, String> {
+    fn push(&mut self, request: &PushRequest) -> Result<PushResponse, TransportError> {
         let response = self
             .client
             .post(format!("{}/sync/push", self.base_url))
             .bearer_auth(&self.access_token)
             .json(request)
             .send()
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| TransportError::Retryable(error.to_string()))?;
         if !response.status().is_success() {
-            return Err(format!("HTTP {}", response.status().as_u16()));
+            return Err(Self::classify(response.status()));
         }
         response
             .json::<PushResponse>()
-            .map_err(|error| error.to_string())
+            .map_err(|error| TransportError::Fatal(error.to_string()))
     }
 
-    fn pull(&mut self, cursor: Option<&str>, limit: i64) -> Result<PullResponse, String> {
+    fn pull(&mut self, cursor: Option<&str>, limit: i64) -> Result<PullResponse, TransportError> {
         let mut request = self
             .client
             .get(format!("{}/sync/pull", self.base_url))
@@ -157,13 +170,15 @@ impl SyncTransport for HttpTransport {
         if let Some(cursor) = cursor {
             request = request.query(&[("cursor", cursor.to_string())]);
         }
-        let response = request.send().map_err(|error| error.to_string())?;
+        let response = request
+            .send()
+            .map_err(|error| TransportError::Retryable(error.to_string()))?;
         if !response.status().is_success() {
-            return Err(format!("HTTP {}", response.status().as_u16()));
+            return Err(Self::classify(response.status()));
         }
         response
             .json::<PullResponse>()
-            .map_err(|error| error.to_string())
+            .map_err(|error| TransportError::Fatal(error.to_string()))
     }
 }
 
@@ -176,7 +191,139 @@ fn run_sync(
 ) -> Result<SyncOutcome, String> {
     let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let mut transport = HttpTransport::new(base_url, access_token);
-    sync_once(&mut store, &mut transport, &device_id, 10)
+    sync_with_retry(&mut store, &mut transport, &device_id, 10, 3, |attempt| {
+        std::thread::sleep(std::time::Duration::from_millis(
+            500 * 2u64.pow(attempt.min(4)),
+        ));
+    })
+    .map_err(|error| error.to_string())
+}
+
+#[derive(Serialize)]
+struct SessionDto {
+    access_token: String,
+    expires_in: i32,
+}
+
+#[derive(Deserialize)]
+struct AuthTokens {
+    access_token: String,
+    refresh_token: String,
+    expires_in: i32,
+}
+
+fn http_client() -> reqwest::blocking::Client {
+    reqwest::blocking::Client::new()
+}
+
+fn base(base_url: &str) -> String {
+    base_url.trim_end_matches('/').to_string()
+}
+
+fn store_refresh_token(refresh_token: &str) -> Result<(), String> {
+    let entry =
+        keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|error| error.to_string())?;
+    entry
+        .set_password(refresh_token)
+        .map_err(|error| error.to_string())
+}
+
+fn read_refresh_token() -> Result<String, String> {
+    let entry =
+        keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|error| error.to_string())?;
+    entry.get_password().map_err(|_| "NO_SESSION".to_string())
+}
+
+fn clear_refresh_token() {
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
+        let _ = entry.delete_credential();
+    }
+}
+
+#[tauri::command]
+fn request_login_code(
+    base_url: String,
+    email: String,
+    device_id: String,
+) -> Result<String, String> {
+    let response = http_client()
+        .post(format!("{}/auth/login/challenges", base(&base_url)))
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .header("X-Device-Id", device_id)
+        .json(&serde_json::json!({ "email": email }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status().as_u16()));
+    }
+    let body: serde_json::Value = response.json().map_err(|error| error.to_string())?;
+    Ok(body
+        .get("expires_at")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default()
+        .to_string())
+}
+
+#[tauri::command]
+fn login_with_code(
+    base_url: String,
+    email: String,
+    code: String,
+    device_name: String,
+    device_id: String,
+) -> Result<SessionDto, String> {
+    let response = http_client()
+        .post(format!("{}/auth/login", base(&base_url)))
+        .header("X-Device-Id", device_id)
+        .json(&serde_json::json!({
+            "email": email,
+            "code": code,
+            "device_name": device_name,
+            "platform": "windows"
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+        return Err("INVALID_CODE".to_string());
+    }
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status().as_u16()));
+    }
+    let tokens: AuthTokens = response.json().map_err(|error| error.to_string())?;
+    store_refresh_token(&tokens.refresh_token)?;
+    Ok(SessionDto {
+        access_token: tokens.access_token,
+        expires_in: tokens.expires_in,
+    })
+}
+
+#[tauri::command]
+fn restore_session(base_url: String) -> Result<SessionDto, String> {
+    let refresh_token = read_refresh_token()?;
+    let response = http_client()
+        .post(format!("{}/auth/refresh", base(&base_url)))
+        .json(&serde_json::json!({ "refresh_token": refresh_token }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+        clear_refresh_token();
+        return Err("SESSION_EXPIRED".to_string());
+    }
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status().as_u16()));
+    }
+    let tokens: AuthTokens = response.json().map_err(|error| error.to_string())?;
+    store_refresh_token(&tokens.refresh_token)?;
+    Ok(SessionDto {
+        access_token: tokens.access_token,
+        expires_in: tokens.expires_in,
+    })
+}
+
+#[tauri::command]
+fn sign_out_local() -> Result<(), String> {
+    clear_refresh_token();
+    Ok(())
 }
 
 pub fn run() {
@@ -202,7 +349,11 @@ pub fn run() {
             list_tasks,
             create_task,
             pending_mutations,
-            run_sync
+            run_sync,
+            request_login_code,
+            login_with_code,
+            restore_session,
+            sign_out_local
         ])
         .run(tauri::generate_context!())
         .expect("error while running Planna desktop");
