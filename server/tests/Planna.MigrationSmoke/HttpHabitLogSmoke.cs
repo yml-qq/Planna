@@ -136,7 +136,7 @@ internal static class HttpHabitLogSmoke
         await AssertCode(await GetStreak(client, token, Guid.NewGuid(), "2026-11-08"),
             HttpStatusCode.NotFound, "HABIT_NOT_FOUND");
         await AssertCode(await GetStreak(client, foreignToken, streakHabit, "2026-11-08"),
-            HttpStatusCode.NotFound, "HABIT_NOT_FOUND");
+            HttpStatusCode.Unauthorized, "ACCOUNT_DELETED");
 
         // Logs are server-only: no revision/sync changes; idempotency records match successful writes.
         if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 0 ||
