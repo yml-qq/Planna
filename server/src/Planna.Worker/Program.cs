@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Planna.Application.Identity;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
+using Planna.Infrastructure.Privacy;
 
 var builder = Host.CreateApplicationBuilder(args);
 var configuration = builder.Configuration;
@@ -19,6 +20,14 @@ var smtpFrom = configuration["SMTP_FROM"]
     ?? throw new InvalidOperationException("SMTP_FROM is required.");
 if (!int.TryParse(configuration["SMTP_PORT"], out var smtpPort) || smtpPort is < 1 or > 65535)
     throw new InvalidOperationException("SMTP_PORT must be a valid port.");
+var retentionDays = 30;
+if (configuration["PRIVACY_DELETION_RETENTION_DAYS"] is { } configuredRetention &&
+    (!int.TryParse(configuredRetention, out retentionDays) || retentionDays is < 1 or > 3650))
+    throw new InvalidOperationException("PRIVACY_DELETION_RETENTION_DAYS must be between 1 and 3650.");
+var cleanupIntervalMinutes = 60;
+if (configuration["PRIVACY_CLEANUP_INTERVAL_MINUTES"] is { } configuredInterval &&
+    (!int.TryParse(configuredInterval, out cleanupIntervalMinutes) || cleanupIntervalMinutes is < 1 or > 1440))
+    throw new InvalidOperationException("PRIVACY_CLEANUP_INTERVAL_MINUTES must be between 1 and 1440.");
 
 builder.Services.AddDbContext<AuthContext>(options => options.UseNpgsql(connection));
 builder.Services.AddSingleton(new LoginCodeCipher(outboxKey));
@@ -28,6 +37,12 @@ builder.Services.AddScoped<ILoginCodeSender>(_ => new SmtpLoginCodeSender(
 builder.Services.AddScoped<LoginEmailDispatcher>();
 builder.Services.AddScoped<AuthQueueMaintenance>();
 builder.Services.AddScoped<StepUpEmailDispatcher>();
+builder.Services.AddSingleton(sp => new AccountCleanupService(connection,
+    sp.GetRequiredService<ILogger<AccountCleanupService>>()));
+builder.Services.AddHostedService(sp => new PrivacyCleanupWorker(
+    sp.GetRequiredService<IServiceScopeFactory>(), sp.GetRequiredService<TimeProvider>(),
+    sp.GetRequiredService<ILogger<PrivacyCleanupWorker>>(),
+    TimeSpan.FromDays(retentionDays), TimeSpan.FromMinutes(cleanupIntervalMinutes)));
 builder.Services.AddHostedService<LoginEmailWorker>();
 builder.Services.AddHostedService<StepUpEmailWorker>();
 await builder.Build().RunAsync();

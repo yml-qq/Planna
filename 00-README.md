@@ -68,6 +68,7 @@
 | 55 | `docs/55-PRIV-STEPUP-01.md` | 敏感操作邮件复核、短期确认 token |
 | 56 | `docs/56-PRIV-DELETE-01.md` | 账号删除请求、会话撤销与离线设备 |
 | 57 | `docs/57-AI-CONSENT-01.md` | AI 数据授权存储与 scope 校验 |
+| 58 | `docs/58-PRIV-CLEANUP-01.md` | 账号删除后的保留期清理作业 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

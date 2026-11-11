@@ -107,6 +107,8 @@
 
 `AI-CONSENT-01` 实现长期 AI 数据授权：`GET /ai/consent` 返回 `{allowed_scopes, updated_at}`，`PUT /ai/consent`（`Idempotency-Key`）整份替换授权，白名单 `task_drafts/plan_preview/task_notes/calendar_free_slots`，空数组撤销；`POST /ai/parse` 的 `allowed_scopes` 必须命中持久化授权并包含 `task_drafts`，否则 `403 AI_SCOPE_DENIED`。授权不写同步状态且随导出导出。详见 `57-AI-CONSENT-01.md`。
 
+`PRIV-CLEANUP-01` 实现删除后的保留期清理（无 API 变更）：Worker 定时清理已接受且超过保留期（默认 30 天，可配置）的删除请求对应账号业务数据，保留 `users` 墓碑与 `account_deletion_requests` 审计并记录 `completed_at`；失败写 `last_error_code` 且不阻塞其他账号。详见 `58-PRIV-CLEANUP-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks
