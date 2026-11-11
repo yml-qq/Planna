@@ -1,6 +1,6 @@
 # 45｜SYNC-PUSH-01：批量 mutation 推送切片
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 SYNC-PUSH-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43056737863](https://github.com/yml-qq/Planna/actions/runs/43056737863) 已通过。
 
 ## 范围与验收
 

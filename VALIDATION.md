@@ -146,3 +146,10 @@
 - `spec/openapi.yaml` 的 `/sync/pull` 补充语义与 `400/401` 响应；契约测试增至 16 项。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43055217937](https://github.com/yml-qq/Planna/actions/runs/43055217937) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、按 revision/change_index 排序、跨多变更 revision 的分页不重不漏（limit=2）、结束游标重复拉取、`has_more`、非法 limit/cursor、`410` 到期窗口与 owner 隔离、只读无副作用。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、16 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`sync/push` 与 `sync/bootstrap` 留待后续切片。
+
+## SYNC-PUSH-01 批量 mutation 推送检查（2026-11-12）
+
+- 实现 `POST /sync/push`：`{device_id, mutations[1..100]}` 逐条独立事务处理，返回 `accepted/duplicate/conflict/rejected` 与 `entity_version`/`server_entity`/`retryable`；以 `(owner, mutation_id)` 幂等，`base_version` 不符返回 `conflict`（含当前实体与版本，可重试），已删任务 `duplicate`，跨 owner/非法 payload/未支持 entity_type `rejected`。本切片覆盖 task upsert/delete；每次 accepted 推进 revision 并原子写 `sync_changes`/`client_mutations`。
+- `spec/openapi.yaml` 的 `/sync/push` 补充语义与 `400` 响应；契约测试增至 17 项。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43056737863](https://github.com/yml-qq/Planna/actions/runs/43056737863) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖批内 accepted/duplicate/conflict/rejected 矩阵、跨 mutation 幂等重放、冲突 server_entity/retryable、删除重复、非法整批（空 device/空数组/101 条/空 mutation_id）、owner 隔离、revision/变更/幂等记录原子性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、17 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
