@@ -49,7 +49,8 @@
 | E11 | PRIV-STEPUP-01 | 敏感操作邮件复核（挑战/验码/短期 token，已交付，见 `55-PRIV-STEPUP-01.md`） | AUTH-06 | 重放/限流测试 |
 | E11 | PRIV-DELETE-01 | 账号删除请求、step-up 校验与离线设备（已交付，见 `56-PRIV-DELETE-01.md`） | PRIV-STEPUP-01 | 删除/回连测试 |
 | E11 | PRIV-CLEANUP-01 | 删除后保留期清理作业（已交付，见 `58-PRIV-CLEANUP-01.md`） | PRIV-DELETE-01 | cleanup tests |
-| E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
+| E11 | SEC-01A | 服务端安全基线（安全头/异常兜底/请求上限/AI 限流，已交付，见 `59-SEC-01A.md`） | PRIV-CLEANUP-01 | security smoke |
+| E11 | SEC-01 | 首发安全与隐私审核（依赖漏洞/配置审计/渗透测试，待办） | SEC-01A | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
 
 E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03` 后拆分为 `TASK-LIST-01`（清单 CRUD）与 `TASK-TAG-01A/B`、`TASK-STEP-01`（标签、任务标签关联、步骤与查询）。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成，`39-TASK-COMPLETE-01.md`）。E05 的 `SYNC-02`（push/outbox/幂等）交付为 `SYNC-PUSH-01`（`45-SYNC-PUSH-01.md`）；`SYNC-03`（pull/bootstrap/conflict）拆分为 `SYNC-PULL-01`（增量拉取，`44-SYNC-PULL-01.md`）与 `SYNC-BOOTSTRAP-01`（快照与游标，`46-SYNC-BOOTSTRAP-01.md`）。E07 的 `TIME-01` 拆分为 `TIME-01A`（循环规则与 occurrence 窗口，`47-TIME-01A.md`）、`TIME-01B`（occurrence 完成，`48-TIME-01B.md`）与 `TIME-01C`（after_completion/法定工作日与撤销）。

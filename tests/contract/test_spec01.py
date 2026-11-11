@@ -359,7 +359,7 @@ class Spec01Contracts(unittest.TestCase):
     def test_ai_parse_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         parse = api["paths"]["/ai/parse"]["post"]
-        self.assertEqual(set(parse["responses"]), {"200", "400", "401", "403", "503"})
+        self.assertEqual(set(parse["responses"]), {"200", "400", "401", "403", "429", "503"})
         self.assertIn("AI_UNAVAILABLE", parse["description"])
         request = api["components"]["schemas"]["AiParseRequest"]
         self.assertEqual(set(request["required"]), {"input", "context"})
@@ -381,12 +381,12 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(body["required"]), {"expected_version"})
         self.assertFalse(body["additionalProperties"])
         edit = api["paths"]["/ai/breakdowns/{id}"]["put"]
-        self.assertEqual(set(edit["responses"]), {"200", "400", "401", "403", "404", "409", "422"})
+        self.assertEqual(set(edit["responses"]), {"200", "400", "401", "403", "404", "409", "422", "429"})
         edit_body = edit["requestBody"]["content"]["application/json"]["schema"]
         self.assertEqual(edit_body["properties"]["steps"]["maxItems"], 20)
         self.assertEqual(edit_body["properties"]["steps"]["minItems"], 1)
         apply_op = api["paths"]["/ai/breakdowns/{id}/apply"]["post"]
-        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409"})
+        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409", "429"})
         applied = apply_op["responses"]["200"]["content"]["application/json"]["schema"]
         self.assertEqual(set(applied["required"]), {"status", "task_id", "step_ids"})
         self.assertEqual(applied["properties"]["step_ids"]["maxItems"], 20)
@@ -395,13 +395,13 @@ class Spec01Contracts(unittest.TestCase):
     def test_ai_plan_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         propose = api["paths"]["/ai/plans"]["post"]
-        self.assertEqual(set(propose["responses"]), {"200", "400", "401", "403", "404", "422"})
+        self.assertEqual(set(propose["responses"]), {"200", "400", "401", "403", "404", "422", "429"})
         body = propose["requestBody"]["content"]["application/json"]["schema"]
         self.assertEqual(set(body["required"]), {"task_ids", "range_start", "range_end"})
         self.assertEqual(body["properties"]["task_ids"]["maxItems"], 100)
         self.assertTrue(body["properties"]["task_ids"]["uniqueItems"])
         apply_op = api["paths"]["/ai/plans/{id}/apply"]["post"]
-        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409"})
+        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409", "429"})
         self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, apply_op["parameters"])
         apply_body = apply_op["requestBody"]["content"]["application/json"]["schema"]
         self.assertEqual(set(apply_body["required"]),
@@ -462,9 +462,9 @@ class Spec01Contracts(unittest.TestCase):
     def test_ai_consent_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         consent = api["paths"]["/ai/consent"]
-        self.assertEqual(set(consent["get"]["responses"]), {"200", "401"})
+        self.assertEqual(set(consent["get"]["responses"]), {"200", "401", "429"})
         put = consent["put"]
-        self.assertEqual(set(put["responses"]), {"200", "400", "401", "409", "422"})
+        self.assertEqual(set(put["responses"]), {"200", "400", "401", "409", "422", "429"})
         self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, put["parameters"])
         body = put["requestBody"]["content"]["application/json"]["schema"]
         self.assertEqual(set(body["required"]), {"allowed_scopes"})

@@ -18,6 +18,7 @@ using Planna.Api.Sync;
 using Planna.Api.Tags;
 using Planna.Api.Tasks;
 using Planna.Api.Ai;
+using Planna.Api.Http;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
 using Planna.Infrastructure.Sync;
@@ -174,11 +175,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+var aiRateLimitPerMinute = 60;
+if (builder.Configuration["AI_RATE_LIMIT_PER_MINUTE"] is { } configuredAiLimit &&
+    (!int.TryParse(configuredAiLimit, out aiRateLimitPerMinute) || aiRateLimitPerMinute is < 1 or > 10000))
+    throw new InvalidOperationException("AI_RATE_LIMIT_PER_MINUTE must be between 1 and 10000.");
+builder.Services.AddApiSecurity(aiRateLimitPerMinute);
 
 var app = builder.Build();
 if (trustedProxies.Length > 0) app.UseForwardedHeaders();
+app.UseApiSecurity();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));
 app.MapTaskEndpoints();
 app.MapAuthEndpoints();

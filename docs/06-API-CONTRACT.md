@@ -109,6 +109,8 @@
 
 `PRIV-CLEANUP-01` 实现删除后的保留期清理（无 API 变更）：Worker 定时清理已接受且超过保留期（默认 30 天，可配置）的删除请求对应账号业务数据，保留 `users` 墓碑与 `account_deletion_requests` 审计并记录 `completed_at`；失败写 `last_error_code` 且不阻塞其他账号。详见 `58-PRIV-CLEANUP-01.md`。
 
+`SEC-01A` 服务端安全基线：所有响应附加 `X-Content-Type-Options/X-Frame-Options/Referrer-Policy` 与默认 `Cache-Control: no-store`；未处理异常返回 500 `INTERNAL_ERROR`（无堆栈）；`Content-Length` > 1 MiB 返回 `413 PAYLOAD_TOO_LARGE`；`/ai/*` 按 owner 固定窗口限流（默认 60 次/分钟，`AI_RATE_LIMIT_PER_MINUTE` 可配置），超限 `429 RATE_LIMITED` + `Retry-After`，各 AI 端点契约补充 429。详见 `59-SEC-01A.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

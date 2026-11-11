@@ -7,7 +7,7 @@ public static class AiEndpoints
 {
     public static IEndpointRouteBuilder MapAiEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/ai").WithTags("AI").RequireAuthorization();
+        var group = app.MapGroup("/ai").WithTags("AI").RequireAuthorization().RequireRateLimiting("ai");
         group.MapPost("/parse", Parse).WithName("ParseNaturalLanguage");
         group.MapGet("/consent", GetConsent).WithName("GetAiConsent");
         group.MapPut("/consent", UpdateConsent).WithName("UpdateAiConsent");
