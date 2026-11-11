@@ -12,6 +12,9 @@ export interface SessionOptions {
   deviceId: string
   autoRefresh?: boolean
   schedule?: (callback: () => void, delayMs: number) => TimerHandle
+  autoSync?: boolean
+  syncIntervalMs?: number
+  scheduleInterval?: (callback: () => void, delayMs: number) => TimerHandle
 }
 
 export interface SessionStore {
@@ -36,6 +39,11 @@ function defaultSchedule(callback: () => void, delayMs: number): TimerHandle {
   return { cancel: () => clearTimeout(handle) }
 }
 
+function defaultScheduleInterval(callback: () => void, delayMs: number): TimerHandle {
+  const handle = setInterval(callback, delayMs)
+  return { cancel: () => clearInterval(handle) }
+}
+
 export function createSessionStore(bridge: DesktopBridge, options: SessionOptions): SessionStore {
   const status = ref<SessionStatus>('signed_out')
   const token = ref<string | null>(null)
@@ -44,12 +52,29 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
   const requested = ref(false)
   const lastSync = ref<SyncSummary | null>(null)
   const autoRefresh = options.autoRefresh ?? true
+  const autoSync = options.autoSync ?? true
+  const syncIntervalMs = options.syncIntervalMs ?? 5 * 60_000
   const schedule = options.schedule ?? defaultSchedule
+  const scheduleInterval = options.scheduleInterval ?? defaultScheduleInterval
   let refreshHandle: TimerHandle | null = null
+  let syncHandle: TimerHandle | null = null
 
   function clearRefresh(): void {
     refreshHandle?.cancel()
     refreshHandle = null
+  }
+
+  function clearAutoSync(): void {
+    syncHandle?.cancel()
+    syncHandle = null
+  }
+
+  function startAutoSync(): void {
+    clearAutoSync()
+    if (!autoSync) return
+    syncHandle = scheduleInterval(() => {
+      void sync()
+    }, syncIntervalMs)
   }
 
   function scheduleRefresh(expiresInSeconds: number): void {
@@ -66,6 +91,7 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
     status.value = 'signed_in'
     error.value = null
     scheduleRefresh(result.expiresIn)
+    startAutoSync()
   }
 
   async function requestCode(email: string): Promise<boolean> {
@@ -116,6 +142,7 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
       return true
     } catch {
       clearRefresh()
+      clearAutoSync()
       token.value = null
       status.value = 'signed_out'
       return false
@@ -126,9 +153,10 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
 
   async function signOut(): Promise<void> {
     clearRefresh()
+    clearAutoSync()
     busy.value = true
     try {
-      await bridge.signOut()
+      await bridge.signOut(options.baseUrl(), token.value)
     } finally {
       token.value = null
       status.value = 'signed_out'
@@ -142,6 +170,7 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
       error.value = 'NOT_SIGNED_IN'
       return false
     }
+    if (busy.value) return false
     busy.value = true
     error.value = null
     try {

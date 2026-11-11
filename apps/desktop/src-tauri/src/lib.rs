@@ -320,6 +320,53 @@ fn restore_session(base_url: String) -> Result<SessionDto, String> {
     })
 }
 
+#[derive(Deserialize)]
+struct DeviceRow {
+    id: String,
+    version: i64,
+    is_current: bool,
+}
+
+#[derive(Deserialize)]
+struct DevicePage {
+    #[serde(default)]
+    devices: Vec<DeviceRow>,
+}
+
+#[tauri::command]
+fn sign_out_server(base_url: String, access_token: String) -> Result<(), String> {
+    let client = http_client();
+    let page = client
+        .get(format!("{}/auth/devices?limit=50", base(&base_url)))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !page.status().is_success() {
+        return Err(format!("HTTP {}", page.status().as_u16()));
+    }
+    let page: DevicePage = page.json().map_err(|error| error.to_string())?;
+    let Some(current) = page.devices.into_iter().find(|device| device.is_current) else {
+        clear_refresh_token();
+        return Ok(());
+    };
+    let response = client
+        .post(format!(
+            "{}/auth/devices/{}/revoke",
+            base(&base_url),
+            current.id
+        ))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .header("If-Match", format!("\"v{}\"", current.version))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status().as_u16()));
+    }
+    clear_refresh_token();
+    Ok(())
+}
+
 #[tauri::command]
 fn sign_out_local() -> Result<(), String> {
     clear_refresh_token();
@@ -353,6 +400,7 @@ pub fn run() {
             request_login_code,
             login_with_code,
             restore_session,
+            sign_out_server,
             sign_out_local
         ])
         .run(tauri::generate_context!())

@@ -38,6 +38,18 @@ const sessionOptions = (scheduler: ReturnType<typeof fakeScheduler>) => ({
   schedule: scheduler.schedule
 })
 
+function fakeInterval(): { callbacks: Scheduled[]; schedule: (callback: () => void, delay: number) => TimerHandle } {
+  const callbacks: Scheduled[] = []
+  return {
+    callbacks,
+    schedule: (callback, delay) => {
+      const handle: Scheduled = { callback, delay, cancelled: false }
+      callbacks.push(handle)
+      return { cancel: () => (handle.cancelled = true) }
+    }
+  }
+}
+
 describe('session store', () => {
   it('requests a login code only for a plausible email', async () => {
     const calls: string[] = []
@@ -98,6 +110,47 @@ describe('session store', () => {
     expect(store.status.value).toBe('signed_out')
     expect(store.token.value).toBeNull()
     expect(scheduler.scheduled[0]!.cancelled).toBe(true)
+  })
+
+  it('schedules background sync after sign-in and cancels it on sign-out', async () => {
+    let syncs = 0
+    const interval = fakeInterval()
+    const store = createSessionStore(
+      bridge({
+        runSync: async () => {
+          syncs += 1
+          return {
+            pushed: 0,
+            duplicates: 0,
+            conflicts: [],
+            rejected: 0,
+            pulled: 0,
+            skippedStale: 0,
+            cursor: null
+          }
+        }
+      }),
+      { ...sessionOptions(fakeScheduler()), scheduleInterval: interval.schedule }
+    )
+    await store.signIn('user@example.test', '123456')
+    expect(interval.callbacks).toHaveLength(1)
+    expect(interval.callbacks[0]!.delay).toBe(300_000)
+    interval.callbacks[0]!.callback()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(syncs).toBe(1)
+    await store.signOut()
+    expect(interval.callbacks[0]!.cancelled).toBe(true)
+  })
+
+  it('can disable background sync', async () => {
+    const interval = fakeInterval()
+    const store = createSessionStore(bridge(), {
+      ...sessionOptions(fakeScheduler()),
+      scheduleInterval: interval.schedule,
+      autoSync: false
+    })
+    await store.signIn('user@example.test', '123456')
+    expect(interval.callbacks).toHaveLength(0)
   })
 
   it('restores an existing session at startup and falls back to signed out', async () => {

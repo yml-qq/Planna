@@ -40,7 +40,7 @@ export interface DesktopBridge {
   requestLoginCode(baseUrl: string, email: string, deviceId: string): Promise<string>
   login(baseUrl: string, email: string, code: string, deviceName: string, deviceId: string): Promise<LoginResult>
   restoreSession(baseUrl: string): Promise<LoginResult>
-  signOut(): Promise<void>
+  signOut(baseUrl: string, accessToken: string | null): Promise<void>
   runSync(input: SyncInput): Promise<SyncSummary>
 }
 
@@ -100,7 +100,7 @@ export class MemoryBridge implements DesktopBridge {
     return { accessToken: 'memory-access-token', expiresIn: 3600 }
   }
 
-  async signOut(): Promise<void> {
+  async signOut(_baseUrl: string, _accessToken: string | null): Promise<void> {
     this.signedIn = false
   }
 
@@ -188,8 +188,12 @@ export class TauriBridge implements DesktopBridge {
     return { accessToken: result.access_token, expiresIn: result.expires_in }
   }
 
-  async signOut(): Promise<void> {
-    await this.invoke<void>('sign_out_local')
+  async signOut(baseUrl: string, accessToken: string | null): Promise<void> {
+    if (accessToken) {
+      await this.invoke<void>('sign_out_server', { baseUrl, accessToken })
+    } else {
+      await this.invoke<void>('sign_out_local')
+    }
   }
 
   async runSync(input: SyncInput): Promise<SyncSummary> {
