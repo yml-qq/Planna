@@ -406,6 +406,24 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(accepted["maxItems"], 20)
         self.assertIn("exact equality", accepted["description"])
 
+    def test_export_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        create = api["paths"]["/me/exports"]["post"]
+        self.assertEqual(set(create["responses"]), {"202", "400", "401", "409"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+        listing = api["paths"]["/me/exports"]["get"]
+        self.assertEqual(set(listing["responses"]), {"200", "401"})
+        get = api["paths"]["/me/exports/{id}"]["get"]
+        self.assertEqual(set(get["responses"]), {"200", "400", "401", "404"})
+        download = api["paths"]["/me/exports/{id}/download"]["get"]
+        self.assertEqual(set(download["responses"]), {"200", "400", "401", "404", "409", "410"})
+        self.assertIn("EXPORT_EXPIRED", download["description"])
+        schema_ref = download["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        self.assertEqual(schema_ref, "./account-export.schema.json")
+        job = api["components"]["schemas"]["AccountExportJob"]
+        self.assertEqual(set(job["required"]),
+                         {"export_id", "status", "requested_at", "snapshot_at", "expires_at"})
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

@@ -256,15 +256,16 @@ paths:
     post:
       tags: [Identity]
       operationId: createAccountExport
-      description: Creates an export of committed cloud data at a consistent snapshot. Complete local export is a client feature.
+      description: Creates an export of committed cloud data at a consistent repeatable-read snapshot and returns a ready job (synchronous generation for the MVP; a worker may replace it later behind the same contract). The same idempotency key replays the original job. Complete local export remains a client feature.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
-          description: Export queued or existing result for the same idempotency key.
+          description: Export job accepted (ready or replayed) for the same idempotency key.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AccountExportJob'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
     get:
@@ -280,10 +281,12 @@ paths:
                 required: [items]
                 properties:
                   items: {type: array, items: {$ref: '#/components/schemas/AccountExportJob'}}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
   /me/exports/{id}:
     get:
       tags: [Identity]
       operationId: getAccountExport
+      description: Export status for the current owner; foreign exports return 404.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
       responses:
@@ -292,11 +295,14 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AccountExportJob'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
   /me/exports/{id}/download:
     get:
       tags: [Identity]
       operationId: downloadAccountExport
+      description: Authorized JSON export for the current owner; available for 24 hours after ready. Expired exports return 410 EXPORT_EXPIRED and non-ready exports return 409 EXPORT_NOT_READY.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
       responses:
@@ -309,6 +315,8 @@ paths:
           content:
             application/json:
               schema: {$ref: './account-export.schema.json'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '410': {$ref: '#/components/responses/ErrorResponse'}

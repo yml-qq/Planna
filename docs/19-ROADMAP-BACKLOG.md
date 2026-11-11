@@ -43,7 +43,8 @@
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
-| E11 | PRIV-01 | 数据导出与账号删除（V1.0） | AUTH-01,SYNC-03 | 导出/删除/离线设备回连测试 |
+| E11 | PRIV-EXPORT-01 | 云端数据导出（快照/下载/24h，已交付，见 `53-PRIV-EXPORT-01.md`） | SYNC-PULL-01 | 导出测试 |
+| E11 | PRIV-DELETE-01 | Step-up 复核与账号删除 | PRIV-EXPORT-01 | 删除/回连测试 |
 | E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
 

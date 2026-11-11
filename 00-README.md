@@ -63,6 +63,7 @@
 | 50 | `docs/50-AI-01.md` | AI Provider 抽象与规则化自然语言解析 |
 | 51 | `docs/51-AI-02.md` | 任务拆解草案、编辑重校验与确认应用 |
 | 52 | `docs/52-AI-03-04.md` | 计划预览、冲突检测与整份确认应用 |
+| 53 | `docs/53-PRIV-EXPORT-01.md` | 云端数据导出、快照与 24 小时下载 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

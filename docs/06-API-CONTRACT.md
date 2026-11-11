@@ -97,6 +97,8 @@
 
 `AI-03/04` 实现计划预览与应用：`POST /ai/plans` 以确定性排程生成顺序时间块预览（`estimate_minutes` 缺省 30，范围 ≤ 7 天，最多 20 个操作；与既有时间块冲突的任务进 `conflicts`、不排程，其余进 `unplanned_task_ids`），持久化 30 分钟有效；`POST /ai/plans/{id}/apply` 要求 `accepted_operation_ids` 与持久化操作完全一致，并校验快照/token/过期/每个任务 `expected_version`，通过后同一事务创建全部 `task_time_blocks`、推进一次 revision、写 `sync_changes(entity_type='time_block')` 与 `ai_action_audits`；失败返回 `409 PLAN_STALE` 且不部分执行。详见 `52-AI-03-04.md`。
 
+`PRIV-EXPORT-01` 实现云端导出：`POST /me/exports` 在 `REPEATABLE READ` 快照内生成 `account-export-v1` JSON（account/lists/tasks/steps/tags/reminders/time_blocks/ai_consents，`source=cloud`、`pending_mutation_ids=[]`），MVP 同步生成并返回 `202` job，同键重放；`GET /me/exports` 列表、`GET /me/exports/{id}` 状态、`GET /me/exports/{id}/download` 仅 owner 且 ready 未过期（24 小时）返回附件，过期 `410 EXPORT_EXPIRED`、未就绪 `409 EXPORT_NOT_READY`。详见 `53-PRIV-EXPORT-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

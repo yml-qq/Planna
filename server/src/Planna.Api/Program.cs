@@ -9,8 +9,10 @@ using Planna.Application.Identity;
 using Planna.Application.Tags;
 using Planna.Application.Sync;
 using Planna.Application.Ai;
+using Planna.Application.Export;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
+using Planna.Api.Me;
 using Planna.Api.Sync;
 using Planna.Api.Tags;
 using Planna.Api.Tasks;
@@ -21,6 +23,7 @@ using Planna.Infrastructure.Sync;
 using Planna.Infrastructure.Tasks;
 using Planna.Infrastructure.Tags;
 using Planna.Infrastructure.Ai;
+using Planna.Infrastructure.Export;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration["PLANNADB_CONNECTION"]
@@ -97,6 +100,8 @@ if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringCompariso
     builder.Services.AddScoped<IProposePlan, PlanService>();
     builder.Services.AddScoped<IApplyPlan, PlanService>();
 }
+builder.Services.AddScoped<IAccountExportService>(sp =>
+    new AccountExportService(connection, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -175,6 +180,7 @@ app.MapStepEndpoints();
 app.MapSyncEndpoints();
 app.MapRecurrenceEndpoints();
 app.MapAiEndpoints();
+app.MapMeEndpoints();
 app.Run();
 
 public partial class Program;
