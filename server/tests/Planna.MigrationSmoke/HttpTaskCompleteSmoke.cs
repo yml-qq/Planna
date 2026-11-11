@@ -68,7 +68,8 @@ internal static class HttpTaskCompleteSmoke
         await AssertCode(await Complete(client, token, c1, null,
             "{\"expected_version\":2,\"occurrence_id\":null,\"completed_at\":null}"),
             HttpStatusCode.BadRequest, "INVALID_IDEMPOTENCY_KEY");
-        Check(await Complete(client, token, c1, Guid.NewGuid(), "{}"), HttpStatusCode.BadRequest);
+        await AssertCode(await Complete(client, token, c1, Guid.NewGuid(), "{}"),
+            HttpStatusCode.UnprocessableEntity, "INVALID_TASK");
 
         // Happy complete with a past completed_at, replay and key reuse.
         var past = DateTimeOffset.UtcNow.AddMinutes(-30);
