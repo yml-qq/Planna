@@ -188,3 +188,10 @@
 - `spec/openapi.yaml` 的 `/ai/parse` 补充 400/401 与语义描述；契约测试增至 20 项。无 schema 变更、无新迁移、无 AI 凭据进入仓库。
 - [PostgreSQL 18 CI 运行 43070714045](https://github.com/yml-qq/Planna/actions/runs/43070714045) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、校验/时区/scope 错误、provider 关闭 503、相对/绝对/下周日期、仅有日期/无日期的 assumptions 与 unresolved、提示注入不改数据（任务数、revision、sync_changes、client_mutations 均不变）。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、20 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。真实 LLM Provider（超时/重试/限流/预算/审计）、AI-02 拆解草案与 AI-03/04 计划留待后续切片。
+
+## AI-02 任务拆解草案检查（2026-11-12）
+
+- 实现 `POST /ai/tasks/{id}/breakdowns`（规则拆解 1..20 步并持久化草案，`expected_version` 校验任务版本）、`PUT /ai/breakdowns/{id}`（整份替换步骤、重校验并轮换 `snapshot_hash`/确认 token）、`POST /ai/breakdowns/{id}/apply`（校验 owner/状态/1 小时过期/快照/token 哈希/任务版本后，同一事务创建全部步骤、推进一次 revision、按步骤写 `sync_changes`、写 `ai_action_audits` 与幂等结果；失败不产生部分步骤）。草案与 token 仅存哈希；同键重放返回原结果。
+- `spec/openapi.yaml` 三个端点补充语义、400/401 与 apply 幂等说明；契约测试增至 21 项。无 schema 变更、无新迁移、无凭据入库。
+- 迭代修复：首轮创建重放应返回 201（改为按操作映射状态）；次轮冒烟对同一响应重复读取内容导致 `ObjectDisposedException`（改一次读取复用）。最终 [PostgreSQL 18 CI 运行 43073409894](https://github.com/yml-qq/Planna/actions/runs/43073409894) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、任务/版本校验、创建/编辑/应用重放、旧 token/快照拒绝、非法步骤、过期草案、重复应用、跨 owner、步骤原子写入与 revision/变更/审计一致性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、21 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。AI-03/04 计划与配额、consent 持久化留待后续切片。
