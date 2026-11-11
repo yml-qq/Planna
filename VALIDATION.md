@@ -254,3 +254,10 @@
 - 迭代修复：大小限制中间件短路导致 413 响应缺少安全头（将安全头中间件置于最外层）；异常兜底曾把框架 400 变成 500（按 `BadHttpRequestException.StatusCode` 映射）。
 - [PostgreSQL 18 CI 运行 43092508558](https://github.com/yml-qq/Planna/actions/runs/43092508558) 已通过迁移重放、构建、格式、静态契约与全部冒烟，新增覆盖：健康/401/413/429 安全头、错误体无内部诊断、超限请求不写业务状态、按 owner AI 限流与 `Retry-After`。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。正式 `SEC-01` 审核（依赖漏洞/配置审计/渗透测试/多实例限流）仍待办。
+
+## DESK-01A 桌面离线核心检查（2026-11-12）
+
+- 新增 `apps/desktop/core`（Rust + rusqlite `bundled`）：本地 SQLite schema（lists/tasks/outbox/sync_state）、`create_task`/`update_task` 在单事务内写本地任务与 outbox、`mutation_id` 幂等重放、版本冲突、`apply_pull` 按实体版本单调应用 upsert/delete（墓碑 + `skipped_stale`）、`pull_cursor` 持久化；9 项 `cargo test` 覆盖原子写、幂等、校验/FK 回滚、冲突、失败计数、拉取与重开持久化。
+- 新增 `.github/workflows/desktop.yml`（windows-latest：`cargo fmt --check`、`clippy -D warnings`、`cargo test`）；本地 `cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test` 全部通过（9 passed）。
+- [Desktop core CI 运行 43093895480](https://github.com/yml-qq/Planna/actions/runs/43093895480) 与 [Server integration 运行 43093895420](https://github.com/yml-qq/Planna/actions/runs/43093895420) 均 **success**；未改动服务端契约。
+- 未在本机执行 Tauri 打包或真机/桌面冒烟（Tauri 外壳与 Vue UI 属 `DESK-01B`）；本切片不声称桌面应用已可运行。

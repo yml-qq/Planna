@@ -1,6 +1,6 @@
 # 60｜DESK-01A：桌面端离线核心（SQLite + outbox）
 
-状态：代码已实现；本地 `cargo fmt/clippy/test` 通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01A 小节。Tauri 外壳与 Vue UI 仍未实现（`DESK-01B`）。
+状态：代码已实现；本地 `cargo fmt/clippy/test`（9 项）通过，[Desktop core CI 43093895480](https://github.com/yml-qq/Planna/actions/runs/43093895480) 已通过。Tauri 外壳与 Vue UI 仍未实现（`DESK-01B`）。
 
 ## 范围与验收
 
