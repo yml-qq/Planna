@@ -53,7 +53,7 @@ public sealed class AiConsentService(TaskWriteContext db, TimeProvider clock) : 
                     JsonSerializer.Deserialize<AiConsentView>(previous.Response))
                 : new(AiConsentStatus.Conflict, Code: "IDEMPOTENCY_KEY_REUSED");
 
-        var now = clock.GetUtcNow();
+        var now = TruncateToMicroseconds(clock.GetUtcNow());
         await using (var command = db.Database.GetDbConnection().CreateCommand())
         {
             command.Transaction = transaction.GetDbTransaction();
@@ -87,6 +87,9 @@ public sealed class AiConsentService(TaskWriteContext db, TimeProvider clock) : 
 
     private static DateTimeOffset Instant(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
+    private static DateTimeOffset TruncateToMicroseconds(DateTimeOffset value) =>
+        new(value.Ticks - value.Ticks % 10, TimeSpan.Zero);
 
     private sealed class ConsentRow
     {
