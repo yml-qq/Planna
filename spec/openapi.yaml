@@ -889,6 +889,98 @@ paths:
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/recurrence:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Tasks]
+      operationId: getRecurrence
+      description: Return the recurrence rule of an owned, non-deleted task; 404 when the task or rule does not exist.
+      responses:
+        '200':
+          description: Recurrence rule
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Recurrence'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    put:
+      tags: [Tasks]
+      operationId: putRecurrence
+      description: Create (expected_version 0) or replace the RRULE recurrence of an owned task. Supported subset is FREQ=DAILY|WEEKLY|MONTHLY with INTERVAL, COUNT/UNTIL and WEEKLY BYDAY; other kinds and unsupported parts are rejected with 422. dtstart_local is a local timestamp in the given IANA time zone.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, kind, rrule, time_zone, dtstart_local]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                kind: {type: string, const: rrule}
+                rrule: {type: string, minLength: 1, maxLength: 1000}
+                time_zone: {type: string}
+                dtstart_local: {type: string, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?$'}
+      responses:
+        '200':
+          description: Saved recurrence rule
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Recurrence'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Tasks]
+      operationId: deleteRecurrence
+      description: Remove the recurrence rule of an owned task with a strong If-Match version; occurrence rows are retained as history. The same idempotency key replays as 204.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        '204': {description: Removed recurrence rule or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/occurrences:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Tasks]
+      operationId: listOccurrences
+      description: Materialize and list occurrences of the task recurrence inside a local date window (max 90 days, defaults to the next 30 days). Materialization is idempotent; nonexistent DST local times are skipped and ambiguous times produce one occurrence at the earliest instant. Occurrence rows are derived state and do not bump the owner revision.
+      parameters:
+        - name: from
+          in: query
+          schema: {type: string, format: date}
+        - name: to
+          in: query
+          schema: {type: string, format: date}
+      responses:
+        '200':
+          description: Occurrences in the window
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/Occurrence'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
   /sync/push:
     post:
       tags: [Sync]
@@ -1269,6 +1361,30 @@ components:
         is_done: {type: boolean}
         position: {type: number, minimum: 0}
         estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+        version: {type: integer, minimum: 1}
+    Recurrence:
+      type: object
+      additionalProperties: false
+      required: [task_id, kind, rrule, time_zone, dtstart_local, version]
+      properties:
+        task_id: {type: string, format: uuid}
+        kind: {type: string, const: rrule}
+        rrule: {type: string}
+        time_zone: {type: string}
+        dtstart_local: {type: string}
+        version: {type: integer, minimum: 1}
+    Occurrence:
+      type: object
+      additionalProperties: false
+      required: [id, task_id, original_local_start, time_zone, status, version]
+      properties:
+        id: {type: string, format: uuid}
+        task_id: {type: string, format: uuid}
+        original_local_start: {type: string}
+        time_zone: {type: string}
+        due_at: {type: [string, 'null'], format: date-time}
+        status: {type: string, enum: [todo, done, skipped]}
+        completed_at: {type: [string, 'null'], format: date-time}
         version: {type: integer, minimum: 1}
     CreateTask:
       type: object

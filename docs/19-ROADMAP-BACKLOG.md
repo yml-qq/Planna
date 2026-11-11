@@ -27,7 +27,8 @@
 | E06 | DESK-01 | Tauri shell/local SQLite/task UI | SYNC-02 | offline scenario |
 | E06 | AND-01 | Compose shell/Room/task UI | SYNC-02 | offline scenario |
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |
-| E07 | TIME-01 | 时间语义/RRULE/实例 | TASK-COMPLETE-01 | DST fixtures |
+| E07 | TIME-01A | 循环规则 CRUD 与 occurrence 窗口物化（已交付，见 `47-TIME-01A.md`） | TASK-COMPLETE-01 | DST fixtures |
+| E07 | TIME-01B | occurrence 完成、after_completion 与编辑范围 | TIME-01A | DST fixtures |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
 | E08 | AI-01 | Provider/structured parse | E02,TASK-COMPLETE-01 | golden tests |
@@ -44,7 +45,7 @@
 | E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
 
-E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03` 后拆分为 `TASK-LIST-01`（清单 CRUD）与 `TASK-TAG-01A/B`、`TASK-STEP-01`（标签、任务标签关联、步骤与查询）。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成，`39-TASK-COMPLETE-01.md`）。E05 的 `SYNC-02`（push/outbox/幂等）交付为 `SYNC-PUSH-01`（`45-SYNC-PUSH-01.md`）；`SYNC-03`（pull/bootstrap/conflict）拆分为 `SYNC-PULL-01`（增量拉取，`44-SYNC-PULL-01.md`）与 `SYNC-BOOTSTRAP-01`（快照与冲突）。
+E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03` 后拆分为 `TASK-LIST-01`（清单 CRUD）与 `TASK-TAG-01A/B`、`TASK-STEP-01`（标签、任务标签关联、步骤与查询）。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成，`39-TASK-COMPLETE-01.md`）。E05 的 `SYNC-02`（push/outbox/幂等）交付为 `SYNC-PUSH-01`（`45-SYNC-PUSH-01.md`）；`SYNC-03`（pull/bootstrap/conflict）拆分为 `SYNC-PULL-01`（增量拉取，`44-SYNC-PULL-01.md`）与 `SYNC-BOOTSTRAP-01`（快照与游标，`46-SYNC-BOOTSTRAP-01.md`）。E07 的 `TIME-01` 拆分为 `TIME-01A`（循环规则与 occurrence 窗口，`47-TIME-01A.md`）与 `TIME-01B`（occurrence 完成与编辑范围）。
 
 ## 3. V1.0 交付范围
 

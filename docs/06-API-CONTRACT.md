@@ -85,6 +85,8 @@
 
 `SYNC-BOOTSTRAP-01` 实现 `POST /sync/bootstrap`：在 `REPEATABLE READ` 只读事务内返回 `{snapshot_cursor, next_page_token, tasks, lists}`，快照游标编码 committed revision 并可直接作为 `GET /sync/pull` 的 cursor；软删数据排除，`next_page_token` 预留为 null，快照只读。详见 `46-SYNC-BOOTSTRAP-01.md`。
 
+`TIME-01A` 实现 `GET/PUT/DELETE /tasks/{id}/recurrence` 与 `GET /tasks/{id}/occurrences`：RRULE 子集（DAILY/WEEKLY/MONTHLY + INTERVAL/COUNT|UNTIL + WEEKLY BYDAY），`dtstart_local` 为规则时区本地时间；`PUT` 以 `expected_version=0` 创建、`≥1` 更新并写 `sync_changes(entity_type='recurrence')`；`DELETE` 保留 occurrence 历史。occurrence 窗口默认 30 天、最大 90 天，幂等物化并采用 DST 显式策略（跳过不存在时刻、歧义取最早 instant），物化不推进 revision。occurrence 完成与 `after_completion` 规则留待 `TIME-01B`。详见 `47-TIME-01A.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

@@ -318,6 +318,30 @@ class Spec01Contracts(unittest.TestCase):
         schema = api["components"]["schemas"]["TaskStep"]
         self.assertEqual(set(schema["required"]), {"id", "title", "is_done", "position", "version"})
 
+    def test_recurrence_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        rule = api["paths"]["/tasks/{id}/recurrence"]
+        self.assertEqual(set(rule["get"]["responses"]), {"200", "400", "401", "404"})
+        put = rule["put"]
+        self.assertEqual(set(put["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, put["parameters"])
+        body = put["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(set(body["required"]),
+                         {"expected_version", "kind", "rrule", "time_zone", "dtstart_local"})
+        self.assertEqual(body["properties"]["kind"]["const"], "rrule")
+        self.assertEqual(body["properties"]["expected_version"]["minimum"], 0)
+        delete = rule["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
+        occurrences = api["paths"]["/tasks/{id}/occurrences"]["get"]
+        self.assertEqual(set(occurrences["responses"]), {"200", "400", "401", "404"})
+        params = {p["name"]: p for p in occurrences["parameters"]}
+        self.assertEqual(set(params), {"from", "to"})
+        schema = api["components"]["schemas"]["Occurrence"]
+        self.assertEqual(set(schema["required"]),
+                         {"id", "task_id", "original_local_start", "time_zone", "status", "version"})
+        self.assertEqual(schema["properties"]["status"]["enum"], ["todo", "done", "skipped"])
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

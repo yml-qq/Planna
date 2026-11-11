@@ -57,6 +57,7 @@
 | 44 | `docs/44-SYNC-PULL-01.md` | 增量同步拉取、revision 游标与 410 到期 |
 | 45 | `docs/45-SYNC-PUSH-01.md` | 批量 mutation 推送、幂等与冲突结果 |
 | 46 | `docs/46-SYNC-BOOTSTRAP-01.md` | 一致快照引导、快照游标与增量衔接 |
+| 47 | `docs/47-TIME-01A.md` | 循环规则 CRUD、occurrence 窗口与 DST 策略 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

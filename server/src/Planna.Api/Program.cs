@@ -80,6 +80,9 @@ builder.Services.AddScoped<IDeleteStep, StepDeleteService>();
 builder.Services.AddScoped<ISyncPullQuery>(sp => new SyncPullQuery(connection, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddScoped<ISyncPushCommand, SyncPushService>();
 builder.Services.AddScoped<ISyncBootstrapQuery>(_ => new SyncBootstrapQuery(connection));
+builder.Services.AddScoped<IPutRecurrence, RecurrenceService>();
+builder.Services.AddScoped<IDeleteRecurrence, RecurrenceService>();
+builder.Services.AddScoped<IRecurrenceQuery>(_ => new RecurrenceQuery(connection));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -156,6 +159,7 @@ app.MapListEndpoints();
 app.MapTagEndpoints();
 app.MapStepEndpoints();
 app.MapSyncEndpoints();
+app.MapRecurrenceEndpoints();
 app.Run();
 
 public partial class Program;
