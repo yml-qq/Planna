@@ -261,3 +261,11 @@
 - 新增 `.github/workflows/desktop.yml`（windows-latest：`cargo fmt --check`、`clippy -D warnings`、`cargo test`）；本地 `cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test` 全部通过（9 passed）。
 - [Desktop core CI 运行 43093895480](https://github.com/yml-qq/Planna/actions/runs/43093895480) 与 [Server integration 运行 43093895420](https://github.com/yml-qq/Planna/actions/runs/43093895420) 均 **success**；未改动服务端契约。
 - 未在本机执行 Tauri 打包或真机/桌面冒烟（Tauri 外壳与 Vue UI 属 `DESK-01B`）；本切片不声称桌面应用已可运行。
+
+## DESK-01B 桌面 Web UI 检查（2026-11-12）
+
+- 新增 Vue 3 + TypeScript + Vite 应用（`apps/desktop/src`）：`DesktopBridge` 边界（`MemoryBridge`/`TauriBridge`/`createBridge`）、任务 store（刷新/新增/错误映射/去重）、最小任务页与浅深色样式；Vitest 6 项单测覆盖桥过滤排序/幂等/校验、store 顺序、空/超长标题不发请求、加载与保存失败不污染状态、重复 id 替换。
+- 本地验证：`pnpm install --frozen-lockfile`（exit 0）、`pnpm test`（6 passed）、`pnpm build`（`vue-tsc -b` 严格类型检查 + `vite build` 成功）；`pnpm-workspace.yaml` 显式忽略 esbuild 安装脚本以免 CI 构建脚本策略失败。
+- `.github/workflows/desktop.yml` 新增 `desktop-web-ui` 作业（ubuntu、pnpm 11、Node 24）。
+- **CI 未完成**：提交 `4e4233a` 触发的 [Desktop core 43095420263](https://github.com/yml-qq/Planna/actions/runs/43095420263) 与 [Server integration 43095420374](https://github.com/yml-qq/Planna/actions/runs/43095420374) 在 GitHub Actions 侧排队约 1 小时且 0 job（同提交的旧运行亦排队），属外部 CI 排队/容量问题，非代码失败；本轮不声称 CI 通过，下一轮补验。
+- 未连接生产库、未提交凭据；Tauri 外壳与同步调度仍属 `DESK-01C`。

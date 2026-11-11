@@ -1,6 +1,6 @@
 # 61｜DESK-01B：桌面 Web UI 与本地桥接层
 
-状态：代码已实现；本地 `pnpm test`（6 项）与 `pnpm build`（vue-tsc + vite）通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01B 小节。Tauri 外壳与同步调度属 `DESK-01C`。
+状态：代码已实现；本地 `pnpm install --frozen-lockfile`、`pnpm test`（6 项）与 `pnpm build`（vue-tsc + vite）通过。CI：提交 `4e4233a` 的运行在 GitHub Actions 侧排队约 1 小时且 0 job（[Desktop core 43095420263](https://github.com/yml-qq/Planna/actions/runs/43095420263)、[Server integration 43095420374](https://github.com/yml-qq/Planna/actions/runs/43095420374)），属外部排队问题，**尚未取得 CI 结论**，下轮补验。Tauri 外壳与同步调度属 `DESK-01C`。
 
 ## 范围与验收
 
