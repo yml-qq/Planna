@@ -209,3 +209,10 @@
 - `spec/openapi.yaml` 补充导出语义与 400/401/404/409/410；契约测试增至 23 项（含 `account-export.schema.json` 引用与 `AccountExportJob` 必填字段）。
 - [PostgreSQL 18 CI 运行 43076494283](https://github.com/yml-qq/Planna/actions/runs/43076494283) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、快照内容（各表数据、排除软删）、同键重放、列表/状态、附件下载内容、跨 owner、过期、未就绪、非法/缺失 id、删除账号，以及导出不推进 revision/不写业务变更。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、23 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。账号删除（PRIV-DELETE-01）、step-up、对象存储与清理任务留待后续切片。
+
+## TIME-01D occurrence 撤销完成检查（2026-11-12）
+
+- 扩展 `POST /tasks/{id}/reopen`：RRULE 任务必须指定 `occurrence_id` 并撤销已完成的 occurrence（`done → todo`、清空 `completed_at`、版本 +1，任务行不变）；缺失 `occurrence_id` → `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 → `422 INVALID_OCCURRENCE`，未完成 → `409 NOT_COMPLETED`；普通任务保持任务级 reopen；响应为 `oneOf [Task, Occurrence]`，同键重放原响应。
+- `spec/openapi.yaml` 更新 reopen 请求/响应与语义；契约测试保持 23 项并通过。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43077888174](https://github.com/yml-qq/Planna/actions/runs/43077888174) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、规则→occurrence→完成→撤销端到端、重放、重复撤销、非法/缺失 occurrence、非循环任务 reopen、跨 owner、删除账号与 revision/变更记录一致性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、23 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`legal_workday`、提醒调度与编辑范围留待 `TIME-01E`。
