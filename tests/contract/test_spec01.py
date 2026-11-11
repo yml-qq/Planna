@@ -334,6 +334,25 @@ class Spec01Contracts(unittest.TestCase):
                          {"revision", "change_index", "entity_type", "entity_id", "op", "version"})
         self.assertEqual(change["properties"]["payload"]["type"], ["object", "null"])
 
+    def test_sync_push_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        push = api["paths"]["/sync/push"]["post"]
+        self.assertEqual(set(push["responses"]), {"200", "400", "401"})
+        request = api["components"]["schemas"]["SyncPushRequest"]
+        self.assertEqual(set(request["required"]), {"device_id", "mutations"})
+        self.assertEqual(request["properties"]["mutations"]["maxItems"], 100)
+        self.assertEqual(request["properties"]["mutations"]["minItems"], 1)
+        mutation = api["components"]["schemas"]["SyncMutation"]
+        self.assertEqual(set(mutation["required"]),
+                         {"mutation_id", "entity_type", "entity_id", "op", "base_version", "payload"})
+        self.assertEqual(mutation["properties"]["op"]["enum"], ["upsert", "delete"])
+        response = api["components"]["schemas"]["SyncPushResponse"]
+        self.assertEqual(set(response["required"]), {"results"})
+        result = response["properties"]["results"]["items"]
+        self.assertEqual(set(result["required"]), {"mutation_id", "status"})
+        self.assertEqual(result["properties"]["status"]["enum"],
+                         ["accepted", "duplicate", "conflict", "rejected"])
+
 
 if __name__ == "__main__":
     unittest.main()

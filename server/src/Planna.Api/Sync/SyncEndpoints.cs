@@ -10,7 +10,20 @@ public static class SyncEndpoints
     {
         var group = app.MapGroup("/sync").WithTags("Sync").RequireAuthorization();
         group.MapGet("/pull", Pull).WithName("PullChanges");
+        group.MapPost("/push", Push).WithName("PushMutations");
         return app;
+    }
+
+    private static async Task<IResult> Push(HttpContext http, SyncPushRequest request,
+        ISyncPushCommand command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (request.DeviceId == Guid.Empty || request.Mutations is null ||
+            request.Mutations.Count is < 1 or > 100 ||
+            request.Mutations.Any(x => x.MutationId == Guid.Empty || x.EntityId == Guid.Empty))
+            return Error(http, 400, "INVALID_SYNC_REQUEST");
+        return TypedResults.Ok(await command.ExecuteAsync(owner, request, ct));
     }
 
     private static async Task<IResult> Pull(HttpContext http, ISyncPullQuery query, CancellationToken ct)

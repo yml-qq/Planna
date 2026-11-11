@@ -81,6 +81,8 @@
 
 `SYNC-PULL-01` 实现 `GET /sync/pull`：按 owner 已提交 revision 与 `change_index` 升序返回 `changes/next_cursor/has_more/server_time`；游标不透明且不基于 `updated_at`，默认 100、最大 200，非法参数 `400`。请求游标早于 `min_available_revision` 时返回 `410 CURSOR_EXPIRED`，客户端应走安全 bootstrap。拉取只返回当前 owner 的变更且不写任何状态。详见 `44-SYNC-PULL-01.md`。`sync/push` 与 `sync/bootstrap` 留待 `SYNC-PUSH-01` 与 `SYNC-BOOTSTRAP-01`。
 
+`SYNC-PUSH-01` 实现 `POST /sync/push`：`{device_id, mutations[1..100]}` 逐条独立原子处理，返回 `accepted/duplicate/conflict/rejected` 与 `entity_version`/`server_entity`/`retryable`；`(owner, mutation_id)` 幂等，`base_version` 不符返回 `conflict`，已删除返回 `duplicate`，非法/跨 owner/未支持 entity_type 返回 `rejected`。本切片覆盖 task 的 upsert/delete；每次 accepted 推进 revision 并写 `sync_changes`/`client_mutations`。详见 `45-SYNC-PUSH-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

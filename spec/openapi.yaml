@@ -893,6 +893,7 @@ paths:
     post:
       tags: [Sync]
       operationId: pushMutations
+      description: Apply offline mutations one by one; each mutation commits atomically on its own and the batch is not all-or-nothing. Results report accepted/duplicate/conflict/rejected with entity_version and server_entity; accepted and duplicate mutations may be removed from the client outbox. Duplicates are keyed by mutation_id. Conflicts carry the current server version and entity for rebasing. This slice supports task upsert/delete; other entity types are rejected without retry.
       requestBody:
         required: true
         content:
@@ -904,6 +905,7 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/SyncPushResponse'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
   /sync/pull:
     get:

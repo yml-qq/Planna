@@ -78,6 +78,7 @@ builder.Services.AddScoped<ICreateStep, StepCreateService>();
 builder.Services.AddScoped<IUpdateStep, StepUpdateService>();
 builder.Services.AddScoped<IDeleteStep, StepDeleteService>();
 builder.Services.AddScoped<ISyncPullQuery>(sp => new SyncPullQuery(connection, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<ISyncPushCommand, SyncPushService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
