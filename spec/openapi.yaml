@@ -933,10 +933,10 @@ paths:
     post:
       tags: [Sync]
       operationId: bootstrapSync
-      description: Consistent paginated snapshot with cursor bound to database snapshot.
+      description: Read one consistent snapshot of non-deleted tasks and lists together with the committed revision, under a repeatable-read transaction. snapshot_cursor is opaque and can be passed to /sync/pull to continue incremental sync; changes committed after the snapshot are returned by that pull. next_page_token is reserved and currently always null.
       responses:
         '200':
-          description: Snapshot first page (additional paging token implementation required)
+          description: Single-page snapshot bound to the committed revision
           content:
             application/json:
               schema:
@@ -947,6 +947,7 @@ paths:
                   next_page_token: {type: [string, 'null']}
                   tasks: {type: array, items: {$ref: '#/components/schemas/Task'}}
                   lists: {type: array, items: {$ref: '#/components/schemas/TaskList'}}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
   /ai/parse:
     post:
       tags: [AI]

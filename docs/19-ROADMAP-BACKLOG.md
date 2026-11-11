@@ -23,7 +23,7 @@
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-PUSH-01 | 批量 mutation 推送（task upsert/delete、幂等、冲突，已交付，见 `45-SYNC-PUSH-01.md`） | SYNC-01 | replay tests |
 | E05 | SYNC-PULL-01 | 增量拉取 `GET /sync/pull`（revision 游标、has_more、410，已交付，见 `44-SYNC-PULL-01.md`） | SYNC-02 | pull tests |
-| E05 | SYNC-BOOTSTRAP-01 | bootstrap 快照与冲突策略 | SYNC-PULL-01 | data-loss tests |
+| E05 | SYNC-BOOTSTRAP-01 | bootstrap 快照与游标衔接（已交付，见 `46-SYNC-BOOTSTRAP-01.md`） | SYNC-PULL-01 | data-loss tests |
 | E06 | DESK-01 | Tauri shell/local SQLite/task UI | SYNC-02 | offline scenario |
 | E06 | AND-01 | Compose shell/Room/task UI | SYNC-02 | offline scenario |
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |

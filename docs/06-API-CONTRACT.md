@@ -83,6 +83,8 @@
 
 `SYNC-PUSH-01` 实现 `POST /sync/push`：`{device_id, mutations[1..100]}` 逐条独立原子处理，返回 `accepted/duplicate/conflict/rejected` 与 `entity_version`/`server_entity`/`retryable`；`(owner, mutation_id)` 幂等，`base_version` 不符返回 `conflict`，已删除返回 `duplicate`，非法/跨 owner/未支持 entity_type 返回 `rejected`。本切片覆盖 task 的 upsert/delete；每次 accepted 推进 revision 并写 `sync_changes`/`client_mutations`。详见 `45-SYNC-PUSH-01.md`。
 
+`SYNC-BOOTSTRAP-01` 实现 `POST /sync/bootstrap`：在 `REPEATABLE READ` 只读事务内返回 `{snapshot_cursor, next_page_token, tasks, lists}`，快照游标编码 committed revision 并可直接作为 `GET /sync/pull` 的 cursor；软删数据排除，`next_page_token` 预留为 null，快照只读。详见 `46-SYNC-BOOTSTRAP-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

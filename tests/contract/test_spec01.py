@@ -353,6 +353,17 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(result["properties"]["status"]["enum"],
                          ["accepted", "duplicate", "conflict", "rejected"])
 
+    def test_sync_bootstrap_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        bootstrap = api["paths"]["/sync/bootstrap"]["post"]
+        self.assertEqual(set(bootstrap["responses"]), {"200", "401"})
+        self.assertIn("snapshot_cursor", bootstrap["description"])
+        schema = bootstrap["responses"]["200"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(schema["required"]), {"snapshot_cursor", "tasks", "lists"})
+        self.assertEqual(schema["properties"]["tasks"]["items"]["$ref"], "#/components/schemas/Task")
+        self.assertEqual(schema["properties"]["lists"]["items"]["$ref"], "#/components/schemas/TaskList")
+        self.assertEqual(schema["properties"]["next_page_token"]["type"], ["string", "null"])
+
 
 if __name__ == "__main__":
     unittest.main()

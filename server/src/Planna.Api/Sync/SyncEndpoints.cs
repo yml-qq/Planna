@@ -11,7 +11,15 @@ public static class SyncEndpoints
         var group = app.MapGroup("/sync").WithTags("Sync").RequireAuthorization();
         group.MapGet("/pull", Pull).WithName("PullChanges");
         group.MapPost("/push", Push).WithName("PushMutations");
+        group.MapPost("/bootstrap", Bootstrap).WithName("BootstrapSync");
         return app;
+    }
+
+    private static async Task<IResult> Bootstrap(HttpContext http, ISyncBootstrapQuery query, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        return TypedResults.Ok(await query.BootstrapAsync(owner, ct));
     }
 
     private static async Task<IResult> Push(HttpContext http, SyncPushRequest request,
