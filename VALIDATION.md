@@ -125,3 +125,10 @@
 - `spec/openapi.yaml` 新增 `/tags` 与 `/tags/{id}` 路径及 `Tag` schema（原机器契约缺失，按 `docs/02` F02 的 name/color 语义补齐）；契约测试增至 13 项。本切片无 schema 变更、无新迁移。
 - 首轮 CI 在应用启动阶段失败：`TagPatch` 同时使用自定义 `JsonConverter` 与 `[JsonUnmappedMemberHandling]`，STJ 在 kind=None 的转换器类型上抛 `Invalid JsonTypeInfo operation`；移除该特性（转换器已拒绝未知字段）后通过。最终 [PostgreSQL 18 CI 运行 43050992171](https://github.com/yml-qq/Planna/actions/runs/43050992171) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、id/键/If-Match/名称/颜色错误、跨 owner 404、大小写不敏感重名冲突、幂等重放与换键冲突、版本冲突 details、颜色清空、软删 tombstone 与 revision 完整性、删除账号 401。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、13 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。任务标签关联与按标签过滤留待 `TASK-TAG-01B`。
+
+## TASK-TAG-01B 任务标签关联与过滤检查（2026-11-11）
+
+- 实现 `PUT /tasks/{id}/tags`（`{expected_version, tag_ids}` 整份替换、最多 20 个唯一标签、空数组清空、标签须 owner 且未软删、任务版本 +1、同步负载含 `tag_ids`）、`GET /tasks/{id}/tags`，并在 `GET /tasks` 增加 `tag_id` 过滤（跨 owner/已软删标签 404、非法 400）。读取走 Dapper，替换走 EF Core 事务服务。
+- 无 schema 变更、无新迁移；契约测试增至 14 项。
+- [PostgreSQL 18 CI 运行 43052396833](https://github.com/yml-qq/Planna/actions/runs/43052396833) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、空集合、替换/子集/清空、幂等重放与换键冲突、版本冲突 details（`changed_fields=tag_ids`）、非法/跨 owner/已软删标签与 21 个标签上限、`tag_id` 过滤与错误、任务/关联/revision/mutations 原子性、删除账号 401。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、14 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
