@@ -429,6 +429,21 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(job["required"]),
                          {"export_id", "status", "requested_at", "snapshot_at", "expires_at"})
 
+    def test_step_up_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        challenge = api["paths"]["/auth/step-up/challenges"]["post"]
+        self.assertEqual(set(challenge["responses"]), {"202", "400", "401", "422", "429"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, challenge["parameters"])
+        verify = api["paths"]["/auth/step-up"]["post"]
+        self.assertEqual(set(verify["responses"]), {"200", "400", "401", "429"})
+        body = verify["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"purpose", "code"})
+        self.assertEqual(body["properties"]["code"]["minLength"], 6)
+        token = verify["responses"]["200"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(token["required"]), {"confirmation_token", "expires_at"})
+        self.assertEqual(token["properties"]["confirmation_token"]["minLength"], 16)
+        self.assertIn("account-deletion", challenge["description"])
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

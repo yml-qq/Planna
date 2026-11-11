@@ -108,6 +108,10 @@ builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
 builder.Services.AddScoped<IAuthService>(sp => new AuthService(
     sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<LoginCodeCipher>(),
     sp.GetRequiredService<IAccessTokenIssuer>(), sp.GetRequiredService<TimeProvider>(), codePepper));
+builder.Services.AddScoped<IStepUpService>(sp => new StepUpService(
+    sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<LoginCodeCipher>(),
+    sp.GetRequiredService<TimeProvider>(), codePepper));
+builder.Services.AddScoped<StepUpEmailDispatcher>();
 builder.Services.AddScoped<IDeviceSessionQuery>(_ => new DeviceSessionQuery(connection));
 builder.Services.AddScoped<IRevokeDeviceSession, RevokeDeviceSession>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -173,6 +177,7 @@ app.UseAuthorization();
 app.MapGet("/health/live", () => TypedResults.Ok(new { status = "ok" }));
 app.MapTaskEndpoints();
 app.MapAuthEndpoints();
+app.MapStepUpEndpoints();
 app.MapDeviceEndpoints();
 app.MapListEndpoints();
 app.MapTagEndpoints();

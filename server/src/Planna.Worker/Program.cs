@@ -27,5 +27,7 @@ builder.Services.AddScoped<ILoginCodeSender>(_ => new SmtpLoginCodeSender(
     smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom));
 builder.Services.AddScoped<LoginEmailDispatcher>();
 builder.Services.AddScoped<AuthQueueMaintenance>();
+builder.Services.AddScoped<StepUpEmailDispatcher>();
 builder.Services.AddHostedService<LoginEmailWorker>();
+builder.Services.AddHostedService<StepUpEmailWorker>();
 await builder.Build().RunAsync();

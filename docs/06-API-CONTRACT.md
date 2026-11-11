@@ -101,6 +101,8 @@
 
 `TIME-01D` 扩展 `POST /tasks/{id}/reopen`：RRULE 任务必须用 `occurrence_id` 撤销已完成的 occurrence（`done → todo`、清空 `completed_at`、版本 +1），响应返回 `Occurrence`；缺失 `occurrence_id` `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 `422 INVALID_OCCURRENCE`，未完成 `409 NOT_COMPLETED`；普通任务保持任务级 reopen。详见 `54-TIME-01D.md`。
 
+`PRIV-STEPUP-01` 实现敏感操作复核：`POST /auth/step-up/challenges` 发送 6 位一次性码（只存哈希、10 分钟有效、每账号 15 分钟 3 次、同键重放不重发），`POST /auth/step-up` 校验最新挑战、最多 5 次尝试并返回绑定 owner 与 `account_delete` 用途的 10 分钟 HMAC token；投递走独立租赁重试队列，Worker 负责发送。详见 `55-PRIV-STEPUP-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks
