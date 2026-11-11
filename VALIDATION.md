@@ -167,3 +167,10 @@
 - `spec/openapi.yaml` 新增 `/tasks/{id}/recurrence`、`/tasks/{id}/occurrences` 与 `Recurrence`/`Occurrence` schema；契约测试增至 19 项。无 schema 变更、无新迁移。
 - 迭代修复：首轮 CI 因 Npgsql 将 Unspecified DateTime 绑定为 `timestamptz` 而 500（`dtstart_local`/窗口参数），改为显式 `NpgsqlDbType.Timestamp`；随后两轮修正 DST 窗口与账目断言（dtstart 之后的候选数、保留的 fall 规则）。最终 [PostgreSQL 18 CI 运行 43063331390](https://github.com/yml-qq/Planna/actions/runs/43063331390) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、规则校验/创建/更新/删除/幂等/版本冲突、周规则窗口计数与排序、春季 DST 跳过、秋季歧义单一最早 instant、窗口边界、owner 隔离与 revision/变更/幂等记录原子性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。occurrence 完成与 after_completion 规则留待 `TIME-01B`。
+
+## TIME-01B 按 occurrence 完成检查（2026-11-12）
+
+- 实现 `POST /tasks/{id}/complete` 的循环任务分支：存在 RRULE 规则时要求 `occurrence_id`，完成写 `task_occurrences.status='done'`、`completed_at`（受信时间钳制到 `[任务创建时间, 当前时间]`）与 `version+1`；响应返回 `Occurrence`（普通任务仍返回 `Task`，OpenAPI 200 为 `oneOf [Task, Occurrence]`）；每次完成推进 revision 并写 `sync_changes(entity_type='occurrence')` 与 `client_mutations`。缺失 occurrence 返回 `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 occurrence 返回 `422 INVALID_OCCURRENCE`，已完成返回 `409 ALREADY_COMPLETED`。
+- 迭代修复：首轮 CI 因重放分支固定按 `TaskReadView` 反序列化、无法重放 occurrence 完成而失败；改为按存储 JSON 形态（`original_local_start` 判定）分派后通过。最终 [PostgreSQL 18 CI 运行 43065790621](https://github.com/yml-qq/Planna/actions/runs/43065790621) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖规则创建→occurrence 物化→完成端到端、幂等重放、重复完成、受信时间、随机/缺失 occurrence、非循环任务、跨 owner 与删除账号、revision/变更/幂等记录原子性。
+- `spec/openapi.yaml` 的 complete 200 响应改为 `oneOf [Task, Occurrence]` 并补充说明；契约测试保持 19 项并通过。无 schema 变更、无新迁移。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`after_completion`/法定工作日规则与 occurrence 撤销留待 `TIME-01C`。
