@@ -29,8 +29,10 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
             e.Property(x => x.TimeZone).HasColumnName("time_zone");
             e.Property(x => x.EstimateMinutes).HasColumnName("estimate_minutes");
             e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.CompletedAt).HasColumnName("completed_at");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
             e.Property(x => x.Position).HasColumnName("position");
         });
         model.Entity<TaskListRow>(e =>
@@ -85,8 +87,10 @@ public sealed class TaskRow
     public short? EstimateMinutes { get; set; }
     public decimal Position { get; set; }
     public long Version { get; set; } = 1;
+    public DateTimeOffset? CompletedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
 }
 
 public sealed class TaskListRow

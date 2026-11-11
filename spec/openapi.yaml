@@ -432,16 +432,20 @@ paths:
     get:
       tags: [Tasks]
       operationId: getTask
+      description: Return the full projection of one owned, non-deleted task including completed_at and version. Foreign or soft-deleted tasks return 404.
       responses:
         '200':
           description: Task
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
     patch:
       tags: [Tasks]
       operationId: updateTask
+      description: Versioned partial update. The patch accepts only title/description/priority/due_at/due_local_date/time_zone/estimate_minutes; omitted fields keep their values and null clears a nullable field. A stale expected_version returns 409 with error.details containing entity_id, server_version and changed_fields. The same idempotency key replays the original response.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -455,11 +459,15 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
     delete:
       tags: [Tasks]
       operationId: deleteTask
+      description: Soft-delete an owned task with a strong If-Match version. Writes deleted_at, bumps version and records a sync_changes op=delete tombstone in one transaction; the same idempotency key replays as 204.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - name: If-Match
@@ -467,7 +475,10 @@ paths:
           required: true
           schema: {type: string, pattern: '^"v[0-9]+"$'}
       responses:
-        '204': {description: Soft-deleted task}
+        '204': {description: Soft-deleted task or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
   /tasks/{id}/complete:
     post:

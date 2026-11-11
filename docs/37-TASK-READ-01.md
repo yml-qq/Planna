@@ -18,6 +18,6 @@
 
 ## 边界与后续
 
-- 本切片不含 `GET /tasks/{id}`、`PATCH /tasks/{id}`、`DELETE /tasks/{id}`、`complete/reopen`、List CRUD、Tags/Steps 与客户端实现；这些属于 `TASK-02`/`TASK-03` 与后续客户端切片。
+- 本切片不含 `GET /tasks/{id}`、`PATCH /tasks/{id}`、`DELETE /tasks/{id}`、`complete/reopen`、List CRUD、Tags/Steps 与客户端实现；详情/更新/软删属于 `TASK-UPDATE-01`（`38-TASK-UPDATE-01.md`），完成/撤销完成属于 `TASK-COMPLETE-01`，List CRUD 与 Tags/Steps 属于 `TASK-03`。
 - 主分页走新索引；`status` 过滤可借用 `idx_tasks_owner_status`，更大数据量或复合过滤的性能以真实数据复核。
 - AI 读工具接入、同步 pull 与本地 SQLite 读取语义不受本切片影响。

@@ -13,19 +13,20 @@
 | E02 | AUTH-01 | 用户/设备/refresh token | E01 | session tests |
 | E03 | DATA-01 | EF Core schema/migrations/索引 + Dapper 查询契约 | E01 | 空库迁移和查询集成测试 |
 | E04 | TASK-01 | Task 创建写入 `POST /tasks` + owner 权限 + 幂等（已交付，见 `30-TASK-01.md`） | E02,E03 | owner tests |
-| E04 | TASK-READ-01 | Task 分页读取 `GET /tasks`（owner 过滤 + 游标分页） | TASK-01 | pagination tests |
-| E04 | TASK-02 | Task 更新/完成/软删 | TASK-READ-01 | state tests |
-| E04 | TASK-03 | List CRUD + Tags/Steps/查询 | TASK-02 | filter tests |
+| E04 | TASK-READ-01 | Task 分页读取 `GET /tasks`（owner 过滤 + 游标分页，已交付） | TASK-01 | pagination tests |
+| E04 | TASK-UPDATE-01 | Task 详情/更新/软删（`GET/PATCH/DELETE /tasks/{id}`，版本化 + 幂等） | TASK-READ-01 | state tests |
+| E04 | TASK-COMPLETE-01 | Task 完成/撤销完成 | TASK-UPDATE-01 | state tests |
+| E04 | TASK-03 | List CRUD + Tags/Steps/查询 | TASK-COMPLETE-01 | filter tests |
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-02 | push/outbox/幂等 | SYNC-01,TASK-02 | replay tests |
 | E05 | SYNC-03 | pull/bootstrap/conflict | SYNC-02 | data-loss tests |
 | E06 | DESK-01 | Tauri shell/local SQLite/task UI | SYNC-02 | offline scenario |
 | E06 | AND-01 | Compose shell/Room/task UI | SYNC-02 | offline scenario |
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |
-| E07 | TIME-01 | 时间语义/RRULE/实例 | TASK-02 | DST fixtures |
+| E07 | TIME-01 | 时间语义/RRULE/实例 | TASK-COMPLETE-01 | DST fixtures |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
-| E08 | AI-01 | Provider/structured parse | E02,TASK-02 | golden tests |
+| E08 | AI-01 | Provider/structured parse | E02,TASK-COMPLETE-01 | golden tests |
 | E08 | AI-02 | 任务拆解草案/编辑确认（V1.0） | AI-01 | 结构化契约、no auto-write |
 | E08 | AI-03 | Scheduler hard constraints | TIME-01 | conflict=0 |
 | E08 | AI-04 | Plan preview/apply/audit | AI-03,SYNC-03 | stale apply tests |
@@ -39,7 +40,7 @@
 | E11 | SEC-01 | 首发安全与隐私审核 | AUTH-01,DATA-01,SYNC-03,REM-01,AI-02,AI-04,UX-01,PRIV-01 | 权限/数据治理/渗透测试 |
 | E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
 
-E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03`。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`），先于更新/完成/软删（`TASK-02`）交付。
+E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03`。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成）。
 
 ## 3. V1.0 交付范围
 

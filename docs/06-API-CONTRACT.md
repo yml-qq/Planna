@@ -67,6 +67,8 @@
 
 `TASK-READ-01` 实现 `GET /tasks`。列表只返回 JWT `sub` 对应的未软删任务，按 `created_at,id` 降序游标分页，默认 50、最多 200；游标不透明，客户端原样传回，非法 `limit`/`cursor`/`list_id`/`status` 返回 `400`。可选 `list_id` 只接受当前 owner 未删除的清单，否则 `404 LIST_NOT_FOUND`；可选 `status` 限 `todo/in_progress/done/archived`。响应为 `items + next_cursor`，`next_cursor` 为 `null` 表示没有更多页；列表不是时间点快照，翻页期间的新写入可能出现在更早的页。详见 `37-TASK-READ-01.md`。
 
+`TASK-UPDATE-01` 实现 `GET/PATCH/DELETE /tasks/{id}`。`GET` 只返回当前 owner 未软删任务的完整投影（含 `completed_at`/`version`），跨 owner 或已软删一律 `404 TASK_NOT_FOUND`。`PATCH` 必须带 UUID `Idempotency-Key`，body 为 `{expected_version, patch}`：patch 只允许 `title/description/priority/due_at/due_local_date/time_zone/estimate_minutes`，未列字段保持原值，可空字段 `null` 表示清空；合并后按创建规则校验，非法返回 `422`。版本不符返回 `409 VERSION_CONFLICT`，`error.details` 含 `entity_id`、`server_version` 与可安全披露的 `changed_fields`；同一键相同请求重放原响应，同一键不同请求返回 `409 IDEMPOTENCY_KEY_REUSED`。`DELETE` 必须带 `Idempotency-Key` 与 `If-Match: "vN"`，软删为 `deleted_at + version+1` 并写 `sync_changes(op='delete')` tombstone，相同键重试返回 `204`。详见 `38-TASK-UPDATE-01.md`。`complete/reopen` 留待 `TASK-COMPLETE-01`。
+
 ## 3. Task 示例
 
 ### POST /tasks

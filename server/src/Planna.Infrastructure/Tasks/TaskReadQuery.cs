@@ -7,12 +7,16 @@ namespace Planna.Infrastructure.Tasks;
 // Read model only. Task writes stay in the EF Core CreateTaskService.
 public sealed class TaskReadQuery(string connectionString) : ITaskReadQuery
 {
-    private const string ListSql = """
-        SELECT id AS "Id", list_id AS "ListId", title AS "Title", description AS "Description",
-            status AS "Status", priority AS "Priority", start_at AS "StartAt", due_at AS "DueAt",
-            due_local_date AS "DueLocalDate", all_day AS "AllDay", time_zone AS "TimeZone",
-            estimate_minutes AS "EstimateMinutes", completed_at AS "CompletedAt",
-            version AS "Version", created_at AS "CreatedAt"
+    private const string Columns = """
+        id AS "Id", list_id AS "ListId", title AS "Title", description AS "Description",
+        status AS "Status", priority AS "Priority", start_at AS "StartAt", due_at AS "DueAt",
+        due_local_date AS "DueLocalDate", all_day AS "AllDay", time_zone AS "TimeZone",
+        estimate_minutes AS "EstimateMinutes", completed_at AS "CompletedAt",
+        version AS "Version", created_at AS "CreatedAt"
+        """;
+
+    private const string ListSql = $"""
+        SELECT {Columns}
         FROM tasks
         WHERE owner_id = @OwnerId AND deleted_at IS NULL
             AND (CAST(@ListId AS uuid) IS NULL OR list_id = CAST(@ListId AS uuid))
@@ -22,6 +26,24 @@ public sealed class TaskReadQuery(string connectionString) : ITaskReadQuery
         ORDER BY created_at DESC, id DESC
         LIMIT @Take
         """;
+
+    private const string GetSql = $"""
+        SELECT {Columns}
+        FROM tasks
+        WHERE id = @Id AND owner_id = @OwnerId AND deleted_at IS NULL
+        LIMIT 1
+        """;
+
+    public async Task<GetTaskResult> GetAsync(Guid ownerId, Guid taskId, CancellationToken ct)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(ct);
+        var row = await connection.QuerySingleOrDefaultAsync<TaskDbRow>(new CommandDefinition(GetSql,
+            new { Id = taskId, OwnerId = ownerId }, cancellationToken: ct));
+        return row is null
+            ? new(TaskGetStatus.NotFound)
+            : new(TaskGetStatus.Ok, ToView(row));
+    }
 
     public async Task<TaskReadResult> ListAsync(Guid ownerId, TaskPageCursor? cursor, int limit,
         Guid? listId, string? status, CancellationToken ct)

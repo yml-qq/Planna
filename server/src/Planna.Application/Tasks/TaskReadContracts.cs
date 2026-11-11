@@ -61,8 +61,14 @@ public enum TaskReadStatus { Ok, ListNotFound }
 
 public sealed record TaskReadResult(TaskReadStatus Status, TaskReadPage? Page = null);
 
+public enum TaskGetStatus { Ok, NotFound }
+
+public sealed record GetTaskResult(TaskGetStatus Status, TaskReadView? Task = null);
+
 public interface ITaskReadQuery
 {
     Task<TaskReadResult> ListAsync(Guid ownerId, TaskPageCursor? cursor, int limit,
         Guid? listId, string? status, CancellationToken ct);
+
+    Task<GetTaskResult> GetAsync(Guid ownerId, Guid taskId, CancellationToken ct);
 }

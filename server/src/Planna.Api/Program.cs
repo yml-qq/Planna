@@ -52,6 +52,8 @@ builder.Services.AddDbContext<AuthContext>(options => options.UseNpgsql(connecti
 builder.Services.AddSingleton(new LoginCodeCipher(outboxKey));
 builder.Services.AddScoped<ICreateTask, CreateTaskService>();
 builder.Services.AddScoped<ITaskReadQuery>(_ => new TaskReadQuery(connection));
+builder.Services.AddScoped<IUpdateTask, TaskUpdateService>();
+builder.Services.AddScoped<IDeleteTask, TaskDeleteService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));

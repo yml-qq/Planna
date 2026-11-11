@@ -170,6 +170,31 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(params["list_id"]["schema"]["format"], "uuid")
         self.assertEqual(params["status"]["schema"]["enum"], ["todo", "in_progress", "done", "archived"])
 
+    def test_task_update_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        detail = api["paths"]["/tasks/{id}"]
+        self.assertEqual(detail["parameters"], [{"$ref": "#/components/parameters/TaskId"}])
+        self.assertEqual(set(detail["get"]["responses"]), {"200", "400", "401", "404"})
+        patch = detail["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, patch["parameters"])
+        patch_schema = api["components"]["schemas"]["UpdateTask"]
+        self.assertTrue(patch_schema["additionalProperties"] is False)
+        self.assertEqual(set(patch_schema["required"]), {"expected_version", "patch"})
+        self.assertEqual(set(patch_schema["properties"]["patch"]["properties"]),
+                         {"title", "description", "priority", "due_at",
+                          "due_local_date", "time_zone", "estimate_minutes"})
+        self.assertEqual(patch_schema["properties"]["patch"]["minProperties"], 1)
+        delete = detail["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
+        params = {}
+        for p in delete["parameters"]:
+            name = p["$ref"].rsplit("/", 1)[-1] if "$ref" in p else p["name"]
+            params[name] = p
+        self.assertEqual(params["IdempotencyKey"]["$ref"], "#/components/parameters/IdempotencyKey")
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+        self.assertIn("changed_fields", patch["description"])
+
 
 if __name__ == "__main__":
     unittest.main()

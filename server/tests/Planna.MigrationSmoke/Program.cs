@@ -128,3 +128,4 @@ await HttpAuthSmoke.RunAsync(connection);
 await AuthMaintenanceSmoke.RunAsync(connection);
 await HttpDeviceSmoke.RunAsync(connection);
 await HttpTaskReadSmoke.RunAsync(connection);
+await HttpTaskWriteSmoke.RunAsync(connection);

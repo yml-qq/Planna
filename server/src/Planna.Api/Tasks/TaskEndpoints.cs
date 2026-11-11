@@ -11,7 +11,83 @@ public static class TaskEndpoints
         var group = app.MapGroup("/tasks").WithTags("Tasks").RequireAuthorization();
         group.MapPost("", CreateTask).WithName("CreateTask");
         group.MapGet("", ListTasks).WithName("ListTasks");
+        group.MapGet("/{id}", GetTask).WithName("GetTask");
+        group.MapPatch("/{id}", PatchTask).WithName("PatchTask");
+        group.MapDelete("/{id}", DeleteTask).WithName("DeleteTask");
         return app;
+    }
+
+    private static Task<IResult> GetTask(HttpContext http, string id, ITaskReadQuery query, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? GetTaskCore(http, taskId, query, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> GetTaskCore(HttpContext http, Guid taskId,
+        ITaskReadQuery query, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        var result = await query.GetAsync(owner, taskId, ct);
+        return result.Status == TaskGetStatus.Ok
+            ? TypedResults.Ok(result.Task)
+            : Error(http, 404, "TASK_NOT_FOUND");
+    }
+
+    private static Task<IResult> PatchTask(HttpContext http, string id, UpdateTaskRequest request,
+        IUpdateTask command, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? PatchTaskCore(http, taskId, request, command, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> PatchTaskCore(HttpContext http, Guid taskId,
+        UpdateTaskRequest request, IUpdateTask command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+
+        var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
+        return result.Status switch
+        {
+            UpdateTaskStatus.Updated or UpdateTaskStatus.Replayed => TypedResults.Ok(result.Task),
+            UpdateTaskStatus.NotFound => Error(http, 404, result.Code!),
+            UpdateTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            UpdateTaskStatus.Invalid => Error(http, 422, result.Code!),
+            UpdateTaskStatus.Conflict => Error(http, 409, result.Code!),
+            UpdateTaskStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static Task<IResult> DeleteTask(HttpContext http, string id, IDeleteTask command, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? DeleteTaskCore(http, taskId, command, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> DeleteTaskCore(HttpContext http, Guid taskId,
+        IDeleteTask command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var etag = http.Request.Headers.IfMatch.ToString();
+        if (etag.Length < 4 || etag[0] != '"' || etag[^1] != '"' || etag[1] != 'v' ||
+            !long.TryParse(etag.AsSpan(2, etag.Length - 3), NumberStyles.None,
+                CultureInfo.InvariantCulture, out var expectedVersion) || expectedVersion < 1)
+            return Error(http, 400, "INVALID_VERSION");
+
+        var result = await command.ExecuteAsync(owner, mutation, taskId, expectedVersion, ct);
+        return result.Status switch
+        {
+            DeleteTaskStatus.Deleted or DeleteTaskStatus.Replayed => TypedResults.NoContent(),
+            DeleteTaskStatus.NotFound => Error(http, 404, result.Code!),
+            DeleteTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            DeleteTaskStatus.Conflict => Error(http, 409, result.Code!),
+            DeleteTaskStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static async Task<IResult> ListTasks(HttpContext http, ITaskReadQuery query, CancellationToken ct)
@@ -73,10 +149,19 @@ public static class TaskEndpoints
         };
     }
 
-    private static IResult Error(HttpContext http, int status, string code) =>
-        TypedResults.Json(new
+    private static IResult Error(HttpContext http, int status, string code, object? details = null)
+    {
+        var error = new Dictionary<string, object?>
+        {
+            ["code"] = code,
+            ["message"] = code,
+            ["retryable"] = false
+        };
+        if (details is not null) error["details"] = details;
+        return TypedResults.Json(new
         {
             request_id = http.TraceIdentifier,
-            error = new { code, message = code, retryable = false }
+            error
         }, statusCode: status);
+    }
 }
