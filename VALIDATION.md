@@ -283,3 +283,11 @@
 - src-tauri 新增 `HttpTransport`（reqwest blocking + rustls，Bearer + `/sync/push`、`/sync/pull`）与 `run_sync` 命令；本地 `cargo test`（store 9 + sync 7 = 16 项）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、shell `cargo check` 均通过。
 - [Desktop core 43105576627](https://github.com/yml-qq/Planna/actions/runs/43105576627) 三个作业（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43105576757](https://github.com/yml-qq/Planna/actions/runs/43105576757) 均 **success**；服务端契约无变更。
 - 未连接生产库、未提交凭据；登录/token 存储、自动重试调度、`CURSOR_EXPIRED` bootstrap 与安装包签名留待 `DESK-01E`。
+
+## DESK-01E 同步重试与桌面登录检查（2026-11-12）
+
+- core：新增 `TransportError { Retryable, CursorExpired, Fatal }`、注入式退避的 `sync_with_retry`、`Store::clear_cursor`；`CursorExpired` 自动清游标并从无游标重拉一次，连续过期返回错误。测试新增 4 项（core 合计 **20 项**：store 9 + sync 11），覆盖可重试两次后成功（退避 `[0,1]`）、Fatal 不重试且保留 outbox、游标恢复、连续过期报错。
+- src-tauri：`HttpTransport` 按状态码分类（410/429/5xx/其他）；`run_sync` 三次尝试 + 0.5s/1s 退避；新增 `request_login_code`、`login_with_code`（refresh token 存 OS 凭据库 `keyring`，仅返回 access token）、`restore_session`（401 清本地 refresh 并 `SESSION_EXPIRED`）、`sign_out_local`。
+- 本地验证：`cargo test`（20 项）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`（core 与 shell）、shell `cargo check` 全部通过。
+- [Desktop core 43107671168](https://github.com/yml-qq/Planna/actions/runs/43107671168)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43107670927](https://github.com/yml-qq/Planna/actions/runs/43107670927) 均 **success**；服务端契约无变更。
+- 未连接生产库、未提交凭据；登录界面、自动刷新/后台调度、服务端登出撤销与安装包签名留待 `DESK-01F`。

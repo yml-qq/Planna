@@ -1,6 +1,6 @@
 # 64｜DESK-01E：同步重试/游标恢复与桌面登录
 
-状态：代码已实现；本地 `cargo test`（core 20 项）、`cargo fmt/clippy/check`（core 与 shell）通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01E 小节。登录界面、自动重试调度、服务端会话撤销与安装包签名属 `DESK-01F`。
+状态：代码已实现；本地 `cargo test`（core 20 项）、`cargo fmt/clippy/check`（core 与 shell）通过；[Desktop core 43107671168](https://github.com/yml-qq/Planna/actions/runs/43107671168)（三个作业）与 [Server integration 43107670927](https://github.com/yml-qq/Planna/actions/runs/43107670927) 均 **success**。登录界面、自动重试调度、服务端会话撤销与安装包签名属 `DESK-01F`。
 
 ## 范围与验收
 
