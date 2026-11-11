@@ -318,6 +318,22 @@ class Spec01Contracts(unittest.TestCase):
         schema = api["components"]["schemas"]["TaskStep"]
         self.assertEqual(set(schema["required"]), {"id", "title", "is_done", "position", "version"})
 
+    def test_sync_pull_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        pull = api["paths"]["/sync/pull"]["get"]
+        self.assertEqual({p["name"] for p in pull["parameters"]}, {"cursor", "limit"})
+        self.assertEqual(set(pull["responses"]), {"200", "400", "401", "410"})
+        params = {p["name"]: p for p in pull["parameters"]}
+        self.assertEqual(params["limit"]["schema"]["maximum"], 200)
+        self.assertEqual(params["limit"]["schema"]["default"], 100)
+        self.assertIn("CURSOR_EXPIRED", pull["description"])
+        response = api["components"]["schemas"]["SyncPullResponse"]
+        self.assertEqual(set(response["required"]), {"changes", "next_cursor", "has_more", "server_time"})
+        change = api["components"]["schemas"]["SyncChange"]
+        self.assertEqual(set(change["required"]),
+                         {"revision", "change_index", "entity_type", "entity_id", "op", "version"})
+        self.assertEqual(change["properties"]["payload"]["type"], ["object", "null"])
+
 
 if __name__ == "__main__":
     unittest.main()

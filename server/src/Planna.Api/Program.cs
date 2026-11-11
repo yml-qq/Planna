@@ -7,12 +7,15 @@ using Microsoft.IdentityModel.Tokens;
 using Planna.Application.Tasks;
 using Planna.Application.Identity;
 using Planna.Application.Tags;
+using Planna.Application.Sync;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
+using Planna.Api.Sync;
 using Planna.Api.Tags;
 using Planna.Api.Tasks;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
+using Planna.Infrastructure.Sync;
 using Planna.Infrastructure.Tasks;
 using Planna.Infrastructure.Tags;
 
@@ -74,6 +77,7 @@ builder.Services.AddScoped<IStepReadQuery>(_ => new StepQuery(connection));
 builder.Services.AddScoped<ICreateStep, StepCreateService>();
 builder.Services.AddScoped<IUpdateStep, StepUpdateService>();
 builder.Services.AddScoped<IDeleteStep, StepDeleteService>();
+builder.Services.AddScoped<ISyncPullQuery>(sp => new SyncPullQuery(connection, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -149,6 +153,7 @@ app.MapDeviceEndpoints();
 app.MapListEndpoints();
 app.MapTagEndpoints();
 app.MapStepEndpoints();
+app.MapSyncEndpoints();
 app.Run();
 
 public partial class Program;

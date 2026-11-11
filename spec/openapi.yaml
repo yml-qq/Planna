@@ -909,15 +909,23 @@ paths:
     get:
       tags: [Sync]
       operationId: pullChanges
+      description: Incremental changes for the authenticated owner ordered by committed revision and change_index. The cursor is opaque, returned as next_cursor and passed back unchanged; changes are never addressed by updated_at. When the requested revision predates the retained window the server returns 410 CURSOR_EXPIRED and the client must bootstrap safely.
       parameters:
-        - {name: cursor, in: query, schema: {type: string}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
+        - name: cursor
+          in: query
+          schema: {type: string}
+          description: Opaque next_cursor from the preceding pull; omit for the beginning of the retained window.
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 200, default: 100}
       responses:
         '200':
           description: Incremental change pages for current owner
           content:
             application/json:
               schema: {$ref: '#/components/schemas/SyncPullResponse'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '410': {$ref: '#/components/responses/ErrorResponse'}
   /sync/bootstrap:
     post:

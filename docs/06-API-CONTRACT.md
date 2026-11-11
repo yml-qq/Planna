@@ -79,6 +79,8 @@
 
 `TASK-STEP-01` 实现任务步骤：`GET /tasks/{id}/steps` 返回未软删步骤（按 `position,id`），`POST /tasks/{id}/steps` 带 `Idempotency-Key` 与 `{id, title, position?, estimate_minutes?}`，`PATCH /steps/{id}` 以 `{expected_version, patch}` 更新标题/完成态/位置/估算（`null` 清空估算），`DELETE /steps/{id}` 带 `If-Match: "vN"` 软删并写 `sync_changes(entity_type='step')` tombstone。步骤写入独立推进 revision 与版本，不改变所属任务版本；跨 owner 或已软删任务/步骤一律 `404`。详见 `43-STEP-01.md`。
 
+`SYNC-PULL-01` 实现 `GET /sync/pull`：按 owner 已提交 revision 与 `change_index` 升序返回 `changes/next_cursor/has_more/server_time`；游标不透明且不基于 `updated_at`，默认 100、最大 200，非法参数 `400`。请求游标早于 `min_available_revision` 时返回 `410 CURSOR_EXPIRED`，客户端应走安全 bootstrap。拉取只返回当前 owner 的变更且不写任何状态。详见 `44-SYNC-PULL-01.md`。`sync/push` 与 `sync/bootstrap` 留待 `SYNC-PUSH-01` 与 `SYNC-BOOTSTRAP-01`。
+
 ## 3. Task 示例
 
 ### POST /tasks
