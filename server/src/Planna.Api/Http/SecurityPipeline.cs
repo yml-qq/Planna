@@ -61,17 +61,20 @@ public static class SecurityPipeline
                         context.Request.Method, context.Request.Path.Value);
                 if (context.Response.HasStarted) throw;
                 context.Response.Clear();
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                var (status, code) = ex switch
+                {
+                    BadHttpRequestException bad => (bad.StatusCode,
+                        bad.StatusCode == StatusCodes.Status413PayloadTooLarge
+                            ? "PAYLOAD_TOO_LARGE"
+                            : "INVALID_REQUEST"),
+                    _ => (StatusCodes.Status500InternalServerError, "INTERNAL_ERROR")
+                };
+                context.Response.StatusCode = status;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
                 {
                     request_id = context.TraceIdentifier,
-                    error = new
-                    {
-                        code = "INTERNAL_ERROR",
-                        message = "INTERNAL_ERROR",
-                        retryable = true
-                    }
+                    error = new { code, message = code, retryable = status >= 500 }
                 });
             }
         });
