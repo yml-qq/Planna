@@ -4,7 +4,7 @@ using Planna.Infrastructure.Privacy;
 
 internal static class AccountCleanupSmoke
 {
-    public static async Task RunAsync(NpgsqlConnection db)
+    public static async Task RunAsync(NpgsqlConnection db, string connectionString)
     {
         var oldOwner = Guid.NewGuid();
         var recentOwner = Guid.NewGuid();
@@ -59,7 +59,7 @@ internal static class AccountCleanupSmoke
             oldOwner, Guid.NewGuid());
 
         var now = DateTimeOffset.UtcNow;
-        var service = new AccountCleanupService(db.ConnectionString, NullLogger<AccountCleanupService>.Instance);
+        var service = new AccountCleanupService(connectionString, NullLogger<AccountCleanupService>.Instance);
         var report = await service.RunOnceAsync(now, TimeSpan.FromDays(30), CancellationToken.None);
         if (report.PurgedRequests != 2 || report.FailedRequests != 0)
             throw new InvalidOperationException($"Unexpected cleanup report {report}.");

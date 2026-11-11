@@ -148,4 +148,4 @@ await HttpOccurrenceReopenSmoke.RunAsync(connection);
 await HttpStepUpSmoke.RunAsync(connection);
 await HttpDeletionSmoke.RunAsync(connection);
 await HttpAiConsentSmoke.RunAsync(connection);
-await AccountCleanupSmoke.RunAsync(connection);
+await AccountCleanupSmoke.RunAsync(connection, value);
