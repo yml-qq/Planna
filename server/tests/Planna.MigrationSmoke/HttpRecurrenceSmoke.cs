@@ -56,7 +56,7 @@ internal static class HttpRecurrenceSmoke
 
         // Rule validation.
         await AssertCode(await PutRecurrence(client, token, t1, Guid.NewGuid(),
-            Body(0, "after_completion", "FREQ=DAILY", "Asia/Shanghai", "2026-11-10T09:00:00")),
+            Body(0, "legal_workday", "FREQ=DAILY", "Asia/Shanghai", "2026-11-10T09:00:00")),
             HttpStatusCode.UnprocessableEntity, "UNSUPPORTED_RECURRENCE");
         await AssertCode(await PutRecurrence(client, token, t1, Guid.NewGuid(),
             Body(0, "rrule", "FREQ=HOURLY", "Asia/Shanghai", "2026-11-10T09:00:00")),
