@@ -1,6 +1,6 @@
 # 57｜AI-CONSENT-01：AI 数据授权与 scope 校验
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 AI-CONSENT-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43086547322](https://github.com/yml-qq/Planna/actions/runs/43086547322) 已通过。
 
 ## 范围与验收
 

@@ -231,3 +231,11 @@
 - `spec/openapi.yaml` 更新删除端点语义与 400/422；契约测试增至 25 项（含 `account-deletion.schema.json` 校验）。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43084137323](https://github.com/yml-qq/Planna/actions/runs/43084137323) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、缺幂等键、无效 token、未确认离线设备、删除原子性（账号/会话/请求/幂等记录）、旧 token 与第二设备回连被拒、revision/同步日志不变。迭代修复：清理前序 step-up 队列遗留的 pending 邮件，避免跨冒烟串码。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、25 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。删除后清理作业与保留策略（`PRIV-CLEANUP-01`）留待后续切片。
+
+## AI-CONSENT-01 AI 数据授权检查（2026-11-12）
+
+- 实现 `GET /ai/consent`（`{allowed_scopes, updated_at}`，未授权为空）与 `PUT /ai/consent`（`Idempotency-Key`，白名单 `task_drafts/plan_preview/task_notes/calendar_free_slots`，整份替换、空数组撤销、未知/重复 scope `422 INVALID_SCOPE`、同键重放原视图）；`POST /ai/parse` 的 `allowed_scopes` 必须为白名单、含 `task_drafts` 且全部包含在持久化授权中，否则 `403 AI_SCOPE_DENIED`。
+- `spec/openapi.yaml` 新增 `/ai/consent` 与 `AiConsent`/`AiConsentScope` schema；契约测试增至 26 项。无 schema 变更、无新迁移；授权不写 revision/`sync_changes`，随账号导出并级联删除。
+- 迭代修复：`ai_consents.updated_at` 微秒精度导致 PUT 响应与 GET 不一致（更新时截断到微秒）。
+- [PostgreSQL 18 CI 运行 43086547322](https://github.com/yml-qq/Planna/actions/runs/43086547322) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、初始空授权、幂等重放、scope 交集与拒绝、撤销即时生效、未知 scope、缺幂等键、跨 owner 隔离、删除账号与不写同步状态。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、26 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。真实 Provider 的细粒度 scope 与“仅本次”授权审计留待后续切片。
