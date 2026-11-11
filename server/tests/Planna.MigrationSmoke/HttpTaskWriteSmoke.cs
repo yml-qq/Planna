@@ -227,7 +227,7 @@ internal static class HttpTaskWriteSmoke
     private static async Task<JsonElement?> Details(HttpResponseMessage response)
     {
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return json.RootElement.GetProperty("error").TryGetProperty("details", out var value) ? value : null;
+        return json.RootElement.GetProperty("error").TryGetProperty("details", out var value) ? value.Clone() : null;
     }
 
     private static async Task<long> Scalar(NpgsqlConnection db, string sql, params object[] values)
