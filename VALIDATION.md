@@ -314,3 +314,12 @@
 - 文档：`67-DESK-01H.md` 给出发布清单（前端/Rust 校验、`cargo tauri build` 三平台产物、Authenticode/Developer ID/notarization、updater 公钥与私钥管理、干净系统安装/升级/卸载冒烟、商店合规），明确签名凭据不得入库。
 - [Desktop core 43113570657](https://github.com/yml-qq/Planna/actions/runs/43113570657)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43113570578](https://github.com/yml-qq/Planna/actions/runs/43113570578) 均 **success**；无服务端契约变更。
 - 未连接生产库、未提交凭据；签名安装包与自动更新（需发布凭据）为 `DESK-01I` 部署任务。
+
+## HAB-01A 习惯 CRUD 检查（2026-11-12）
+
+- 新增迁移 `202611130001_Habits`（`habits` 表：标题 1..200、`daily/weekly/weekdays`、weekly 唯一 weekday 约束、目标 1..1000、单位 1..20、owner 复合唯一/级联），审阅 SQL `server/habit-migrations.sql`。
+- 端点：`GET/POST /habits`、`GET/PATCH/DELETE /habits/{id}`（幂等键；PATCH 版控；DELETE 使用 `If-Match: "vN"` 软删除）；校验 IANA 时区、weekdays 排序去重、非 weekly 清空 weekdays、`paused` 切换 `paused_at`；账号删除清理作业加入 `habits`。
+- 习惯本切片不写 revision/`sync_changes`（导出/同步留 `HAB-01B`）；幂等记录与请求哈希保证重放一致。
+- `spec/openapi.yaml` 新增 5 个端点与 `Habit`/`HabitPatch` schema；契约测试增至 **27 项**并通过。
+- [Server integration 43115731827](https://github.com/yml-qq/Planna/actions/runs/43115731827) 与 [Desktop core 43115731923](https://github.com/yml-qq/Planna/actions/runs/43115731923) 均 **success**，覆盖迁移重放、Habit 冒烟（鉴权/校验/重放/版控/跨 owner/删除）与既有服务端测试。
+- 未连接生产库、未提交凭据；打卡日志、连续天数、习惯同步/导出与客户端打卡 UI 留待 `HAB-01B`。
