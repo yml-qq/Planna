@@ -72,6 +72,7 @@
 | 59 | `docs/59-SEC-01A.md` | 服务端安全基线：安全头、异常兜底、请求上限、AI 限流 |
 | 60 | `docs/60-DESK-01A.md` | 桌面离线核心：SQLite 本地事实源与原子 outbox |
 | 61 | `docs/61-DESK-01B.md` | 桌面 Web UI、桥接层与前端单测 |
+| 62 | `docs/62-DESK-01C.md` | Tauri 2 外壳、CSP/能力配置与 Rust 命令层 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
