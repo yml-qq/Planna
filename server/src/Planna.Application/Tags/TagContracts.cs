@@ -19,7 +19,6 @@ public sealed record CreateTagRequest(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("color")] string? Color);
 
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 [JsonConverter(typeof(TagPatchJsonConverter))]
 public sealed class TagPatch
 {
