@@ -65,6 +65,21 @@ describe('task store', () => {
       },
       createTask: async () => {
         throw new Error('offline')
+      },
+      requestLoginCode: async () => {
+        throw new Error('offline')
+      },
+      login: async () => {
+        throw new Error('offline')
+      },
+      restoreSession: async () => {
+        throw new Error('offline')
+      },
+      signOut: async () => {
+        throw new Error('offline')
+      },
+      runSync: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')

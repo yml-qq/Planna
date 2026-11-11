@@ -1,25 +1,108 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { createBridge } from './api'
+import { createSessionStore } from './session'
 import { createTaskStore } from './tasks'
 
-const store = createTaskStore(createBridge())
-const title = ref('')
-const submitting = ref(false)
-
-async function submit(): Promise<void> {
-  if (submitting.value) return
-  submitting.value = true
+function readBaseUrl(): string {
   try {
-    const created = await store.add(title.value)
-    if (created) title.value = ''
-  } finally {
-    submitting.value = false
+    return localStorage.getItem('planna.baseUrl') ?? 'http://127.0.0.1:5080'
+  } catch {
+    return 'http://127.0.0.1:5080'
   }
 }
 
-onMounted(() => {
-  void store.refresh()
+function readDeviceId(): string {
+  try {
+    const existing = localStorage.getItem('planna.deviceId')
+    if (existing) return existing
+    const generated = crypto.randomUUID()
+    localStorage.setItem('planna.deviceId', generated)
+    return generated
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
+const bridge = createBridge()
+const baseUrl = ref(readBaseUrl())
+const deviceId = ref(readDeviceId())
+const session = createSessionStore(bridge, {
+  baseUrl: () => baseUrl.value,
+  deviceId: deviceId.value
+})
+const tasks = createTaskStore(bridge)
+
+const email = ref('')
+const code = ref('')
+const title = ref('')
+const syncing = ref(false)
+
+const signedIn = computed(() => session.status.value === 'signed_in')
+const signedOut = computed(() => session.status.value === 'signed_out')
+const errorText = computed(() => {
+  const error = session.error.value ?? tasks.error.value
+  if (!error) return null
+  const messages: Record<string, string> = {
+    INVALID_EMAIL: '请输入有效邮箱',
+    INVALID_CREDENTIALS: '邮箱或验证码格式不正确',
+    CODE_REQUEST_FAILED: '验证码发送失败，请重试',
+    SIGN_IN_FAILED: '登录失败，请检查验证码',
+    SYNC_FAILED: '同步失败，稍后自动重试',
+    NOT_SIGNED_IN: '请先登录',
+    INVALID_TITLE: '标题不能为空且不超过 500 字',
+    SAVE_FAILED: '保存失败，请重试',
+    LOAD_FAILED: '加载失败，请重试'
+  }
+  return messages[error] ?? '操作失败，请重试'
+})
+const syncSummary = computed(() => {
+  const summary = session.lastSync.value
+  if (!summary) return null
+  return `已推送 ${summary.pushed}、拉取 ${summary.pulled}、冲突 ${summary.conflicts.length}`
+})
+
+watch(baseUrl, (value) => {
+  try {
+    localStorage.setItem('planna.baseUrl', value)
+  } catch {
+    // Storage may be unavailable in hardened environments; the session still works in memory.
+  }
+})
+
+async function requestCode(): Promise<void> {
+  const ok = await session.requestCode(email.value)
+  if (ok) code.value = ''
+}
+
+async function submitLogin(): Promise<void> {
+  if (await session.signIn(email.value, code.value)) {
+    await tasks.refresh()
+  }
+}
+
+async function submitTask(): Promise<void> {
+  const created = await tasks.add(title.value)
+  if (created) title.value = ''
+}
+
+async function syncNow(): Promise<void> {
+  if (syncing.value) return
+  syncing.value = true
+  try {
+    if (await session.sync()) await tasks.refresh()
+  } finally {
+    syncing.value = false
+  }
+}
+
+async function signOut(): Promise<void> {
+  await session.signOut()
+  tasks.tasks.value = []
+}
+
+onMounted(async () => {
+  if (await session.restore()) await tasks.refresh()
 })
 </script>
 
@@ -27,38 +110,70 @@ onMounted(() => {
   <main class="app">
     <header class="app__header">
       <h1>Planna 普拉清单</h1>
-      <p class="app__subtitle">本地优先 · 离线可用</p>
+      <p class="app__subtitle">本地优先 · 离线可用 · 登录后同步</p>
     </header>
 
-    <form class="composer" @submit.prevent="submit">
-      <label class="composer__label" for="task-title">新增任务</label>
-      <div class="composer__row">
-        <input
-          id="task-title"
-          v-model="title"
-          class="composer__input"
-          type="text"
-          maxlength="500"
-          placeholder="例如：写周报"
-          autocomplete="off"
-        />
-        <button class="composer__button" type="submit" :disabled="submitting || title.trim() === ''">
-          添加
-        </button>
+    <section v-if="signedOut" class="card" aria-labelledby="login-title">
+      <h2 id="login-title" class="card__title">登录</h2>
+      <p class="card__hint">使用邮箱一次性验证码登录；离线时仍可查看本地任务。</p>
+      <label class="field">
+        <span>服务器地址</span>
+        <input v-model="baseUrl" class="input" type="url" autocomplete="off" spellcheck="false" />
+      </label>
+      <label class="field">
+        <span>邮箱</span>
+        <input v-model="email" class="input" type="email" autocomplete="email" />
+      </label>
+      <div class="field">
+        <span>验证码</span>
+        <div class="field__row">
+          <input v-model="code" class="input" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />
+          <button class="button button--ghost" type="button" :disabled="session.busy.value" @click="requestCode">
+            获取验证码
+          </button>
+        </div>
       </div>
-    </form>
+      <button class="button" type="button" :disabled="session.busy.value" @click="submitLogin">登录</button>
+    </section>
 
-    <p v-if="store.error.value" class="status status--error" role="alert">
-      {{ store.error.value === 'INVALID_TITLE' ? '标题不能为空且不超过 500 字' : '操作失败，请重试' }}
-    </p>
-    <p v-else-if="store.loading.value" class="status">加载中…</p>
+    <template v-if="signedIn">
+      <section class="card" aria-labelledby="session-title">
+        <div class="card__row">
+          <h2 id="session-title" class="card__title">已登录</h2>
+          <button class="button button--ghost" type="button" @click="signOut">退出</button>
+        </div>
+        <div class="card__row">
+          <button class="button" type="button" :disabled="syncing" @click="syncNow">立即同步</button>
+          <span v-if="syncing" class="status">同步中…</span>
+          <span v-else-if="syncSummary" class="status">{{ syncSummary }}</span>
+        </div>
+      </section>
 
-    <ul v-if="store.tasks.value.length > 0" class="tasks" aria-label="任务列表">
-      <li v-for="task in store.tasks.value" :key="task.id" class="tasks__item">
-        <span class="tasks__title">{{ task.title }}</span>
-        <span class="tasks__meta">v{{ task.version }}</span>
-      </li>
-    </ul>
-    <p v-else-if="!store.loading.value" class="empty">还没有任务，先在下方添加一条。</p>
+      <form class="composer" @submit.prevent="submitTask">
+        <label class="composer__label" for="task-title">新增任务</label>
+        <div class="composer__row">
+          <input
+            id="task-title"
+            v-model="title"
+            class="input"
+            type="text"
+            maxlength="500"
+            placeholder="例如：写周报"
+            autocomplete="off"
+          />
+          <button class="button" type="submit" :disabled="session.busy.value || title.trim() === ''">添加</button>
+        </div>
+      </form>
+
+      <ul v-if="tasks.tasks.value.length > 0" class="tasks" aria-label="任务列表">
+        <li v-for="task in tasks.tasks.value" :key="task.id" class="tasks__item">
+          <span class="tasks__title">{{ task.title }}</span>
+          <span class="tasks__meta">v{{ task.version }}</span>
+        </li>
+      </ul>
+      <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
+    </template>
+
+    <p v-if="errorText" class="status status--error" role="alert">{{ errorText }}</p>
   </main>
 </template>
