@@ -93,6 +93,8 @@
 
 `AI-01` 实现 `POST /ai/parse`：`{input, context{time_zone, now}, allowed_scopes?}` → `{intent, drafts, assumptions, unresolved_fields}` 草稿，不执行任何写入。按 docs/09「先规则解析」实现确定性 Provider（`IAiParseProvider`），支持 `今天/明天/后天`、`下周X`、`YYYY-MM-DD` 与常用时间短语；缺少 context/超长输入 `400`、非法时区 `400`、scope 不含 `task_drafts` `403 AI_SCOPE_DENIED`、Provider 关闭 `503 AI_UNAVAILABLE`。提示注入文本仅作为标题文本。真实 LLM Provider、预算与拆解/计划端点留待 `AI-01B`..`AI-04`。详见 `50-AI-01.md`。
 
+`AI-02` 实现拆解草案生命周期：`POST /ai/tasks/{id}/breakdowns` 生成并持久化 1..20 步草案（不写业务步骤），`PUT /ai/breakdowns/{id}` 整份替换步骤并轮换 `snapshot_hash`/确认 token，`POST /ai/breakdowns/{id}/apply` 校验 owner/状态/过期/快照/token/任务版本后同一事务创建全部步骤、推进 revision、写 `sync_changes` 与 `ai_action_audits`；同键重放返回同一结果，失败不产生部分步骤。详见 `51-AI-02.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

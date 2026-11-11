@@ -367,6 +367,26 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(response["properties"]["intent"]["enum"],
                          ["create_task", "multi_task", "clarify", "unsupported"])
 
+    def test_ai_breakdown_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        create = api["paths"]["/ai/tasks/{id}/breakdowns"]["post"]
+        self.assertEqual(set(create["responses"]), {"201", "400", "401", "403", "404", "409", "429", "503"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+        body = create["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"expected_version"})
+        self.assertFalse(body["additionalProperties"])
+        edit = api["paths"]["/ai/breakdowns/{id}"]["put"]
+        self.assertEqual(set(edit["responses"]), {"200", "400", "401", "403", "404", "409", "422"})
+        edit_body = edit["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(edit_body["properties"]["steps"]["maxItems"], 20)
+        self.assertEqual(edit_body["properties"]["steps"]["minItems"], 1)
+        apply_op = api["paths"]["/ai/breakdowns/{id}/apply"]["post"]
+        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409"})
+        applied = apply_op["responses"]["200"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(applied["required"]), {"status", "task_id", "step_ids"})
+        self.assertEqual(applied["properties"]["step_ids"]["maxItems"], 20)
+        self.assertIn("same idempotency key", apply_op["responses"]["200"]["description"])
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

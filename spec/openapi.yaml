@@ -1068,7 +1068,7 @@ paths:
     post:
       tags: [AI]
       operationId: proposeTaskBreakdown
-      description: Persist an AI draft for an owned task; does not create business steps.
+      description: Persist a draft of at most 20 steps for an owned task; no business steps are created until apply. The first stage uses a deterministic rule-based splitter (docs/09) behind an injectable provider; the task version must match expected_version. The same idempotency key replays the original draft.
       parameters:
         - $ref: '#/components/parameters/TaskId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -1089,6 +1089,8 @@ paths:
           content:
             application/json:
               schema: {$ref: './ai-breakdown.schema.json'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
@@ -1098,7 +1100,7 @@ paths:
     put:
       tags: [AI]
       operationId: editTaskBreakdown
-      description: Replace all draft steps; revalidate and issue a fresh snapshot hash and confirmation token.
+      description: Replace all draft steps with the current snapshot_hash; revalidate title/count/positions/estimates and issue a fresh snapshot hash and confirmation token (the previous token is invalidated). Applied or expired drafts return 409 BREAKDOWN_STALE.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -1119,6 +1121,8 @@ paths:
           content:
             application/json:
               schema: {$ref: './ai-breakdown.schema.json'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
@@ -1127,7 +1131,7 @@ paths:
     post:
       tags: [AI]
       operationId: applyTaskBreakdown
-      description: Apply the complete confirmed draft atomically; no partial step writes.
+      description: Apply the complete confirmed draft atomically; no partial step writes. Validates owner, draft status/expiry, snapshot hash, confirmation token and current task version; creates all steps in one transaction, advances the owner revision and records sync changes plus an audit row. The same idempotency key returns the same applied result.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -1155,6 +1159,8 @@ paths:
                   status: {type: string, const: applied}
                   task_id: {type: string, format: uuid}
                   step_ids: {type: array, minItems: 1, maxItems: 20, items: {type: string, format: uuid}}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}

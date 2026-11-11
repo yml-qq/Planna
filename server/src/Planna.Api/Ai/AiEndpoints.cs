@@ -9,8 +9,71 @@ public static class AiEndpoints
     {
         var group = app.MapGroup("/ai").WithTags("AI").RequireAuthorization();
         group.MapPost("/parse", Parse).WithName("ParseNaturalLanguage");
+        group.MapPost("/tasks/{taskId}/breakdowns", CreateBreakdown).WithName("CreateBreakdown");
+        group.MapPut("/breakdowns/{draftId}", EditBreakdown).WithName("EditBreakdown");
+        group.MapPost("/breakdowns/{draftId}/apply", ApplyBreakdown).WithName("ApplyBreakdown");
         return app;
     }
+
+    private static async Task<IResult> CreateBreakdown(HttpContext http, string taskId,
+        CreateBreakdownRequest request, CancellationToken ct)
+    {
+        if (!Guid.TryParse(taskId, out var id) || id == Guid.Empty) return Error(http, 400, "INVALID_TASK_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (http.RequestServices.GetService<IAiBreakdownProvider>() is null)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var command = http.RequestServices.GetRequiredService<ICreateBreakdown>();
+        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+    }
+
+    private static async Task<IResult> EditBreakdown(HttpContext http, string draftId,
+        EditBreakdownRequest request, CancellationToken ct)
+    {
+        if (!Guid.TryParse(draftId, out var id) || id == Guid.Empty) return Error(http, 400, "INVALID_BREAKDOWN_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (http.RequestServices.GetService<IAiBreakdownProvider>() is null)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var command = http.RequestServices.GetRequiredService<IEditBreakdown>();
+        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+    }
+
+    private static async Task<IResult> ApplyBreakdown(HttpContext http, string draftId,
+        ApplyBreakdownRequest request, CancellationToken ct)
+    {
+        if (!Guid.TryParse(draftId, out var id) || id == Guid.Empty) return Error(http, 400, "INVALID_BREAKDOWN_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (http.RequestServices.GetService<IAiBreakdownProvider>() is null)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var command = http.RequestServices.GetRequiredService<IApplyBreakdown>();
+        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+    }
+
+    private static IResult MapBreakdownResult(HttpContext http, BreakdownResult result) => result.Status switch
+    {
+        BreakdownStatus.Created => TypedResults.Created($"/ai/breakdowns/{result.Draft!.DraftId}", result.Draft),
+        BreakdownStatus.Edited => TypedResults.Ok(result.Draft),
+        BreakdownStatus.Applied => TypedResults.Ok(result.Applied),
+        BreakdownStatus.Replayed => result.Applied is not null
+            ? (IResult)TypedResults.Ok(result.Applied)
+            : TypedResults.Ok(result.Draft),
+        BreakdownStatus.Invalid => Error(http, 422, result.Code!),
+        BreakdownStatus.NotFound => Error(http, 404, result.Code!),
+        BreakdownStatus.Stale => Error(http, 409, "BREAKDOWN_STALE"),
+        BreakdownStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+        BreakdownStatus.StepConflict => Error(http, 409, result.Code!),
+        BreakdownStatus.Conflict => Error(http, 409, result.Code!),
+        BreakdownStatus.AccountDeleted => Error(http, 401, result.Code!),
+        _ => Error(http, 500, "INTERNAL_ERROR")
+    };
 
     private static async Task<IResult> Parse(HttpContext http, AiParseRequest request, CancellationToken ct)
     {

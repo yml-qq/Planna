@@ -87,7 +87,13 @@ builder.Services.AddScoped<IPutRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IDeleteRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IRecurrenceQuery>(_ => new RecurrenceQuery(connection));
 if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringComparison.OrdinalIgnoreCase))
+{
     builder.Services.AddSingleton<IAiParseProvider, RuleBasedParseProvider>();
+    builder.Services.AddSingleton<IAiBreakdownProvider, RuleBasedBreakdownProvider>();
+    builder.Services.AddScoped<ICreateBreakdown, BreakdownService>();
+    builder.Services.AddScoped<IEditBreakdown, BreakdownService>();
+    builder.Services.AddScoped<IApplyBreakdown, BreakdownService>();
+}
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
