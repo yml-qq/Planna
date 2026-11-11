@@ -62,10 +62,10 @@ internal static class HttpBreakdownSmoke
         var createKey = Guid.NewGuid();
         var created = await Create(client, token, t1, createKey, "{\"expected_version\":2}");
         Check(created, HttpStatusCode.Created);
-        if (created.Headers.Location?.ToString() != "/ai/breakdowns/" + (await DraftId(created)))
-            throw new InvalidOperationException("Breakdown location differs from contract.");
         var draft = await created.Content.ReadFromJsonAsync<AiBreakdownDraftView>()
             ?? throw new InvalidOperationException("Breakdown draft missing.");
+        if (created.Headers.Location?.ToString() != "/ai/breakdowns/" + draft.DraftId)
+            throw new InvalidOperationException("Breakdown location differs from contract.");
         if (draft.TaskVersion != 2 || draft.Steps.Count != 3 ||
             !draft.Steps.Select(x => x.Position).SequenceEqual(new[] { 0, 1, 2 }) ||
             draft.SnapshotHash.Length < 16 || draft.ConfirmationToken.Length < 16 ||
@@ -174,6 +174,8 @@ internal static class HttpBreakdownSmoke
             ?? throw new InvalidOperationException("Draft missing.");
         return draft.DraftId;
     }
+
+    // Response content is single-read in the test server; helpers must not consume a body the test still needs.
 
     private static async Task<HttpResponseMessage> Create(HttpClient client, string? token, Guid taskId,
         Guid? key, string json)
