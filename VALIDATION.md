@@ -323,3 +323,12 @@
 - `spec/openapi.yaml` 新增 5 个端点与 `Habit`/`HabitPatch` schema；契约测试增至 **27 项**并通过。
 - [Server integration 43115731827](https://github.com/yml-qq/Planna/actions/runs/43115731827) 与 [Desktop core 43115731923](https://github.com/yml-qq/Planna/actions/runs/43115731923) 均 **success**，覆盖迁移重放、Habit 冒烟（鉴权/校验/重放/版控/跨 owner/删除）与既有服务端测试。
 - 未连接生产库、未提交凭据；打卡日志、连续天数、习惯同步/导出与客户端打卡 UI 留待 `HAB-01B`。
+
+## HAB-01B 打卡日志检查（2026-11-12）
+
+- 新增迁移 `202611130002_HabitLogs`（`habit_logs`：`(owner_id, habit_id, log_date)` 唯一、quantity 0..1000、status `done/skipped`、FK 级联），审阅 SQL 更新为 `server/habit-migrations.sql`。
+- 端点：`PUT /habits/{id}/logs/{date}`（`Idempotency-Key`，同日原地 upsert 并版本 +1，显式日期即用户补签，缺省 quantity=1/status=done）；`GET /habits/{id}/logs?from&to`（必填、含端点、≤366 天、按日期升序）。账号删除清理作业先删 `habit_logs` 再删 `habits`，`AccountCleanupSmoke` 已扩展覆盖。
+- `spec/openapi.yaml` 新增两个端点与 `HabitLog` schema；契约测试增至 **28 项**并通过。日志暂不写 revision/`sync_changes`（与 HAB-01A 一致）。
+- 迭代修复：冒烟窗口宽度误写为 2 个月（预期 422 却合法），改为超过 366 天后通过。
+- [Server integration 43119204817](https://github.com/yml-qq/Planna/actions/runs/43119204817)（迁移重放 + Habit/HabitLog 冒烟 + 清理冒烟）与 [Desktop core 43119204667](https://github.com/yml-qq/Planna/actions/runs/43119204667) 均 **success**。
+- 未连接生产库、未提交凭据；连续天数规则、习惯同步/导出 schema v2 与客户端打卡 UI 留待 `HAB-01C`。
