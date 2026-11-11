@@ -139,3 +139,10 @@
 - `spec/openapi.yaml` 新增 `/tasks/{id}/steps` 与 `/steps/{id}` 路径及 `TaskStep` schema（原机器契约未定义步骤端点，按 `docs/02` 任务步骤语义补齐）；契约测试增至 15 项。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43053807500](https://github.com/yml-qq/Planna/actions/runs/43053807500) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、排序、创建重放/换键冲突/ID 冲突、版本冲突 details、估算清空、软删 tombstone、跨 owner/已软删任务与步骤 404、删除账号 401、revision/步骤版本/任务版本不变与幂等记录原子性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、15 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
+
+## SYNC-PULL-01 增量拉取检查（2026-11-11）
+
+- 实现 `GET /sync/pull`：按 owner 已提交 revision 与 `change_index` 升序返回 `changes/next_cursor/has_more/server_time`；游标不透明（`base64url(revision:change_index)`），默认 100、最大 200，非法参数 `400`；请求游标早于 `min_available_revision` 时 `410 CURSOR_EXPIRED`。只返回当前 owner 的变更，拉取不写任何状态（不推进 revision、不写 `sync_changes`/`client_mutations`）。读取走独立 Dapper 查询。
+- `spec/openapi.yaml` 的 `/sync/pull` 补充语义与 `400/401` 响应；契约测试增至 16 项。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43055217937](https://github.com/yml-qq/Planna/actions/runs/43055217937) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、按 revision/change_index 排序、跨多变更 revision 的分页不重不漏（limit=2）、结束游标重复拉取、`has_more`、非法 limit/cursor、`410` 到期窗口与 owner 隔离、只读无副作用。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、16 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`sync/push` 与 `sync/bootstrap` 留待后续切片。

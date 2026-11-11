@@ -1,6 +1,6 @@
 # 44｜SYNC-PULL-01：增量拉取切片
 
-状态：代码已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 SYNC-PULL-01 小节。
+状态：代码已实现；[PostgreSQL 18 隔离库 CI 运行 43055217937](https://github.com/yml-qq/Planna/actions/runs/43055217937) 已通过。
 
 ## 范围与验收
 
