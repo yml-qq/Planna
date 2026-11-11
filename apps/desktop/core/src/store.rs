@@ -100,6 +100,7 @@ pub struct OutboxEntry {
     pub operation: String,
     pub payload: String,
     pub request_hash: String,
+    pub base_version: i64,
     pub created_at: String,
     pub attempts: i64,
 }
@@ -175,6 +176,7 @@ impl Store {
                 operation TEXT NOT NULL CHECK (operation IN ('upsert','delete')),
                 payload TEXT NOT NULL,
                 request_hash TEXT NOT NULL,
+                base_version INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
                 attempts INTEGER NOT NULL DEFAULT 0,
                 last_error TEXT
@@ -185,6 +187,16 @@ impl Store {
             );
             "#,
         )?;
+        let has_base_version: i64 = self.connection.query_row(
+            "SELECT count(*) FROM pragma_table_info('outbox') WHERE name = 'base_version'",
+            [],
+            |row| row.get(0),
+        )?;
+        if has_base_version == 0 {
+            self.connection.execute_batch(
+                "ALTER TABLE outbox ADD COLUMN base_version INTEGER NOT NULL DEFAULT 0;",
+            )?;
+        }
         Ok(())
     }
 
@@ -239,12 +251,15 @@ impl Store {
         .to_string();
         insert_outbox(
             &transaction,
-            mutation_id,
-            "task",
-            &task.id,
-            "upsert",
-            &payload,
-            now,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "task",
+                entity_id: &task.id,
+                operation: "upsert",
+                base_version: 0,
+                payload: &payload,
+                now,
+            },
         )?;
         transaction.commit()?;
         Ok(true)
@@ -329,12 +344,15 @@ impl Store {
             serde_json::to_string(&stored).map_err(|_| StoreError::Validation("payload"))?;
         insert_outbox(
             &transaction,
-            mutation_id,
-            "task",
-            task_id,
-            "upsert",
-            &payload,
-            now,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "task",
+                entity_id: task_id,
+                operation: "upsert",
+                base_version: expected_version,
+                payload: &payload,
+                now,
+            },
         )?;
         transaction.commit()?;
         Ok(true)
@@ -357,7 +375,7 @@ impl Store {
     pub fn pending_mutations(&self, limit: i64) -> StoreResult<Vec<OutboxEntry>> {
         let mut statement = self.connection.prepare(
             "SELECT mutation_id, entity_type, entity_id, operation, payload, request_hash,
-                created_at, attempts
+                base_version, created_at, attempts
              FROM outbox ORDER BY created_at, mutation_id LIMIT ?1",
         )?;
         let rows = statement.query_map(params![limit], |row| {
@@ -368,8 +386,9 @@ impl Store {
                 operation: row.get(3)?,
                 payload: row.get(4)?,
                 request_hash: row.get(5)?,
-                created_at: row.get(6)?,
-                attempts: row.get(7)?,
+                base_version: row.get(6)?,
+                created_at: row.get(7)?,
+                attempts: row.get(8)?,
             })
         })?;
         let mut entries = Vec::new();
@@ -472,12 +491,7 @@ impl Store {
         Ok(outcome)
     }
 
-    pub fn set_cursor(&self, revision: i64, change_index: i64) -> StoreResult<()> {
-        let value = serde_json::json!({
-            "revision": revision,
-            "change_index": change_index
-        })
-        .to_string();
+    pub fn set_cursor_value(&self, value: &str) -> StoreResult<()> {
         self.connection.execute(
             "INSERT INTO sync_state(key, value) VALUES ('pull_cursor', ?1)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -486,27 +500,15 @@ impl Store {
         Ok(())
     }
 
-    pub fn cursor(&self) -> StoreResult<Option<(i64, i64)>> {
-        let raw: Option<String> = self
-            .connection
+    pub fn cursor_value(&self) -> StoreResult<Option<String>> {
+        self.connection
             .query_row(
                 "SELECT value FROM sync_state WHERE key = 'pull_cursor'",
                 [],
                 |row| row.get(0),
             )
-            .optional()?;
-        let Some(raw) = raw else { return Ok(None) };
-        let parsed: serde_json::Value =
-            serde_json::from_str(&raw).map_err(|_| StoreError::Validation("bad cursor"))?;
-        let revision = parsed
-            .get("revision")
-            .and_then(|value| value.as_i64())
-            .ok_or(StoreError::Validation("bad cursor revision"))?;
-        let change_index = parsed
-            .get("change_index")
-            .and_then(|value| value.as_i64())
-            .ok_or(StoreError::Validation("bad cursor index"))?;
-        Ok(Some((revision, change_index)))
+            .optional()
+            .map_err(StoreError::from)
     }
 }
 
@@ -531,26 +533,33 @@ fn insert_task(transaction: &Transaction<'_>, task: &NewTask, now: &str) -> Stor
     Ok(())
 }
 
-fn insert_outbox(
-    transaction: &Transaction<'_>,
-    mutation_id: &str,
-    entity_type: &str,
-    entity_id: &str,
-    operation: &str,
-    payload: &str,
-    now: &str,
-) -> StoreResult<()> {
+struct OutboxWrite<'a> {
+    mutation_id: &'a str,
+    entity_type: &'a str,
+    entity_id: &'a str,
+    operation: &'a str,
+    base_version: i64,
+    payload: &'a str,
+    now: &'a str,
+}
+
+fn insert_outbox(transaction: &Transaction<'_>, entry: OutboxWrite<'_>) -> StoreResult<()> {
     transaction.execute(
-        "INSERT INTO outbox(mutation_id, entity_type, entity_id, operation, payload, request_hash, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO outbox(mutation_id, entity_type, entity_id, operation, payload, request_hash,
+            base_version, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
-            mutation_id,
-            entity_type,
-            entity_id,
-            operation,
-            payload,
-            format!("{operation}:{entity_id}:{mutation_id}"),
-            now
+            entry.mutation_id,
+            entry.entity_type,
+            entry.entity_id,
+            entry.operation,
+            entry.payload,
+            format!(
+                "{}:{}:{}",
+                entry.operation, entry.entity_id, entry.mutation_id
+            ),
+            entry.base_version,
+            entry.now
         ],
     )?;
     Ok(())

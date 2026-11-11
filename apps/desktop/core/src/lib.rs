@@ -5,7 +5,12 @@
 //! to the network; the shell drains `outbox` through the sync API and applies pull changes.
 
 pub mod store;
+pub mod sync;
 
 pub use store::{
     Change, NewTask, OutboxEntry, PullOutcome, Store, StoreError, StoredTask, TaskPatch,
+};
+pub use sync::{
+    PullChange, PullResponse, PushMutation, PushRequest, PushResponse, PushResult, SyncOutcome,
+    SyncTransport, sync_once,
 };

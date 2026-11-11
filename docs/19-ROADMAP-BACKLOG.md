@@ -27,7 +27,8 @@
 | E06 | DESK-01A | 桌面离线核心：本地 SQLite + 原子 outbox + 拉取应用（已交付，见 `60-DESK-01A.md`） | SYNC-PUSH-01 | offline scenario |
 | E06 | DESK-01B | 桌面 Web UI 与本地桥接层（Vue 3 + TS + Vite + Vitest，已交付，见 `61-DESK-01B.md`） | DESK-01A | offline scenario |
 | E06 | DESK-01C | Tauri 2 外壳与 Rust 命令层（已交付，见 `62-DESK-01C.md`） | DESK-01B | shell check |
-| E06 | DESK-01D | 登录/同步调度、outbox 重试与安装包 | DESK-01C | offline scenario |
+| E06 | DESK-01D | 离线同步引擎与 HTTP 传输命令（已交付，见 `63-DESK-01D.md`） | DESK-01C | sync replay tests |
+| E06 | DESK-01E | 登录/token 存储、自动重试调度、安装包签名 | DESK-01D | offline scenario |
 | E06 | AND-01 | Compose shell/Room/task UI | SYNC-02 | offline scenario |
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |
 | E07 | TIME-01A | 循环规则 CRUD 与 occurrence 窗口物化（已交付，见 `47-TIME-01A.md`） | TASK-COMPLETE-01 | DST fixtures |

@@ -220,9 +220,12 @@ fn pull_applies_newer_versions_and_skips_stale_ones() {
 #[test]
 fn cursor_round_trips() {
     let store = Store::open_in_memory().expect("store");
-    assert_eq!(store.cursor().expect("empty"), None);
-    store.set_cursor(7, 2).expect("cursor");
-    assert_eq!(store.cursor().expect("cursor"), Some((7, 2)));
+    assert_eq!(store.cursor_value().expect("empty"), None);
+    store.set_cursor_value("cursor-7").expect("cursor");
+    assert_eq!(
+        store.cursor_value().expect("cursor"),
+        Some("cursor-7".to_string())
+    );
 }
 
 #[test]
@@ -235,9 +238,12 @@ fn file_store_persists_across_reopen() {
         store
             .create_task(&task(), "mutation-1", "2026-11-12T00:00:00Z")
             .expect("created");
-        store.set_cursor(3, 0).expect("cursor");
+        store.set_cursor_value("cursor-3").expect("cursor");
     }
     let store = Store::open(&path).expect("reopen");
     assert_eq!(store.tasks_for_list("list-inbox").expect("tasks").len(), 1);
-    assert_eq!(store.cursor().expect("cursor"), Some((3, 0)));
+    assert_eq!(
+        store.cursor_value().expect("cursor"),
+        Some("cursor-3".to_string())
+    );
 }

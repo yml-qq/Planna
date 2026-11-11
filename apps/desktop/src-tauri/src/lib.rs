@@ -1,6 +1,9 @@
 use std::sync::Mutex;
 
-use planna_desktop_core::{NewTask, OutboxEntry, Store, StoredTask};
+use planna_desktop_core::{
+    NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse, Store, StoredTask, SyncOutcome,
+    SyncTransport, sync_once,
+};
 use serde::Serialize;
 use tauri::{Manager, State};
 
@@ -112,6 +115,70 @@ fn now() -> String {
     format!("{millis}")
 }
 
+struct HttpTransport {
+    base_url: String,
+    access_token: String,
+    client: reqwest::blocking::Client,
+}
+
+impl HttpTransport {
+    fn new(base_url: String, access_token: String) -> Self {
+        Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            access_token,
+            client: reqwest::blocking::Client::new(),
+        }
+    }
+}
+
+impl SyncTransport for HttpTransport {
+    fn push(&mut self, request: &PushRequest) -> Result<PushResponse, String> {
+        let response = self
+            .client
+            .post(format!("{}/sync/push", self.base_url))
+            .bearer_auth(&self.access_token)
+            .json(request)
+            .send()
+            .map_err(|error| error.to_string())?;
+        if !response.status().is_success() {
+            return Err(format!("HTTP {}", response.status().as_u16()));
+        }
+        response
+            .json::<PushResponse>()
+            .map_err(|error| error.to_string())
+    }
+
+    fn pull(&mut self, cursor: Option<&str>, limit: i64) -> Result<PullResponse, String> {
+        let mut request = self
+            .client
+            .get(format!("{}/sync/pull", self.base_url))
+            .bearer_auth(&self.access_token)
+            .query(&[("limit", limit.to_string())]);
+        if let Some(cursor) = cursor {
+            request = request.query(&[("cursor", cursor.to_string())]);
+        }
+        let response = request.send().map_err(|error| error.to_string())?;
+        if !response.status().is_success() {
+            return Err(format!("HTTP {}", response.status().as_u16()));
+        }
+        response
+            .json::<PullResponse>()
+            .map_err(|error| error.to_string())
+    }
+}
+
+#[tauri::command]
+fn run_sync(
+    state: State<'_, AppState>,
+    base_url: String,
+    access_token: String,
+    device_id: String,
+) -> Result<SyncOutcome, String> {
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let mut transport = HttpTransport::new(base_url, access_token);
+    sync_once(&mut store, &mut transport, &device_id, 10)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -134,7 +201,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_tasks,
             create_task,
-            pending_mutations
+            pending_mutations,
+            run_sync
         ])
         .run(tauri::generate_context!())
         .expect("error while running Planna desktop");
