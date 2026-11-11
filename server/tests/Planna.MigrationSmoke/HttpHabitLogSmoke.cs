@@ -84,7 +84,7 @@ internal static class HttpHabitLogSmoke
         if (list.Items.Count != 2 || !list.Items.Select(x => x.LogDate).SequenceEqual(
                 new[] { new DateOnly(2026, 11, 10), new DateOnly(2026, 11, 12) }))
             throw new InvalidOperationException("Habit log list mismatch.");
-        await AssertCode(await GetLogs(client, token, habit, "2026-11-01", "2026-12-31"),
+        await AssertCode(await GetLogs(client, token, habit, "2026-11-01", "2027-12-31"),
             HttpStatusCode.UnprocessableEntity, "INVALID_HABIT_LOG_RANGE");
         await AssertCode(await GetLogs(client, token, habit, "2026-11-30", "2026-11-01"),
             HttpStatusCode.UnprocessableEntity, "INVALID_HABIT_LOG_RANGE");
