@@ -58,7 +58,8 @@ public sealed class StepUpService(AuthContext db, LoginCodeCipher cipher, TimePr
         }
         var challengeId = Guid.NewGuid();
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
-        var expiresAt = now.AddMinutes(ChallengeTtlMinutes);
+        // PostgreSQL timestamptz stores microseconds; truncate so replay returns the identical instant.
+        var expiresAt = TruncateToMicroseconds(now.AddMinutes(ChallengeTtlMinutes));
         await connection.ExecuteAsync(new CommandDefinition("""
             INSERT INTO auth_step_up_challenges(id, user_id, purpose, request_key, code_hash, created_at, expires_at)
             VALUES(@Id, @Owner, 'account_delete', @Key, @Hash, @Now, @Expires)
@@ -176,6 +177,9 @@ public sealed class StepUpService(AuthContext db, LoginCodeCipher cipher, TimePr
 
     private static DateTimeOffset Instant(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
+    private static DateTimeOffset TruncateToMicroseconds(DateTimeOffset value) =>
+        new(value.Ticks - value.Ticks % 10, TimeSpan.Zero);
 
     private sealed class WindowRow
     {
