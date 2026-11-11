@@ -211,3 +211,43 @@ describe('session store', () => {
     expect(failing.error.value).toBe('SYNC_FAILED')
   })
 })
+
+describe('network recovery', () => {
+  it('syncs when connectivity returns and unsubscribes on sign-out', async () => {
+    let syncs = 0
+    const onlineCallbacks: Array<() => void> = []
+    let unsubscribed = false
+    const store = createSessionStore(
+      bridge({
+        runSync: async () => {
+          syncs += 1
+          return {
+            pushed: 0,
+            duplicates: 0,
+            conflicts: [],
+            rejected: 0,
+            pulled: 0,
+            skippedStale: 0,
+            cursor: null
+          }
+        }
+      }),
+      {
+        ...sessionOptions(fakeScheduler()),
+        scheduleInterval: fakeInterval().schedule,
+        watchOnline: (callback) => {
+          onlineCallbacks.push(callback)
+          return () => {
+            unsubscribed = true
+          }
+        }
+      }
+    )
+    await store.signIn('user@example.test', '123456')
+    onlineCallbacks[0]!()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(syncs).toBe(1)
+    await store.signOut()
+    expect(unsubscribed).toBe(true)
+  })
+})

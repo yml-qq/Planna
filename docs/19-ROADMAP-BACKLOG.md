@@ -31,7 +31,8 @@
 | E06 | DESK-01E | 同步重试/游标恢复与桌面登录（token 存 OS 凭据库，已交付，见 `64-DESK-01E.md`） | DESK-01D | retry tests |
 | E06 | DESK-01F | 桌面登录 UI 与会话生命周期（自动刷新/手动同步，已交付，见 `65-DESK-01F.md`） | DESK-01E | session tests |
 | E06 | DESK-01G | 后台同步调度与服务端登出撤销（已交付，见 `66-DESK-01G.md`） | DESK-01F | session tests |
-| E06 | DESK-01H | 安装包签名/自动更新、网络恢复同步与真机冒烟 | DESK-01G | platform smoke |
+| E06 | DESK-01H | 网络恢复同步、release 构建验证与发布清单（已交付，见 `67-DESK-01H.md`） | DESK-01G | platform smoke |
+| E06 | DESK-01I | 签名安装包/自动更新（需发布凭据，部署任务） | DESK-01H | release checklist |
 | E06 | AND-01 | Compose shell/Room/task UI | SYNC-02 | offline scenario |
 | E06 | IOS-01 | SwiftUI shell/SQLite/task UI | SYNC-02 | offline scenario |
 | E07 | TIME-01A | 循环规则 CRUD 与 occurrence 窗口物化（已交付，见 `47-TIME-01A.md`） | TASK-COMPLETE-01 | DST fixtures |

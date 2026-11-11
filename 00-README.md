@@ -77,6 +77,7 @@
 | 64 | `docs/64-DESK-01E.md` | 同步重试/游标恢复与桌面登录/token 存储 |
 | 65 | `docs/65-DESK-01F.md` | 桌面登录 UI、会话生命周期与手动同步 |
 | 66 | `docs/66-DESK-01G.md` | 后台同步调度与服务端登出撤销 |
+| 67 | `docs/67-DESK-01H.md` | 网络恢复同步、release 构建与桌面发布清单 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

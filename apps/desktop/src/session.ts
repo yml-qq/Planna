@@ -15,6 +15,7 @@ export interface SessionOptions {
   autoSync?: boolean
   syncIntervalMs?: number
   scheduleInterval?: (callback: () => void, delayMs: number) => TimerHandle
+  watchOnline?: (callback: () => void) => () => void
 }
 
 export interface SessionStore {
@@ -44,6 +45,12 @@ function defaultScheduleInterval(callback: () => void, delayMs: number): TimerHa
   return { cancel: () => clearInterval(handle) }
 }
 
+function defaultWatchOnline(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener('online', callback)
+  return () => window.removeEventListener('online', callback)
+}
+
 export function createSessionStore(bridge: DesktopBridge, options: SessionOptions): SessionStore {
   const status = ref<SessionStatus>('signed_out')
   const token = ref<string | null>(null)
@@ -56,8 +63,10 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
   const syncIntervalMs = options.syncIntervalMs ?? 5 * 60_000
   const schedule = options.schedule ?? defaultSchedule
   const scheduleInterval = options.scheduleInterval ?? defaultScheduleInterval
+  const watchOnline = options.watchOnline ?? defaultWatchOnline
   let refreshHandle: TimerHandle | null = null
   let syncHandle: TimerHandle | null = null
+  let unwatchOnline: (() => void) | null = null
 
   function clearRefresh(): void {
     refreshHandle?.cancel()
@@ -69,12 +78,21 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
     syncHandle = null
   }
 
+  function clearOnlineWatcher(): void {
+    unwatchOnline?.()
+    unwatchOnline = null
+  }
+
   function startAutoSync(): void {
     clearAutoSync()
+    clearOnlineWatcher()
     if (!autoSync) return
     syncHandle = scheduleInterval(() => {
       void sync()
     }, syncIntervalMs)
+    unwatchOnline = watchOnline(() => {
+      if (token.value) void sync()
+    })
   }
 
   function scheduleRefresh(expiresInSeconds: number): void {
@@ -143,6 +161,7 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
     } catch {
       clearRefresh()
       clearAutoSync()
+      clearOnlineWatcher()
       token.value = null
       status.value = 'signed_out'
       return false
@@ -154,6 +173,7 @@ export function createSessionStore(bridge: DesktopBridge, options: SessionOption
   async function signOut(): Promise<void> {
     clearRefresh()
     clearAutoSync()
+    clearOnlineWatcher()
     busy.value = true
     try {
       await bridge.signOut(options.baseUrl(), token.value)
