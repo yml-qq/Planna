@@ -276,3 +276,10 @@
 - 本地验证：`cargo check`（Tauri 2.12 + webview2-com 0.39，2m08s）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings` 全部通过；未在本机执行 `tauri build` 安装包或真实窗口冒烟。
 - 桌面 CI 新增 `Windows Tauri shell`（fmt/clippy/check + rust-cache）。[Desktop core 43103429108](https://github.com/yml-qq/Planna/actions/runs/43103429108) 三个作业（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43103429062](https://github.com/yml-qq/Planna/actions/runs/43103429062) 均 **success**。
 - 未连接生产库、未提交凭据；登录/同步调度与安装包签名留待 `DESK-01D`。
+
+## DESK-01D 离线同步引擎检查（2026-11-12）
+
+- core 新增 `sync` 模块：`SyncTransport` 可注入的 `sync_once`（最多 100 条 outbox push、accepted/duplicate 清空、conflict/rejected 保留并计次、逐页 pull 直到 `has_more=false` 或页预算、透明 cursor 持久化、版本单调/墓碑由 `apply_pull` 保证、传输失败不丢 outbox）；outbox 新增 `base_version`（旧库幂等补列）。
+- src-tauri 新增 `HttpTransport`（reqwest blocking + rustls，Bearer + `/sync/push`、`/sync/pull`）与 `run_sync` 命令；本地 `cargo test`（store 9 + sync 7 = 16 项）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、shell `cargo check` 均通过。
+- [Desktop core 43105576627](https://github.com/yml-qq/Planna/actions/runs/43105576627) 三个作业（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43105576757](https://github.com/yml-qq/Planna/actions/runs/43105576757) 均 **success**；服务端契约无变更。
+- 未连接生产库、未提交凭据；登录/token 存储、自动重试调度、`CURSOR_EXPIRED` bootstrap 与安装包签名留待 `DESK-01E`。

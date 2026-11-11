@@ -1,6 +1,6 @@
 # 63｜DESK-01D：离线同步引擎与桌面 HTTP 传输
 
-状态：代码已实现；本地 `cargo test`（core 16 项）、`cargo fmt/clippy/check`（core 与 shell）通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01D 小节。登录流程、自动重试调度与安装包签名属 `DESK-01E`。
+状态：代码已实现；本地 `cargo test`（core 16 项）、`cargo fmt/clippy/check`（core 与 shell）通过；[Desktop core 43105576627](https://github.com/yml-qq/Planna/actions/runs/43105576627)（三个作业）与 [Server integration 43105576757](https://github.com/yml-qq/Planna/actions/runs/43105576757) 均 **success**。登录流程、自动重试调度与安装包签名属 `DESK-01E`。
 
 ## 范围与验收
 
