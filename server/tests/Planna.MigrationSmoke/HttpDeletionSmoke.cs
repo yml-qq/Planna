@@ -20,6 +20,9 @@ internal static class HttpDeletionSmoke
 {
     public static async Task RunAsync(NpgsqlConnection db)
     {
+        // Start from a clean step-up queue so an earlier smoke's pending challenge cannot be dispatched here.
+        await Exec(db, "DELETE FROM auth_step_up_email_outbox");
+        await Exec(db, "DELETE FROM auth_step_up_challenges");
         var owner = Guid.NewGuid();
         var email = "deletion-smoke@example.test";
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,$2)", owner, email);
