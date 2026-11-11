@@ -1,7 +1,11 @@
+using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using NpgsqlTypes;
 using Planna.Application.Tasks;
 using Planna.Infrastructure.Persistence;
 
@@ -47,8 +51,17 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
         if (request.ExpectedVersion == 0)
         {
             if (existingVersion > 0) return new(PutRecurrenceStatus.Exists, Code: "RECURRENCE_EXISTS");
-            await db.Database.ExecuteSqlInterpolatedAsync(
-                $"INSERT INTO recurrences(owner_id, task_id, kind, rrule, dtstart_local, time_zone) VALUES({ownerId}, {taskId}, 'rrule', {request.Rrule}, {dtstartLocal}, {request.TimeZone})", ct);
+            await ExecuteTimestampSql(db, """
+                INSERT INTO recurrences(owner_id, task_id, kind, rrule, dtstart_local, time_zone)
+                VALUES(@owner, @task, 'rrule', @rrule, @dtstart, @tz)
+                """, p =>
+            {
+                p.Add(new NpgsqlParameter("owner", ownerId));
+                p.Add(new NpgsqlParameter("task", taskId));
+                p.Add(new NpgsqlParameter("rrule", request.Rrule));
+                p.Add(new NpgsqlParameter("dtstart", NpgsqlDbType.Timestamp) { Value = dtstartLocal });
+                p.Add(new NpgsqlParameter("tz", request.TimeZone));
+            }, ct);
             newVersion = 1;
         }
         else
@@ -58,8 +71,18 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
                 return new(PutRecurrenceStatus.VersionConflict,
                     Details: new VersionConflictDetails(taskId, existingVersion, []));
             newVersion = existingVersion + 1;
-            await db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE recurrences SET rrule={request.Rrule}, dtstart_local={dtstartLocal}, time_zone={request.TimeZone}, version={newVersion}, updated_at=now() WHERE owner_id={ownerId} AND task_id={taskId}", ct);
+            await ExecuteTimestampSql(db, """
+                UPDATE recurrences SET rrule=@rrule, dtstart_local=@dtstart, time_zone=@tz,
+                    version=@version, updated_at=now() WHERE owner_id=@owner AND task_id=@task
+                """, p =>
+            {
+                p.Add(new NpgsqlParameter("owner", ownerId));
+                p.Add(new NpgsqlParameter("task", taskId));
+                p.Add(new NpgsqlParameter("rrule", request.Rrule));
+                p.Add(new NpgsqlParameter("dtstart", NpgsqlDbType.Timestamp) { Value = dtstartLocal });
+                p.Add(new NpgsqlParameter("tz", request.TimeZone));
+                p.Add(new NpgsqlParameter("version", newVersion));
+            }, ct);
         }
 
         await db.Database.ExecuteSqlInterpolatedAsync(
@@ -151,5 +174,15 @@ public sealed class RecurrenceService(TaskWriteContext db, TimeProvider clock) :
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return new(DeleteRecurrenceStatus.Deleted);
+    }
+
+    private static async Task ExecuteTimestampSql(TaskWriteContext db, string sql,
+        Action<DbParameterCollection> addParameters, CancellationToken ct)
+    {
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = sql;
+        command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
+        addParameters(command.Parameters);
+        await command.ExecuteNonQueryAsync(ct);
     }
 }

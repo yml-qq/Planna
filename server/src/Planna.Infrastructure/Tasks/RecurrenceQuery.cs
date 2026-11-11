@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using NpgsqlTypes;
 using Planna.Application.Tasks;
 
 namespace Planna.Infrastructure.Tasks;
@@ -55,34 +56,47 @@ public sealed class RecurrenceQuery(string connectionString) : IRecurrenceQuery
             foreach (var local in candidates)
             {
                 if (!RecurrenceExpander.TryResolveInstant(zone, local, out var dueAt)) continue;
-                await connection.ExecuteAsync(new CommandDefinition("""
+                await using var insert = connection.CreateCommand();
+                insert.Transaction = transaction;
+                insert.CommandText = """
                     INSERT INTO task_occurrences(owner_id, series_task_id, original_local_start, time_zone, due_at)
-                    VALUES(@OwnerId, @TaskId, @Local, @TimeZone, @DueAt)
+                    VALUES(@owner, @task, @local, @tz, @due)
                     ON CONFLICT (series_task_id, original_local_start) DO NOTHING
-                    """, new
-                {
-                    OwnerId = ownerId,
-                    TaskId = taskId,
-                    Local = local,
-                    TimeZone = rule.TimeZone,
-                    DueAt = dueAt.UtcDateTime
-                }, transaction, cancellationToken: ct));
+                    """;
+                insert.Parameters.Add(new NpgsqlParameter("owner", ownerId));
+                insert.Parameters.Add(new NpgsqlParameter("task", taskId));
+                insert.Parameters.Add(new NpgsqlParameter("local", NpgsqlDbType.Timestamp) { Value = local });
+                insert.Parameters.Add(new NpgsqlParameter("tz", rule.TimeZone));
+                insert.Parameters.Add(new NpgsqlParameter("due", NpgsqlDbType.TimestampTz) { Value = dueAt.UtcDateTime });
+                await insert.ExecuteNonQueryAsync(ct);
             }
             await transaction.CommitAsync(ct);
         }
 
-        var rows = await connection.QueryAsync<OccurrenceDbRow>(new CommandDefinition("""
-            SELECT id AS "Id", series_task_id AS "TaskId", original_local_start AS "OriginalLocalStart",
-                time_zone AS "TimeZone", due_at AS "DueAt", status AS "Status",
-                completed_at AS "CompletedAt", version AS "Version"
-            FROM task_occurrences
-            WHERE owner_id = @OwnerId AND series_task_id = @TaskId
-                AND original_local_start >= @From AND original_local_start < @To
-            ORDER BY original_local_start
-            """, new { OwnerId = ownerId, TaskId = taskId, From = fromLocal, To = toLocalExclusive },
-            cancellationToken: ct));
-        var items = rows.Select(row => new OccurrenceView(row.Id, row.TaskId, row.OriginalLocalStart,
-            row.TimeZone, AsInstant(row.DueAt), row.Status, AsInstant(row.CompletedAt), row.Version)).ToList();
+        var items = new List<OccurrenceView>();
+        await using (var select = connection.CreateCommand())
+        {
+            select.CommandText = """
+                SELECT id, series_task_id, original_local_start, time_zone, due_at, status, completed_at, version
+                FROM task_occurrences
+                WHERE owner_id = @owner AND series_task_id = @task
+                    AND original_local_start >= @from AND original_local_start < @to
+                ORDER BY original_local_start
+                """;
+            select.Parameters.Add(new NpgsqlParameter("owner", ownerId));
+            select.Parameters.Add(new NpgsqlParameter("task", taskId));
+            select.Parameters.Add(new NpgsqlParameter("from", NpgsqlDbType.Timestamp) { Value = fromLocal });
+            select.Parameters.Add(new NpgsqlParameter("to", NpgsqlDbType.Timestamp) { Value = toLocalExclusive });
+            await using var reader = await select.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                var dueAt = await reader.IsDBNullAsync(4, ct) ? (DateTime?)null : reader.GetDateTime(4);
+                var completedAt = await reader.IsDBNullAsync(6, ct) ? (DateTime?)null : reader.GetDateTime(6);
+                items.Add(new OccurrenceView(reader.GetGuid(0), reader.GetGuid(1), reader.GetDateTime(2),
+                    reader.GetString(3), AsInstant(dueAt), reader.GetString(5), AsInstant(completedAt),
+                    reader.GetInt64(7)));
+            }
+        }
         return new(GetOccurrenceListStatus.Ok, items);
     }
 
