@@ -1,6 +1,6 @@
 # 65｜DESK-01F：桌面登录 UI 与会话生命周期
 
-状态：代码已实现；本地 `pnpm test`（12 项）与 `pnpm build`（vue-tsc + vite）通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01F 小节。安装包/签名、后台调度与服务端登出撤销属 `DESK-01G`。
+状态：代码已实现；本地 `pnpm test`（12 项）与 `pnpm build`（vue-tsc + vite）通过；[Desktop core 43109615757](https://github.com/yml-qq/Planna/actions/runs/43109615757)（三个作业）与 [Server integration 43109615758](https://github.com/yml-qq/Planna/actions/runs/43109615758) 均 **success**。安装包/签名、后台调度与服务端登出撤销属 `DESK-01G`。
 
 ## 范围与验收
 

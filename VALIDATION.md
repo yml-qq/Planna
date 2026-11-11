@@ -291,3 +291,10 @@
 - 本地验证：`cargo test`（20 项）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`（core 与 shell）、shell `cargo check` 全部通过。
 - [Desktop core 43107671168](https://github.com/yml-qq/Planna/actions/runs/43107671168)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43107670927](https://github.com/yml-qq/Planna/actions/runs/43107670927) 均 **success**；服务端契约无变更。
 - 未连接生产库、未提交凭据；登录界面、自动刷新/后台调度、服务端登出撤销与安装包签名留待 `DESK-01F`。
+
+## DESK-01F 桌面登录 UI 检查（2026-11-12）
+
+- 扩展 `DesktopBridge`（`requestLoginCode/login/restoreSession/signOut/runSync`，Memory 与 Tauri 两种实现）；新增 `session` store（邮箱/验证码校验、内存 access token、按 `expiresIn` 提前 60s 注入式刷新定时器、启动恢复、登出取消定时器、手动 sync 与 `NOT_SIGNED_IN/SYNC_FAILED` 错误映射）；`App.vue` 增加登录面板/同步摘要/退出，base URL 与随机设备 ID 存 `localStorage`（非机密）。
+- 前端测试增至 **12 项**（新增 6 项会话：验证码请求、登录与 `3_540_000ms` 提前刷新、定时刷新轮换 token、登出取消、启动恢复成功/失败、同步错误），`pnpm build`（vue-tsc 严格检查 + vite）通过；无 Rust/服务端契约变更。
+- [Desktop core 43109615757](https://github.com/yml-qq/Planna/actions/runs/43109615757)（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43109615758](https://github.com/yml-qq/Planna/actions/runs/43109615758) 均 **success**。
+- 未连接生产库、未提交凭据；后台/网络恢复自动调度、服务端登出撤销、安装包签名与真机冒烟留待 `DESK-01G`。
