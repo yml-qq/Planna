@@ -68,6 +68,8 @@ builder.Services.AddScoped<ITagReadQuery>(_ => new TagQuery(connection));
 builder.Services.AddScoped<ICreateTag, TagCreateService>();
 builder.Services.AddScoped<IUpdateTag, TagUpdateService>();
 builder.Services.AddScoped<IDeleteTag, TagDeleteService>();
+builder.Services.AddScoped<ITaskTagQuery>(_ => new TaskTagQuery(connection));
+builder.Services.AddScoped<ISetTaskTags, SetTaskTagsService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));

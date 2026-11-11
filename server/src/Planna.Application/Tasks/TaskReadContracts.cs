@@ -57,7 +57,7 @@ public sealed record TaskPageCursor(DateTimeOffset CreatedAt, Guid Id)
     }
 }
 
-public enum TaskReadStatus { Ok, ListNotFound }
+public enum TaskReadStatus { Ok, ListNotFound, TagNotFound }
 
 public sealed record TaskReadResult(TaskReadStatus Status, TaskReadPage? Page = null);
 
@@ -68,7 +68,7 @@ public sealed record GetTaskResult(TaskGetStatus Status, TaskReadView? Task = nu
 public interface ITaskReadQuery
 {
     Task<TaskReadResult> ListAsync(Guid ownerId, TaskPageCursor? cursor, int limit,
-        Guid? listId, string? status, CancellationToken ct);
+        Guid? listId, string? status, Guid? tagId, CancellationToken ct);
 
     Task<GetTaskResult> GetAsync(Guid ownerId, Guid taskId, CancellationToken ct);
 }

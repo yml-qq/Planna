@@ -16,7 +16,53 @@ public static class TaskEndpoints
         group.MapDelete("/{id}", DeleteTask).WithName("DeleteTask");
         group.MapPost("/{id}/complete", CompleteTask).WithName("CompleteTask");
         group.MapPost("/{id}/reopen", ReopenTask).WithName("ReopenTask");
+        group.MapGet("/{id}/tags", GetTaskTags).WithName("GetTaskTags");
+        group.MapPut("/{id}/tags", ReplaceTaskTags).WithName("ReplaceTaskTags");
         return app;
+    }
+
+    private static Task<IResult> GetTaskTags(HttpContext http, string id, ITaskTagQuery query, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? GetTaskTagsCore(http, taskId, query, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> GetTaskTagsCore(HttpContext http, Guid taskId,
+        ITaskTagQuery query, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        var result = await query.GetAsync(owner, taskId, ct);
+        return result.Status == GetTaskTagsStatus.Ok
+            ? TypedResults.Ok(new Planna.Application.Tags.TagListView(result.Items!))
+            : Error(http, 404, "TASK_NOT_FOUND");
+    }
+
+    private static Task<IResult> ReplaceTaskTags(HttpContext http, string id, ReplaceTaskTagsRequest request,
+        ISetTaskTags command, CancellationToken ct) =>
+        Guid.TryParse(id, out var taskId) && taskId != Guid.Empty
+            ? ReplaceTaskTagsCore(http, taskId, request, command, ct)
+            : Task.FromResult(Error(http, 400, "INVALID_TASK_ID"));
+
+    private static async Task<IResult> ReplaceTaskTagsCore(HttpContext http, Guid taskId,
+        ReplaceTaskTagsRequest request, ISetTaskTags command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+
+        var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
+        return result.Status switch
+        {
+            SetTaskTagsStatus.Updated or SetTaskTagsStatus.Replayed => TypedResults.Ok(result.Set),
+            SetTaskTagsStatus.NotFound => Error(http, 404, result.Code!),
+            SetTaskTagsStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            SetTaskTagsStatus.InvalidTagSet => Error(http, 422, result.Code!),
+            SetTaskTagsStatus.Invalid => Error(http, 422, result.Code!),
+            SetTaskTagsStatus.Conflict => Error(http, 409, result.Code!),
+            SetTaskTagsStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static Task<IResult> CompleteTask(HttpContext http, string id, CompleteTaskRequest request,
@@ -184,10 +230,21 @@ public static class TaskEndpoints
             status = rawStatus[0];
         }
 
-        var result = await query.ListAsync(owner, cursor, limit, listId, status, ct);
-        return result.Status == TaskReadStatus.Ok
-            ? TypedResults.Ok(result.Page)
-            : Error(http, 404, "LIST_NOT_FOUND");
+        Guid? tagId = null;
+        if (http.Request.Query.TryGetValue("tag_id", out var rawTag))
+        {
+            if (rawTag.Count != 1 || !Guid.TryParse(rawTag[0], out var parsedTag) || parsedTag == Guid.Empty)
+                return Error(http, 400, "INVALID_TAG_ID");
+            tagId = parsedTag;
+        }
+
+        var result = await query.ListAsync(owner, cursor, limit, listId, status, tagId, ct);
+        return result.Status switch
+        {
+            TaskReadStatus.Ok => TypedResults.Ok(result.Page),
+            TaskReadStatus.TagNotFound => Error(http, 404, "TAG_NOT_FOUND"),
+            _ => Error(http, 404, "LIST_NOT_FOUND")
+        };
     }
 
     private static async Task<IResult> CreateTask(

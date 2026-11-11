@@ -155,7 +155,7 @@ class Spec01Contracts(unittest.TestCase):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         listing = api["paths"]["/tasks"]["get"]
         self.assertEqual({p["name"] for p in listing["parameters"]},
-                         {"limit", "cursor", "list_id", "status"})
+                         {"limit", "cursor", "list_id", "status", "tag_id"})
         self.assertEqual(set(listing["responses"]), {"200", "400", "401", "404"})
         page = listing["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
         self.assertEqual(page, "#/components/schemas/TaskPage")
@@ -273,6 +273,22 @@ class Spec01Contracts(unittest.TestCase):
         schema = api["components"]["schemas"]["Tag"]
         self.assertEqual(set(schema["required"]), {"id", "name", "version"})
         self.assertEqual(schema["properties"]["color"]["type"], ["string", "null"])
+
+    def test_task_tags_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        detail = api["paths"]["/tasks/{id}/tags"]
+        self.assertEqual(detail["parameters"], [{"$ref": "#/components/parameters/TaskId"}])
+        self.assertEqual(set(detail["get"]["responses"]), {"200", "400", "401", "404"})
+        put = detail["put"]
+        self.assertEqual(set(put["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, put["parameters"])
+        body = put["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(set(body["required"]), {"expected_version", "tag_ids"})
+        self.assertEqual(body["properties"]["tag_ids"]["maxItems"], 20)
+        self.assertTrue(body["properties"]["tag_ids"]["uniqueItems"])
+        set_schema = api["components"]["schemas"]["TaskTagSet"]
+        self.assertEqual(set(set_schema["required"]), {"task_id", "version", "tag_ids"})
 
 
 if __name__ == "__main__":

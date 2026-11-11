@@ -21,6 +21,9 @@ public sealed class TaskReadQuery(string connectionString) : ITaskReadQuery
         WHERE owner_id = @OwnerId AND deleted_at IS NULL
             AND (CAST(@ListId AS uuid) IS NULL OR list_id = CAST(@ListId AS uuid))
             AND (CAST(@Status AS text) IS NULL OR status = CAST(@Status AS text))
+            AND (CAST(@TagId AS uuid) IS NULL OR EXISTS (SELECT 1 FROM task_tags AS tt
+                 WHERE tt.owner_id = tasks.owner_id AND tt.task_id = tasks.id
+                     AND tt.tag_id = CAST(@TagId AS uuid)))
             AND (CAST(@BeforeCreatedAt AS timestamptz) IS NULL OR
                  (created_at, id) < (CAST(@BeforeCreatedAt AS timestamptz), CAST(@BeforeId AS uuid)))
         ORDER BY created_at DESC, id DESC
@@ -46,7 +49,7 @@ public sealed class TaskReadQuery(string connectionString) : ITaskReadQuery
     }
 
     public async Task<TaskReadResult> ListAsync(Guid ownerId, TaskPageCursor? cursor, int limit,
-        Guid? listId, string? status, CancellationToken ct)
+        Guid? listId, string? status, Guid? tagId, CancellationToken ct)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(ct);
@@ -58,12 +61,21 @@ public sealed class TaskReadQuery(string connectionString) : ITaskReadQuery
                 new { OwnerId = ownerId, ListId = listId }, cancellationToken: ct));
             if (!owned) return new(TaskReadStatus.ListNotFound);
         }
+        if (tagId is not null)
+        {
+            var owned = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+                "SELECT EXISTS(SELECT 1 FROM tags WHERE id = CAST(@TagId AS uuid) " +
+                "AND owner_id = @OwnerId AND deleted_at IS NULL)",
+                new { OwnerId = ownerId, TagId = tagId }, cancellationToken: ct));
+            if (!owned) return new(TaskReadStatus.TagNotFound);
+        }
 
         var rows = (await connection.QueryAsync<TaskDbRow>(new CommandDefinition(ListSql, new
         {
             OwnerId = ownerId,
             ListId = listId,
             Status = status,
+            TagId = tagId,
             BeforeCreatedAt = cursor?.CreatedAt,
             BeforeId = cursor?.Id,
             Take = limit + 1

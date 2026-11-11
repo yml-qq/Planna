@@ -18,7 +18,7 @@
 | E04 | TASK-COMPLETE-01 | Task 完成/撤销完成（已交付，见 `39-TASK-COMPLETE-01.md`） | TASK-UPDATE-01 | state tests |
 | E04 | TASK-LIST-01 | List CRUD（`GET/POST /lists` + `GET/PATCH/DELETE /lists/{id}`，owner 权限 + 幂等） | TASK-COMPLETE-01 | owner tests |
 | E04 | TASK-TAG-01A | Tag CRUD（`GET/POST /tags` + `GET/PATCH/DELETE /tags/{id}`，已交付，见 `41-TAG-01A.md`） | TASK-LIST-01 | owner tests |
-| E04 | TASK-TAG-01B | 任务标签关联（批量替换）与按标签过滤 | TASK-TAG-01A | association tests |
+| E04 | TASK-TAG-01B | 任务标签关联（批量替换）与按标签过滤（已交付，见 `42-TAG-01B.md`） | TASK-TAG-01A | association tests |
 | E04 | TASK-STEP-01 | 步骤 CRUD 与查询 | TASK-TAG-01B | step tests |
 | E05 | SYNC-01 | per-owner revision + changelog | E03 | concurrency tests |
 | E05 | SYNC-02 | push/outbox/幂等 | SYNC-01,TASK-02 | replay tests |

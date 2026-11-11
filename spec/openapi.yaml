@@ -565,7 +565,7 @@ paths:
     get:
       tags: [Tasks]
       operationId: listTasks
-      description: List the authenticated owner's non-deleted tasks using stable descending created_at/id keyset pagination. Soft-deleted tasks are omitted. The optional list_id filter must reference an owned, non-deleted list; the optional status filter accepts todo/in_progress/done/archived. The cursor is opaque and must be passed back unchanged.
+      description: List the authenticated owner's non-deleted tasks using stable descending created_at/id keyset pagination. Soft-deleted tasks are omitted. The optional list_id filter must reference an owned, non-deleted list; the optional status filter accepts todo/in_progress/done/archived; the optional tag_id filter must reference an owned, non-deleted tag and keeps only tasks carrying that tag. The cursor is opaque and must be passed back unchanged.
       parameters:
         - name: limit
           in: query
@@ -580,6 +580,9 @@ paths:
         - name: status
           in: query
           schema: {type: string, enum: [todo, in_progress, done, archived]}
+        - name: tag_id
+          in: query
+          schema: {type: string, format: uuid}
       responses:
         '200':
           description: Paged tasks
@@ -719,6 +722,60 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/tags:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Tags]
+      operationId: listTaskTags
+      description: Return the owned non-deleted tags currently attached to an owned, non-deleted task; foreign or soft-deleted tasks return 404.
+      responses:
+        '200':
+          description: Tags of the task
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/Tag'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    put:
+      tags: [Tags]
+      operationId: replaceTaskTags
+      description: Replace the complete tag set of an owned task with a version check. Tag IDs must belong to the owner and be non-deleted; at most 20 unique IDs; an empty array clears all tags. Bumps the task version and records a task sync change with tag_ids. The same idempotency key replays the original response.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, tag_ids]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                tag_ids:
+                  type: array
+                  maxItems: 20
+                  uniqueItems: true
+                  items: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Replaced tag set
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskTagSet'}
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
@@ -1071,6 +1128,18 @@ components:
       properties:
         items: {type: array, items: {$ref: '#/components/schemas/Task'}}
         next_cursor: {type: [string, 'null'], description: Null when no further pages exist.}
+    TaskTagSet:
+      type: object
+      additionalProperties: false
+      required: [task_id, version, tag_ids]
+      properties:
+        task_id: {type: string, format: uuid}
+        version: {type: integer, minimum: 1}
+        tag_ids:
+          type: array
+          uniqueItems: true
+          maxItems: 20
+          items: {type: string, format: uuid}
     CreateTask:
       type: object
       additionalProperties: false

@@ -75,6 +75,8 @@
 
 `TASK-TAG-01A` 实现 `GET/POST /tags` 与 `GET/PATCH/DELETE /tags/{id}`（原机器契约缺失，按 docs/02 F02 的 name/color 定义补齐）。`GET /tags` 只返回 JWT `sub` 的未软删标签，按名称排序。`POST` 带 UUID `Idempotency-Key` 与 `{id, name, color?}`；名称在 owner 内大小写不敏感唯一，软删后可重建同名；同键重放原 `201`，ID/名称冲突 `409 TAG_ID_CONFLICT/TAG_NAME_CONFLICT`，非法 `422 INVALID_TAG`。`PATCH` 为 `{expected_version, patch:{name?, color?}}`，至少一项，`null` 清空 color，版本不符 `409 VERSION_CONFLICT`。`DELETE` 需 `Idempotency-Key` 与 `If-Match: "vN"`，软删写 `sync_changes(entity_type='tag')` tombstone；任务标签关联的清理由客户端按 tombstone 处理。任务打标签与按标签过滤留待 `TASK-TAG-01B`。详见 `41-TAG-01A.md`。
 
+`TASK-TAG-01B` 实现任务标签关联：`PUT /tasks/{id}/tags` 以 `{expected_version, tag_ids}` 整份替换（最多 20 个唯一标签、空数组清空），标签必须属于 owner 且未软删；版本冲突 `409 VERSION_CONFLICT`、非法集合 `422 INVALID_TAG_SET`，任务版本 +1 并写含 `tag_ids` 的 `sync_changes`，同键重放原响应。`GET /tasks/{id}/tags` 返回任务标签；`GET /tasks?tag_id=` 在游标分页上追加标签过滤，非法/跨 owner/已软删标签分别返回 `400 INVALID_TAG_ID`/`404 TAG_NOT_FOUND`。详见 `42-TAG-01B.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks
