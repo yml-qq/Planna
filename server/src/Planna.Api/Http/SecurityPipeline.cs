@@ -45,6 +45,19 @@ public static class SecurityPipeline
     {
         app.Use(async (context, next) =>
         {
+            context.Response.OnStarting(() =>
+            {
+                var headers = context.Response.Headers;
+                headers["X-Content-Type-Options"] = "nosniff";
+                headers["X-Frame-Options"] = "DENY";
+                headers["Referrer-Policy"] = "no-referrer";
+                if (!headers.ContainsKey("Cache-Control")) headers["Cache-Control"] = "no-store";
+                return Task.CompletedTask;
+            });
+            await next();
+        });
+        app.Use(async (context, next) =>
+        {
             try
             {
                 await next();
@@ -100,19 +113,6 @@ public static class SecurityPipeline
             await next();
         });
 
-        app.Use(async (context, next) =>
-        {
-            context.Response.OnStarting(() =>
-            {
-                var headers = context.Response.Headers;
-                headers["X-Content-Type-Options"] = "nosniff";
-                headers["X-Frame-Options"] = "DENY";
-                headers["Referrer-Policy"] = "no-referrer";
-                if (!headers.ContainsKey("Cache-Control")) headers["Cache-Control"] = "no-store";
-                return Task.CompletedTask;
-            });
-            await next();
-        });
         return app;
     }
 
