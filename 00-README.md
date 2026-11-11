@@ -70,6 +70,7 @@
 | 57 | `docs/57-AI-CONSENT-01.md` | AI 数据授权存储与 scope 校验 |
 | 58 | `docs/58-PRIV-CLEANUP-01.md` | 账号删除后的保留期清理作业 |
 | 59 | `docs/59-SEC-01A.md` | 服务端安全基线：安全头、异常兜底、请求上限、AI 限流 |
+| 60 | `docs/60-DESK-01A.md` | 桌面离线核心：SQLite 本地事实源与原子 outbox |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
