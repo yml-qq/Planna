@@ -19,7 +19,7 @@ public enum CompleteTaskStatus
 }
 
 public sealed record CompleteTaskResult(CompleteTaskStatus Status, TaskReadView? Task = null,
-    string? Code = null, VersionConflictDetails? Details = null);
+    string? Code = null, VersionConflictDetails? Details = null, OccurrenceView? Occurrence = null);
 
 public interface ICompleteTask
 {

@@ -212,6 +212,9 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(props["completed_at"]["type"], ["string", "null"])
         self.assertIn("ALREADY_COMPLETED", complete["description"])
         self.assertIn("clamped", complete["description"])
+        completion_schema = complete["responses"]["200"]["content"]["application/json"]["schema"]
+        self.assertEqual({item["$ref"] for item in completion_schema["oneOf"]},
+                         {"#/components/schemas/Task", "#/components/schemas/Occurrence"})
         reopen = api["paths"]["/tasks/{id}/reopen"]["post"]
         self.assertIn("NOT_COMPLETED", reopen["description"])
 

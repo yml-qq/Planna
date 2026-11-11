@@ -82,7 +82,10 @@ public static class TaskEndpoints
         var result = await command.ExecuteAsync(owner, mutation, taskId, request, ct);
         return result.Status switch
         {
-            CompleteTaskStatus.Completed or CompleteTaskStatus.Replayed => TypedResults.Ok(result.Task),
+            CompleteTaskStatus.Completed or CompleteTaskStatus.Replayed =>
+                result.Occurrence is not null
+                    ? TypedResults.Ok(result.Occurrence)
+                    : TypedResults.Ok(result.Task),
             CompleteTaskStatus.NotFound => Error(http, 404, result.Code!),
             CompleteTaskStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
             CompleteTaskStatus.AlreadyCompleted => Error(http, 409, result.Code!),

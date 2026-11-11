@@ -690,10 +690,13 @@ paths:
                 completed_at: {type: [string, 'null'], format: date-time}
       responses:
         '200':
-          description: Completion result
+          description: Completion result; an ordinary task returns the Task projection, while a recurring task with occurrence_id returns the completed Occurrence.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Task'}
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Task'
+                  - $ref: '#/components/schemas/Occurrence'
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
