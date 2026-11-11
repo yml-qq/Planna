@@ -81,9 +81,10 @@ internal static class HttpBreakdownSmoke
         // Edit: replace steps, rotate snapshot and token.
         var firstStep = Guid.NewGuid();
         var secondStep = Guid.NewGuid();
-        var edited = await Edit(client, token, draft.DraftId, Guid.NewGuid(),
-            "{\"snapshot_hash\":\"" + draft.SnapshotHash + "\",\"steps\":[" +
-            StepJson(firstStep, "A", 10, 0) + "," + StepJson(secondStep, "B", null, 1) + "]}");
+        var editKey = Guid.NewGuid();
+        var editBody = "{\"snapshot_hash\":\"" + draft.SnapshotHash + "\",\"steps\":[" +
+            StepJson(firstStep, "A", 10, 0) + "," + StepJson(secondStep, "B", null, 1) + "]}";
+        var edited = await Edit(client, token, draft.DraftId, editKey, editBody);
         Check(edited, HttpStatusCode.OK);
         var editedDraft = await edited.Content.ReadFromJsonAsync<AiBreakdownDraftView>()
             ?? throw new InvalidOperationException("Edited draft missing.");
@@ -91,10 +92,12 @@ internal static class HttpBreakdownSmoke
             editedDraft.SnapshotHash == draft.SnapshotHash ||
             editedDraft.ConfirmationToken == draft.ConfirmationToken)
             throw new InvalidOperationException("Breakdown edit did not rotate snapshot/token.");
-        var editReplay = await Edit(client, token, draft.DraftId, Guid.NewGuid(),
-            "{\"snapshot_hash\":\"" + draft.SnapshotHash + "\",\"steps\":[" +
-            StepJson(firstStep, "A", 10, 0) + "," + StepJson(secondStep, "B", null, 1) + "]}");
-        await AssertCode(editReplay, HttpStatusCode.Conflict, "BREAKDOWN_STALE");
+        var editReplay = await Edit(client, token, draft.DraftId, editKey, editBody);
+        Check(editReplay, HttpStatusCode.OK);
+        if ((await editReplay.Content.ReadFromJsonAsync<AiBreakdownDraftView>())?.SnapshotHash != editedDraft.SnapshotHash)
+            throw new InvalidOperationException("Breakdown edit replay mismatch.");
+        var staleEdit = await Edit(client, token, draft.DraftId, Guid.NewGuid(), editBody);
+        await AssertCode(staleEdit, HttpStatusCode.Conflict, "BREAKDOWN_STALE");
         await AssertCode(await Edit(client, token, draft.DraftId, Guid.NewGuid(),
             "{\"snapshot_hash\":\"" + editedDraft.SnapshotHash + "\",\"steps\":[]}"),
             HttpStatusCode.UnprocessableEntity, "INVALID_BREAKDOWN");

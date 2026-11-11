@@ -26,7 +26,10 @@ public static class AiEndpoints
         if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
             return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
         var command = http.RequestServices.GetRequiredService<ICreateBreakdown>();
-        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+        var result = await command.ExecuteAsync(owner, mutation, id, request, ct);
+        return result.Status is BreakdownStatus.Created or BreakdownStatus.Replayed
+            ? TypedResults.Created($"/ai/breakdowns/{result.Draft!.DraftId}", result.Draft)
+            : MapBreakdownResult(http, result);
     }
 
     private static async Task<IResult> EditBreakdown(HttpContext http, string draftId,
@@ -40,7 +43,10 @@ public static class AiEndpoints
         if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
             return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
         var command = http.RequestServices.GetRequiredService<IEditBreakdown>();
-        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+        var result = await command.ExecuteAsync(owner, mutation, id, request, ct);
+        return result.Status is BreakdownStatus.Edited or BreakdownStatus.Replayed
+            ? TypedResults.Ok(result.Draft)
+            : MapBreakdownResult(http, result);
     }
 
     private static async Task<IResult> ApplyBreakdown(HttpContext http, string draftId,
@@ -54,17 +60,14 @@ public static class AiEndpoints
         if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
             return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
         var command = http.RequestServices.GetRequiredService<IApplyBreakdown>();
-        return MapBreakdownResult(http, await command.ExecuteAsync(owner, mutation, id, request, ct));
+        var result = await command.ExecuteAsync(owner, mutation, id, request, ct);
+        return result.Status is BreakdownStatus.Applied or BreakdownStatus.Replayed
+            ? TypedResults.Ok(result.Applied)
+            : MapBreakdownResult(http, result);
     }
 
     private static IResult MapBreakdownResult(HttpContext http, BreakdownResult result) => result.Status switch
     {
-        BreakdownStatus.Created => TypedResults.Created($"/ai/breakdowns/{result.Draft!.DraftId}", result.Draft),
-        BreakdownStatus.Edited => TypedResults.Ok(result.Draft),
-        BreakdownStatus.Applied => TypedResults.Ok(result.Applied),
-        BreakdownStatus.Replayed => result.Applied is not null
-            ? (IResult)TypedResults.Ok(result.Applied)
-            : TypedResults.Ok(result.Draft),
         BreakdownStatus.Invalid => Error(http, 422, result.Code!),
         BreakdownStatus.NotFound => Error(http, 404, result.Code!),
         BreakdownStatus.Stale => Error(http, 409, "BREAKDOWN_STALE"),
