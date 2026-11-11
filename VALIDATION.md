@@ -91,3 +91,11 @@
 - 本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过；8 项 Python 静态契约测试及 OpenAPI 3.1 校验通过。
 - 本机 Docker Linux 引擎不可连接；[PostgreSQL 18 CI 运行 41984550425](https://github.com/yml-qq/Planna/actions/runs/41984550425) 已通过完整迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖 Dapper 分页、owner 隔离、版本/幂等/并发撤销和退出后访问及刷新令牌拒绝。
 - `planna_db_dev` 迁移前只读核对显示第七条待应用；执行 `dotnet ef database update` 后再次只读复核，七条迁移均已应用。未在该库插入合成数据或查询业务记录。
+
+## TASK-READ-01 任务分页读取检查（2026-11-11）
+
+- 实现 `GET /tasks`：owner 只来自 JWT `sub`，按 `created_at,id` 降序游标分页（默认 50、最多 200、游标不透明），可选 `list_id`/`status` 过滤；读取走独立 Dapper 查询类，任务写入仍为 EF Core `CreateTaskService`，两者不混合。
+- 新增 `202611110008_TaskListReadIndex` 迁移（`idx_tasks_owner_created ON tasks(owner_id, created_at DESC, id DESC) WHERE deleted_at IS NULL`）与完整审阅 SQL `server/tasks-read-migrations.sql`；`spec/openapi.yaml` 的 `GET /tasks` 增加 `400`/`404` 响应与 `TaskPage` schema，契约测试增至 9 项。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地 `dotnet build server/Planna.slnx --no-restore --warnaserror` 零警告，`dotnet format server/Planna.slnx --verify-no-changes --no-restore` 通过，9 项 Python 静态契约测试与 OpenAPI 3.1 校验通过。
+- [PostgreSQL 18 CI 运行 43022227391](https://github.com/yml-qq/Planna/actions/runs/43022227391) 已通过迁移、构建、格式、静态契约与 HTTP 冒烟：覆盖未认证与已删除账号 401、非法 limit/cursor/list_id/status 与重复参数的 400、跨 owner 与已删除清单过滤的 404、软删与他人任务不泄漏、`limit=1` 全量遍历不重不漏且严格降序、默认与 `limit=200` 边界、status/list_id 过滤与过滤+游标组合、`version/completed_at/due_at/due_local_date/estimate_minutes` 投影。
+- 本会话没有 `planna_db_dev` 连接信息，第八条迁移未在开发库应用；上线前需按 `docs/37-TASK-READ-01.md` 先迁移后发布。未在开发库插入合成数据或查询业务记录。

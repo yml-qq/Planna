@@ -1,6 +1,6 @@
 # 37｜TASK-READ-01：任务分页读取切片
 
-状态：代码与迁移已实现；PostgreSQL 18 隔离库 CI 验证见 `VALIDATION.md` 的 TASK-READ-01 小节。
+状态：代码与迁移已实现；[PostgreSQL 18 隔离库 CI 运行 43022227391](https://github.com/yml-qq/Planna/actions/runs/43022227391) 已通过。
 
 ## 范围与验收
 
