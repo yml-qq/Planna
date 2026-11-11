@@ -160,3 +160,10 @@
 - `spec/openapi.yaml` 补充语义与 `401` 响应；契约测试增至 18 项。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43058072416](https://github.com/yml-qq/Planna/actions/runs/43058072416) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、快照过滤与投影、owner 隔离、空 owner、快照游标与 pull 衔接（快照后 revision 7 变更可由游标增量获取）、只读无副作用。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、18 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
+
+## TIME-01A 循环规则与 occurrence 窗口检查（2026-11-12）
+
+- 实现 `GET/PUT/DELETE /tasks/{id}/recurrence` 与 `GET /tasks/{id}/occurrences`：RRULE 子集（DAILY/WEEKLY/MONTHLY + INTERVAL + COUNT|UNTIL + WEEKLY BYDAY），`dtstart_local` 为规则时区本地时间并以 `timestamp without time zone` 显式绑定；`PUT` 以 `expected_version=0` 创建、`≥1` 更新，幂等重放与 `409 RECURRENCE_EXISTS`/`VERSION_CONFLICT`；`DELETE` 保留 occurrence 历史。occurrence 窗口默认 30 天、最大 90 天，幂等物化（`ON CONFLICT DO NOTHING`），DST 策略为跳过不存在本地时刻、歧义取最早 instant，物化为派生状态不推进 revision。
+- `spec/openapi.yaml` 新增 `/tasks/{id}/recurrence`、`/tasks/{id}/occurrences` 与 `Recurrence`/`Occurrence` schema；契约测试增至 19 项。无 schema 变更、无新迁移。
+- 迭代修复：首轮 CI 因 Npgsql 将 Unspecified DateTime 绑定为 `timestamptz` 而 500（`dtstart_local`/窗口参数），改为显式 `NpgsqlDbType.Timestamp`；随后两轮修正 DST 窗口与账目断言（dtstart 之后的候选数、保留的 fall 规则）。最终 [PostgreSQL 18 CI 运行 43063331390](https://github.com/yml-qq/Planna/actions/runs/43063331390) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、规则校验/创建/更新/删除/幂等/版本冲突、周规则窗口计数与排序、春季 DST 跳过、秋季歧义单一最早 instant、窗口边界、owner 隔离与 revision/变更/幂等记录原子性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。occurrence 完成与 after_completion 规则留待 `TIME-01B`。
