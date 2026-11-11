@@ -21,6 +21,7 @@ internal static class AccountCleanupSmoke
         var recentTask = Guid.NewGuid();
         var oldSession = Guid.NewGuid();
         var oldTag = Guid.NewGuid();
+        var oldHabit = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email,deleted_at) VALUES($1,$2,now()-interval '40 days'),($3,$4,now()),($5,$6,now())",
             oldOwner, oldEmail, recentOwner, recentEmail, boundaryOwner, boundaryEmail);
         await Exec(db, "INSERT INTO owner_sync_clocks(owner_id) VALUES($1),($2),($3)", oldOwner, recentOwner, boundaryOwner);
@@ -34,6 +35,10 @@ internal static class AccountCleanupSmoke
             oldList, oldOwner, recentList, recentOwner);
         await Exec(db, "INSERT INTO tasks(id,owner_id,list_id,title) VALUES($1,$2,$3,'Old task'),($4,$5,$6,'Recent task')",
             oldTask, oldOwner, oldList, recentTask, recentOwner, recentList);
+        await Exec(db, "INSERT INTO habits(id,owner_id,title,schedule_type,time_zone) VALUES($1,$2,'Old habit','daily','Asia/Shanghai')",
+            oldHabit, oldOwner);
+        await Exec(db, "INSERT INTO habit_logs(owner_id,habit_id,log_date,quantity,status) VALUES($1,$2,'2026-11-01',1,'done')",
+            oldOwner, oldHabit);
         await Exec(db, "INSERT INTO task_steps(id,owner_id,task_id,title) VALUES($1,$2,$3,'Step')", Guid.NewGuid(), oldOwner, oldTask);
         await Exec(db, "INSERT INTO tags(id,owner_id,name) VALUES($1,$2,'Tag')", oldTag, oldOwner);
         await Exec(db, "INSERT INTO task_tags(owner_id,task_id,tag_id) VALUES($1,$2,$3)", oldOwner, oldTask, oldTag);
@@ -78,7 +83,9 @@ internal static class AccountCleanupSmoke
             await Scalar(db, "SELECT count(*) FROM device_sessions WHERE user_id=$1", oldOwner) != 0 ||
             await Scalar(db, "SELECT count(*) FROM refresh_token_history WHERE token_hash='old-token'") != 0 ||
             await Scalar(db, "SELECT count(*) FROM auth_login_challenges WHERE email=$1", oldEmail) != 0 ||
-            await Scalar(db, "SELECT count(*) FROM auth_step_up_challenges WHERE user_id=$1", oldOwner) != 0)
+            await Scalar(db, "SELECT count(*) FROM auth_step_up_challenges WHERE user_id=$1", oldOwner) != 0 ||
+            await Scalar(db, "SELECT count(*) FROM habits WHERE owner_id=$1", oldOwner) != 0 ||
+            await Scalar(db, "SELECT count(*) FROM habit_logs WHERE owner_id=$1", oldOwner) != 0)
             throw new InvalidOperationException("Retention cleanup left owner data behind.");
         if (await Scalar(db, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NOT NULL", oldOwner) != 1 ||
             await Scalar(db, "SELECT count(*) FROM account_deletion_requests WHERE id=$1 AND completed_at IS NOT NULL AND last_error_code IS NULL", oldRequest) != 1 ||

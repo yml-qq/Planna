@@ -689,6 +689,60 @@ paths:
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
+  /habits/{id}/logs:
+    get:
+      tags: [Habits]
+      operationId: listHabitLogs
+      description: Logs of one owned habit inside an inclusive local-date window (at most 366 days). Logs are keyed by (habit, local date).
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+      responses:
+        '200':
+          description: Logs ordered by date
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items]
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/HabitLog'}}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /habits/{id}/logs/{date}:
+    put:
+      tags: [Habits]
+      operationId: upsertHabitLog
+      description: Idempotent upsert of the single log for a local date (same-date uniqueness); explicit past dates are user-initiated backfill. quantity defaults to 1 and status to done; an existing log is updated in place with a version bump.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: date, in: path, required: true, schema: {type: string, format: date}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                quantity: {type: integer, minimum: 0, maximum: 1000, default: 1}
+                status: {type: string, enum: [done, skipped], default: done}
+      responses:
+        '200':
+          description: Stored daily log
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HabitLog'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /tasks:
     get:
       tags: [Tasks]
@@ -1717,6 +1771,19 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused_at: {type: [string, 'null'], format: date-time}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    HabitLog:
+      type: object
+      additionalProperties: false
+      required: [id, habit_id, log_date, quantity, status, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        habit_id: {type: string, format: uuid}
+        log_date: {type: string, format: date}
+        quantity: {type: integer, minimum: 0, maximum: 1000}
+        status: {type: string, enum: [done, skipped]}
         version: {type: integer, minimum: 1}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}

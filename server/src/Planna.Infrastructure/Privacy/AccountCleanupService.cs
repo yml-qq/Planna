@@ -70,6 +70,7 @@ public sealed class AccountCleanupService(string connectionString, ILogger<Accou
         DELETE FROM tasks WHERE owner_id=@Owner;
         DELETE FROM task_lists WHERE owner_id=@Owner;
         DELETE FROM tags WHERE owner_id=@Owner;
+        DELETE FROM habit_logs WHERE owner_id=@Owner;
         DELETE FROM habits WHERE owner_id=@Owner;
         DELETE FROM sync_changes WHERE owner_id=@Owner;
         DELETE FROM client_mutations WHERE owner_id=@Owner;

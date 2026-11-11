@@ -776,3 +776,44 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '202611130002_HabitLogs') THEN
+    CREATE TABLE habit_logs (
+        id uuid NOT NULL DEFAULT (gen_random_uuid()),
+        owner_id uuid NOT NULL,
+        habit_id uuid NOT NULL,
+        log_date date NOT NULL,
+        quantity integer NOT NULL DEFAULT 1,
+        status text NOT NULL DEFAULT 'done',
+        version bigint NOT NULL DEFAULT 1,
+        created_at timestamp with time zone NOT NULL DEFAULT (now()),
+        updated_at timestamp with time zone NOT NULL DEFAULT (now()),
+        CONSTRAINT pk_habit_logs PRIMARY KEY (id),
+        CONSTRAINT ak_habit_logs_day UNIQUE (owner_id, habit_id, log_date),
+        CONSTRAINT ck_habit_logs_quantity CHECK (quantity BETWEEN 0 AND 1000),
+        CONSTRAINT ck_habit_logs_status CHECK (status IN ('done','skipped')),
+        CONSTRAINT fk_habit_logs_users FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE,
+        CONSTRAINT fk_habit_logs_habits FOREIGN KEY (owner_id, habit_id) REFERENCES habits (owner_id, id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '202611130002_HabitLogs') THEN
+    CREATE INDEX idx_habit_logs_owner_habit_date ON habit_logs (owner_id, habit_id, log_date);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '202611130002_HabitLogs') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('202611130002_HabitLogs', '10.0.14');
+    END IF;
+END $EF$;
+COMMIT;
+

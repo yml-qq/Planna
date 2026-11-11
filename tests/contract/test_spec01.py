@@ -488,6 +488,27 @@ class Spec01Contracts(unittest.TestCase):
                     if parameter.get("name") == "If-Match"}
         self.assertEqual(if_match["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
 
+    def test_habit_log_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        logs = api["paths"]["/habits/{id}/logs"]["get"]
+        self.assertEqual(set(logs["responses"]), {"200", "400", "401", "404", "422"})
+        params = {parameter["name"]: parameter for parameter in logs["parameters"]}
+        self.assertEqual(set(params), {"id", "from", "to"})
+        self.assertEqual(params["from"]["schema"]["format"], "date")
+        self.assertTrue(params["from"]["required"])
+        upsert = api["paths"]["/habits/{id}/logs/{date}"]["put"]
+        self.assertEqual(set(upsert["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, upsert["parameters"])
+        body = upsert["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(body["properties"]["status"]["enum"], ["done", "skipped"])
+        self.assertEqual(body["properties"]["quantity"]["maximum"], 1000)
+        log = api["components"]["schemas"]["HabitLog"]
+        self.assertEqual(set(log["required"]),
+                         {"id", "habit_id", "log_date", "quantity", "status", "version",
+                          "created_at", "updated_at"})
+        self.assertEqual(log["properties"]["status"]["enum"], ["done", "skipped"])
+
     def test_ai_consent_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         consent = api["paths"]["/ai/consent"]

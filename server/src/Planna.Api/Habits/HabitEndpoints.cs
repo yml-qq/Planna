@@ -14,7 +14,58 @@ public static class HabitEndpoints
         group.MapGet("/{id}", Get).WithName("GetHabit");
         group.MapPatch("/{id}", Update).WithName("UpdateHabit");
         group.MapDelete("/{id}", Delete).WithName("DeleteHabit");
+        group.MapPut("/{id}/logs/{date}", UpsertLog).WithName("UpsertHabitLog");
+        group.MapGet("/{id}/logs", ListLogs).WithName("ListHabitLogs");
         return app;
+    }
+
+    private static async Task<IResult> UpsertLog(HttpContext http, string id, string date,
+        UpsertHabitLogRequest request, IHabitLogUpsert command, CancellationToken ct)
+    {
+        if (!Guid.TryParse(id, out var habitId) || habitId == Guid.Empty)
+            return Error(http, 400, "INVALID_HABIT_ID");
+        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var logDate))
+            return Error(http, 400, "INVALID_DATE");
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryMutation(http, out var mutation)) return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var result = await command.ExecuteAsync(owner, mutation, habitId, logDate, request, ct);
+        return result.Status switch
+        {
+            HabitLogStatus.Upserted or HabitLogStatus.Replayed => TypedResults.Ok(result.Log),
+            HabitLogStatus.NotFound => Error(http, 404, result.Code!),
+            HabitLogStatus.Invalid => Error(http, 422, result.Code!),
+            HabitLogStatus.Conflict => Error(http, 409, result.Code!),
+            HabitLogStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> ListLogs(HttpContext http, string id, IHabitLogQuery query,
+        CancellationToken ct)
+    {
+        if (!Guid.TryParse(id, out var habitId) || habitId == Guid.Empty)
+            return Error(http, 400, "INVALID_HABIT_ID");
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryDate(http, "from", out var from) || !TryDate(http, "to", out var to))
+            return Error(http, 400, "INVALID_DATE");
+        var result = await query.ListAsync(owner, habitId, from, to, ct);
+        return result.Status switch
+        {
+            HabitLogStatus.Ok => TypedResults.Ok(result.Logs),
+            HabitLogStatus.NotFound => Error(http, 404, result.Code!),
+            HabitLogStatus.Invalid => Error(http, 422, result.Code!),
+            HabitLogStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static bool TryDate(HttpContext http, string name, out DateOnly value)
+    {
+        value = default;
+        var raw = http.Request.Query[name].ToString();
+        return DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out value);
     }
 
     private static async Task<IResult> List(HttpContext http, IHabitQuery query, CancellationToken ct)
