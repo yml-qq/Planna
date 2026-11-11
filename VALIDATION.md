@@ -224,3 +224,10 @@
 - `spec/openapi.yaml` 补充语义/400/422 与 token 约束；契约测试增至 24 项。迭代修复：移除 API 中误注册的仅 Worker 依赖 `StepUpEmailDispatcher`（DI 校验失败）；挑战过期时间截断到微秒使重放响应与首次一致。
 - [PostgreSQL 18 CI 运行 43081769119](https://github.com/yml-qq/Planna/actions/runs/43081769119) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、队列投递与幂等重放、验证码消费、token 绑定/篡改/过期、过期挑战、尝试上限、挑战限流、删除账号，以及不写 revision/`sync_changes`/`client_mutations`。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、24 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。账号删除（`PRIV-DELETE-01`）留待后续切片。
+
+## PRIV-DELETE-01 账号删除检查（2026-11-12）
+
+- 实现 `POST /me/deletion-requests`（需登录 + `Idempotency-Key`）：要求绑定 owner/`account_delete` 用途的 step-up token 与 `acknowledge_offline_devices=true`；同一事务标记 `users.deleted_at`、撤销全部 `device_sessions`、写入 `account_deletion_requests(status='accepted', policy_version='account-deletion-v1')` 与幂等结果；返回 `202` `account-deletion` 契约对象。无效 token `403 STEP_UP_REQUIRED`、ack 缺失 `422`、缺幂等键 `400`；同键重放原结果，删除后旧设备认证/同步/导出/重试一律 `401 ACCOUNT_DELETED`；删除不写 revision/`sync_changes`。
+- `spec/openapi.yaml` 更新删除端点语义与 400/422；契约测试增至 25 项（含 `account-deletion.schema.json` 校验）。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43084137323](https://github.com/yml-qq/Planna/actions/runs/43084137323) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、缺幂等键、无效 token、未确认离线设备、删除原子性（账号/会话/请求/幂等记录）、旧 token 与第二设备回连被拒、revision/同步日志不变。迭代修复：清理前序 step-up 队列遗留的 pending 邮件，避免跨冒烟串码。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、25 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。删除后清理作业与保留策略（`PRIV-CLEANUP-01`）留待后续切片。
