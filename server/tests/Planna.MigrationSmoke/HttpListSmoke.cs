@@ -74,7 +74,7 @@ internal static class HttpListSmoke
         await AssertCode(await GetList(client, token, l3), HttpStatusCode.NotFound, "LIST_NOT_FOUND");
 
         // Create, replay, key reuse and id conflict.
-        await AssertCode(await CreateList(client, token, Guid.NewGuid(), "{\"id\":\"" + Guid.NewGuid() + "\",\"name\":\"X\"}"),
+        await AssertCode(await CreateList(client, token, null, "{\"id\":\"" + Guid.NewGuid() + "\",\"name\":\"X\"}"),
             HttpStatusCode.BadRequest, "INVALID_IDEMPOTENCY_KEY");
         await AssertCode(await CreateList(client, token, Guid.NewGuid(), "{\"id\":\"" + Guid.NewGuid() + "\",\"name\":\"   \"}"),
             HttpStatusCode.UnprocessableEntity, "INVALID_LIST");
