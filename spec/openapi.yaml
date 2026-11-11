@@ -1048,6 +1048,7 @@ paths:
     post:
       tags: [AI]
       operationId: parseNaturalLanguage
+      description: Parse one natural-language input into a draft for user confirmation; drafts never mutate data and are not executed automatically. The first stage is a deterministic rule-based parser (docs/09 先规则解析) with an injectable provider abstraction; when no provider is configured the endpoint returns 503 AI_UNAVAILABLE. Prompt-injection text is treated as task text only.
       requestBody:
         required: true
         content:
@@ -1059,6 +1060,8 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AiParseResponse'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
         '503': {$ref: '#/components/responses/ErrorResponse'}
   /ai/tasks/{id}/breakdowns:

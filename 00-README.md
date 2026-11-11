@@ -60,6 +60,7 @@
 | 47 | `docs/47-TIME-01A.md` | 循环规则 CRUD、occurrence 窗口与 DST 策略 |
 | 48 | `docs/48-TIME-01B.md` | 按 occurrence 完成循环任务、受信时间与幂等 |
 | 49 | `docs/49-TIME-01C.md` | after_completion 规则与下一次 occurrence 生成 |
+| 50 | `docs/50-AI-01.md` | AI Provider 抽象与规则化自然语言解析 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

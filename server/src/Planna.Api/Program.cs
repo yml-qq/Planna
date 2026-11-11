@@ -8,16 +8,19 @@ using Planna.Application.Tasks;
 using Planna.Application.Identity;
 using Planna.Application.Tags;
 using Planna.Application.Sync;
+using Planna.Application.Ai;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
 using Planna.Api.Sync;
 using Planna.Api.Tags;
 using Planna.Api.Tasks;
+using Planna.Api.Ai;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
 using Planna.Infrastructure.Sync;
 using Planna.Infrastructure.Tasks;
 using Planna.Infrastructure.Tags;
+using Planna.Infrastructure.Ai;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration["PLANNADB_CONNECTION"]
@@ -83,6 +86,8 @@ builder.Services.AddScoped<ISyncBootstrapQuery>(_ => new SyncBootstrapQuery(conn
 builder.Services.AddScoped<IPutRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IDeleteRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IRecurrenceQuery>(_ => new RecurrenceQuery(connection));
+if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddSingleton<IAiParseProvider, RuleBasedParseProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -160,6 +165,7 @@ app.MapTagEndpoints();
 app.MapStepEndpoints();
 app.MapSyncEndpoints();
 app.MapRecurrenceEndpoints();
+app.MapAiEndpoints();
 app.Run();
 
 public partial class Program;

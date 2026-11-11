@@ -33,7 +33,7 @@
 | E07 | TIME-01D | 法定工作日规则、occurrence 撤销与编辑范围 | TIME-01C | policy tests |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
-| E08 | AI-01 | Provider/structured parse | E02,TASK-COMPLETE-01 | golden tests |
+| E08 | AI-01 | Provider 抽象与结构化规则解析（已交付，见 `50-AI-01.md`） | E02,TASK-COMPLETE-01 | golden tests |
 | E08 | AI-02 | 任务拆解草案/编辑确认（V1.0） | AI-01 | 结构化契约、no auto-write |
 | E08 | AI-03 | Scheduler hard constraints | TIME-01 | conflict=0 |
 | E08 | AI-04 | Plan preview/apply/audit | AI-03,SYNC-03 | stale apply tests |

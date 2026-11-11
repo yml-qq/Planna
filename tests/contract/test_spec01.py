@@ -339,6 +339,7 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(recurrence["required"]),
                          {"task_id", "kind", "time_zone", "dtstart_local", "version"})
         self.assertEqual(recurrence["properties"]["kind"]["enum"], ["rrule", "after_completion"])
+
         delete = rule["delete"]
         self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
         occurrences = api["paths"]["/tasks/{id}/occurrences"]["get"]
@@ -349,6 +350,22 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(schema["required"]),
                          {"id", "task_id", "original_local_start", "time_zone", "status", "version"})
         self.assertEqual(schema["properties"]["status"]["enum"], ["todo", "done", "skipped"])
+
+    def test_ai_parse_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        parse = api["paths"]["/ai/parse"]["post"]
+        self.assertEqual(set(parse["responses"]), {"200", "400", "401", "403", "503"})
+        self.assertIn("AI_UNAVAILABLE", parse["description"])
+        request = api["components"]["schemas"]["AiParseRequest"]
+        self.assertEqual(set(request["required"]), {"input", "context"})
+        self.assertEqual(set(request["properties"]["context"]["required"]), {"time_zone", "now"})
+        response = api["components"]["schemas"]["AiParseResponse"]
+        self.assertEqual(set(response["required"]),
+                         {"intent", "drafts", "assumptions", "unresolved_fields"})
+        draft = response["properties"]["drafts"]["items"]
+        self.assertEqual(set(draft["required"]), {"title"})
+        self.assertEqual(response["properties"]["intent"]["enum"],
+                         ["create_task", "multi_task", "clarify", "unsupported"])
 
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))

@@ -140,3 +140,4 @@ await HttpSyncBootstrapSmoke.RunAsync(connection);
 await HttpRecurrenceSmoke.RunAsync(connection);
 await HttpOccurrenceCompleteSmoke.RunAsync(connection);
 await HttpAfterCompletionSmoke.RunAsync(connection);
+await HttpAiParseSmoke.RunAsync(connection);
