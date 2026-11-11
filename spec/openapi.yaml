@@ -1168,15 +1168,17 @@ paths:
     post:
       tags: [AI]
       operationId: proposeAiPlan
+      description: Build a deterministic plan preview (sequential time blocks inside the range) without mutating data. Tasks that are not owned, not found or exceed 20 operations land in unplanned_task_ids; overlaps with existing time blocks land in conflicts. The plan expires after 30 minutes and apply requires exact operation equality.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [task_ids, range_start, range_end]
               properties:
-                task_ids: {type: array, items: {type: string, format: uuid}, maxItems: 100}
+                task_ids: {type: array, items: {type: string, format: uuid}, minItems: 1, maxItems: 100, uniqueItems: true}
                 range_start: {type: string, format: date-time}
                 range_end: {type: string, format: date-time}
       responses:
@@ -1185,11 +1187,16 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AiPlan'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /ai/plans/{id}/apply:
     post:
       tags: [AI]
       operationId: applyAiPlan
+      description: Apply the complete persisted plan atomically. V1.0 requires accepted_operation_ids to equal all persisted operation IDs exactly; the snapshot hash, confirmation token, plan expiry and every task expected_version are validated before any time block is written. Failures return 409 PLAN_STALE without partial writes; the same idempotency key returns the same applied operation IDs.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -1199,6 +1206,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [snapshot_hash, accepted_operation_ids, confirmation_token]
               properties:
                 snapshot_hash: {type: string}
@@ -1215,8 +1223,11 @@ paths:
                 properties:
                   status: {type: string, const: applied}
                   applied_operation_ids: {type: array, items: {type: string, format: uuid}}
-        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
         '403': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
 components:
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}

@@ -93,6 +93,9 @@ if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringCompariso
     builder.Services.AddScoped<ICreateBreakdown, BreakdownService>();
     builder.Services.AddScoped<IEditBreakdown, BreakdownService>();
     builder.Services.AddScoped<IApplyBreakdown, BreakdownService>();
+    builder.Services.AddSingleton<IPlanScheduler, RuleBasedPlanScheduler>();
+    builder.Services.AddScoped<IProposePlan, PlanService>();
+    builder.Services.AddScoped<IApplyPlan, PlanService>();
 }
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(

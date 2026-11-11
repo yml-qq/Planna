@@ -387,6 +387,25 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(applied["properties"]["step_ids"]["maxItems"], 20)
         self.assertIn("same idempotency key", apply_op["responses"]["200"]["description"])
 
+    def test_ai_plan_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        propose = api["paths"]["/ai/plans"]["post"]
+        self.assertEqual(set(propose["responses"]), {"200", "400", "401", "403", "404", "422"})
+        body = propose["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"task_ids", "range_start", "range_end"})
+        self.assertEqual(body["properties"]["task_ids"]["maxItems"], 100)
+        self.assertTrue(body["properties"]["task_ids"]["uniqueItems"])
+        apply_op = api["paths"]["/ai/plans/{id}/apply"]["post"]
+        self.assertEqual(set(apply_op["responses"]), {"200", "400", "401", "403", "404", "409"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, apply_op["parameters"])
+        apply_body = apply_op["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(apply_body["required"]),
+                         {"snapshot_hash", "accepted_operation_ids", "confirmation_token"})
+        accepted = apply_body["properties"]["accepted_operation_ids"]
+        self.assertTrue(accepted["uniqueItems"])
+        self.assertEqual(accepted["maxItems"], 20)
+        self.assertIn("exact equality", accepted["description"])
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

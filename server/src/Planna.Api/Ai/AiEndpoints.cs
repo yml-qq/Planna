@@ -12,7 +12,51 @@ public static class AiEndpoints
         group.MapPost("/tasks/{taskId}/breakdowns", CreateBreakdown).WithName("CreateBreakdown");
         group.MapPut("/breakdowns/{draftId}", EditBreakdown).WithName("EditBreakdown");
         group.MapPost("/breakdowns/{draftId}/apply", ApplyBreakdown).WithName("ApplyBreakdown");
+        group.MapPost("/plans", ProposePlan).WithName("ProposeAiPlan");
+        group.MapPost("/plans/{planId}/apply", ApplyPlan).WithName("ApplyAiPlan");
         return app;
+    }
+
+    private static async Task<IResult> ProposePlan(HttpContext http, ProposePlanRequest request, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (http.RequestServices.GetService<IPlanScheduler>() is null)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        var command = http.RequestServices.GetRequiredService<IProposePlan>();
+        var result = await command.ExecuteAsync(owner, request, ct);
+        return result.Status switch
+        {
+            PlanStatus.Created => TypedResults.Ok(result.Plan),
+            PlanStatus.Invalid => Error(http, 422, result.Code!),
+            PlanStatus.TaskNotFound => Error(http, 404, result.Code!),
+            PlanStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> ApplyPlan(HttpContext http, string planId, ApplyPlanRequest request,
+        CancellationToken ct)
+    {
+        if (!Guid.TryParse(planId, out var id) || id == Guid.Empty) return Error(http, 400, "INVALID_PLAN_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (http.RequestServices.GetService<IPlanScheduler>() is null)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var command = http.RequestServices.GetRequiredService<IApplyPlan>();
+        var result = await command.ExecuteAsync(owner, mutation, id, request, ct);
+        return result.Status switch
+        {
+            PlanStatus.Applied or PlanStatus.Replayed => TypedResults.Ok(result.Applied),
+            PlanStatus.Invalid => Error(http, 422, result.Code!),
+            PlanStatus.NotFound => Error(http, 404, result.Code!),
+            PlanStatus.Stale => Error(http, 409, "PLAN_STALE"),
+            PlanStatus.Conflict => Error(http, 409, result.Code!),
+            PlanStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static async Task<IResult> CreateBreakdown(HttpContext http, string taskId,

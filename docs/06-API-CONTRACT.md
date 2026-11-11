@@ -95,6 +95,8 @@
 
 `AI-02` 实现拆解草案生命周期：`POST /ai/tasks/{id}/breakdowns` 生成并持久化 1..20 步草案（不写业务步骤），`PUT /ai/breakdowns/{id}` 整份替换步骤并轮换 `snapshot_hash`/确认 token，`POST /ai/breakdowns/{id}/apply` 校验 owner/状态/过期/快照/token/任务版本后同一事务创建全部步骤、推进 revision、写 `sync_changes` 与 `ai_action_audits`；同键重放返回同一结果，失败不产生部分步骤。详见 `51-AI-02.md`。
 
+`AI-03/04` 实现计划预览与应用：`POST /ai/plans` 以确定性排程生成顺序时间块预览（`estimate_minutes` 缺省 30，范围 ≤ 7 天，最多 20 个操作；与既有时间块冲突的任务进 `conflicts`、不排程，其余进 `unplanned_task_ids`），持久化 30 分钟有效；`POST /ai/plans/{id}/apply` 要求 `accepted_operation_ids` 与持久化操作完全一致，并校验快照/token/过期/每个任务 `expected_version`，通过后同一事务创建全部 `task_time_blocks`、推进一次 revision、写 `sync_changes(entity_type='time_block')` 与 `ai_action_audits`；失败返回 `409 PLAN_STALE` 且不部分执行。详见 `52-AI-03-04.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks
