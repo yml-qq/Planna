@@ -38,6 +38,7 @@
 | E08 | AI-02 | 任务拆解草案/编辑确认（已交付，见 `51-AI-02.md`） | AI-01 | 结构化契约、no auto-write |
 | E08 | AI-03 | Scheduler hard constraints（确定性排程与既有时间块冲突检测，已交付，见 `52-AI-03-04.md`） | TIME-01A | conflict=0 |
 | E08 | AI-04 | Plan preview/apply/audit（已交付，见 `52-AI-03-04.md`） | AI-03,SYNC-PULL-01 | stale apply tests |
+| E08 | AI-CONSENT-01 | AI 数据授权存储与 parse scope 校验（已交付，见 `57-AI-CONSENT-01.md`） | AI-01 | consent tests |
 | E09 | UX-01 | 设计系统/无障碍/空状态 | E06 | accessibility tests |
 | E09 | UX-02 | 可选模块入口与轻量首页（V1.1） | UX-01 | 隐藏/恢复不丢数据 |
 | E10 | HAB-01 | 习惯/打卡 | E04 | repeat tests |

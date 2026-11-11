@@ -1061,6 +1061,48 @@ paths:
                   tasks: {type: array, items: {$ref: '#/components/schemas/Task'}}
                   lists: {type: array, items: {$ref: '#/components/schemas/TaskList'}}
         '401': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/consent:
+    get:
+      tags: [AI]
+      operationId: getAiConsent
+      description: Long-term AI data consent scopes for the authenticated owner. An empty list means AI data access is revoked; consent is stored server-side and included in account exports.
+      responses:
+        '200':
+          description: Current consent; empty when never granted or revoked.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiConsent'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+    put:
+      tags: [AI]
+      operationId: updateAiConsent
+      description: Replace the long-term AI data consent scope set; an empty array revokes all long-term AI data access. Only whitelisted scopes are accepted and duplicates are rejected. The same idempotency key replays the original view. Consent is not synced task data and never advances the sync revision.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [allowed_scopes]
+              properties:
+                allowed_scopes:
+                  type: array
+                  uniqueItems: true
+                  maxItems: 4
+                  items: {$ref: '#/components/schemas/AiConsentScope'}
+      responses:
+        '200':
+          description: Stored consent view.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiConsent'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /ai/parse:
     post:
       tags: [AI]
@@ -1541,6 +1583,20 @@ components:
               reminders: {type: array, items: {type: object, additionalProperties: true}}
         assumptions: {type: array, items: {type: string}}
         unresolved_fields: {type: array, items: {type: string}}
+    AiConsentScope:
+      type: string
+      enum: [task_drafts, plan_preview, task_notes, calendar_free_slots]
+    AiConsent:
+      type: object
+      additionalProperties: false
+      required: [allowed_scopes, updated_at]
+      properties:
+        allowed_scopes:
+          type: array
+          maxItems: 4
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/AiConsentScope'}
+        updated_at: {type: [string, 'null'], format: date-time}
     AiPlan:
       type: object
       required: [plan_id, expires_at, snapshot_hash, confirmation_token, operations, conflicts, unplanned_task_ids, explanation]

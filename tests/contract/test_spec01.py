@@ -459,6 +459,23 @@ class Spec01Contracts(unittest.TestCase):
         response_ref = deletion["responses"]["202"]["content"]["application/json"]["schema"]["$ref"]
         self.assertEqual(response_ref, "./account-deletion.schema.json")
 
+    def test_ai_consent_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        consent = api["paths"]["/ai/consent"]
+        self.assertEqual(set(consent["get"]["responses"]), {"200", "401"})
+        put = consent["put"]
+        self.assertEqual(set(put["responses"]), {"200", "400", "401", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, put["parameters"])
+        body = put["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"allowed_scopes"})
+        scopes = body["properties"]["allowed_scopes"]
+        self.assertEqual(scopes["maxItems"], 4)
+        self.assertTrue(scopes["uniqueItems"])
+        self.assertEqual(api["components"]["schemas"]["AiConsentScope"]["enum"],
+                         ["task_drafts", "plan_preview", "task_notes", "calendar_free_slots"])
+        view = api["components"]["schemas"]["AiConsent"]
+        self.assertEqual(set(view["required"]), {"allowed_scopes", "updated_at"})
+
     def test_sync_pull_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         pull = api["paths"]["/sync/pull"]["get"]

@@ -105,6 +105,8 @@
 
 `PRIV-DELETE-01` 实现账号删除请求：`POST /me/deletion-requests` 要求该 step-up token 与 `acknowledge_offline_devices=true`，在同一事务内标记账号不可用、撤销全部设备会话、写 `account_deletion_requests` 与幂等结果，返回 `202` `account-deletion` 契约对象；无效 token `403 STEP_UP_REQUIRED`、ack 缺失 `422`；删除后旧设备认证/同步/导出/重试均返回不可重试 `401 ACCOUNT_DELETED`。详见 `56-PRIV-DELETE-01.md`。
 
+`AI-CONSENT-01` 实现长期 AI 数据授权：`GET /ai/consent` 返回 `{allowed_scopes, updated_at}`，`PUT /ai/consent`（`Idempotency-Key`）整份替换授权，白名单 `task_drafts/plan_preview/task_notes/calendar_free_slots`，空数组撤销；`POST /ai/parse` 的 `allowed_scopes` 必须命中持久化授权并包含 `task_drafts`，否则 `403 AI_SCOPE_DENIED`。授权不写同步状态且随导出导出。详见 `57-AI-CONSENT-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

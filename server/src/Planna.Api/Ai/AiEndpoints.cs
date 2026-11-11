@@ -9,6 +9,8 @@ public static class AiEndpoints
     {
         var group = app.MapGroup("/ai").WithTags("AI").RequireAuthorization();
         group.MapPost("/parse", Parse).WithName("ParseNaturalLanguage");
+        group.MapGet("/consent", GetConsent).WithName("GetAiConsent");
+        group.MapPut("/consent", UpdateConsent).WithName("UpdateAiConsent");
         group.MapPost("/tasks/{taskId}/breakdowns", CreateBreakdown).WithName("CreateBreakdown");
         group.MapPut("/breakdowns/{draftId}", EditBreakdown).WithName("EditBreakdown");
         group.MapPost("/breakdowns/{draftId}/apply", ApplyBreakdown).WithName("ApplyBreakdown");
@@ -122,6 +124,39 @@ public static class AiEndpoints
         _ => Error(http, 500, "INTERNAL_ERROR")
     };
 
+    private static async Task<IResult> GetConsent(HttpContext http, CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        var service = http.RequestServices.GetRequiredService<IAiConsent>();
+        var result = await service.GetAsync(owner, ct);
+        return result.Status switch
+        {
+            AiConsentStatus.Ok => TypedResults.Ok(result.View),
+            AiConsentStatus.Invalid => Error(http, 400, "INVALID_REQUEST"),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> UpdateConsent(HttpContext http, UpdateAiConsentRequest request,
+        CancellationToken ct)
+    {
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) || mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var service = http.RequestServices.GetRequiredService<IAiConsent>();
+        var result = await service.UpdateAsync(owner, mutation, request, ct);
+        return result.Status switch
+        {
+            AiConsentStatus.Updated or AiConsentStatus.Replayed => TypedResults.Ok(result.View),
+            AiConsentStatus.Invalid => Error(http, 422, result.Code!),
+            AiConsentStatus.Conflict => Error(http, 409, result.Code!),
+            AiConsentStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
     private static async Task<IResult> Parse(HttpContext http, AiParseRequest request, CancellationToken ct)
     {
         if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
@@ -136,8 +171,15 @@ public static class AiEndpoints
         try { _ = TimeZoneInfo.FindSystemTimeZoneById(request.Context.TimeZone); }
         catch (TimeZoneNotFoundException) { return Error(http, 400, "INVALID_TIME_ZONE"); }
         catch (InvalidTimeZoneException) { return Error(http, 400, "INVALID_TIME_ZONE"); }
-        if (request.AllowedScopes is { Count: > 0 } scopes && !scopes.Contains("task_drafts"))
-            return Error(http, 403, "AI_SCOPE_DENIED");
+        if (request.AllowedScopes is { Count: > 0 } scopes)
+        {
+            if (scopes.Distinct().Any(scope => !AiConsentScopes.IsKnown(scope)) ||
+                !scopes.Contains("task_drafts"))
+                return Error(http, 403, "AI_SCOPE_DENIED");
+            var consent = await http.RequestServices.GetRequiredService<IAiConsent>().GetAsync(owner, ct);
+            var granted = consent.View?.AllowedScopes ?? [];
+            if (!scopes.Distinct().All(granted.Contains)) return Error(http, 403, "AI_SCOPE_DENIED");
+        }
 
         var result = await provider.ParseAsync(
             new AiParseInput(text, request.Context.Now.Value, request.Context.TimeZone), ct);

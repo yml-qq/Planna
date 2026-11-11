@@ -104,6 +104,7 @@ if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringCompariso
 }
 builder.Services.AddScoped<IAccountExportService>(sp =>
     new AccountExportService(connection, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<IAiConsent, AiConsentService>();
 builder.Services.AddScoped<IAccountDeletionService>(sp => new AccountDeletionService(
     sp.GetRequiredService<TaskWriteContext>(), sp.GetRequiredService<IStepUpService>(),
     sp.GetRequiredService<TimeProvider>()));
