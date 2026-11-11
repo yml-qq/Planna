@@ -181,3 +181,10 @@
 - `spec/openapi.yaml` 的 Recurrence/put 请求更新为双 kind 并加入 `interval_days`；契约测试保持 19 项并通过。无 schema 变更、无新迁移。
 - 迭代修复：旧递归冒烟把 `after_completion` 当 unsupported（改测 `legal_workday`）；新冒烟重复完成未使用当前任务版本（改为 v2）。最终 [PostgreSQL 18 CI 运行 43069324140](https://github.com/yml-qq/Planna/actions/runs/43069324140) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖规则校验/双 kind、完成生成下一次 occurrence（固定本地日期与 UTC instant）、重放不重复、reopen 后再完成追加、跨 owner、删除账号与 revision/变更记录一致性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。法定工作日、occurrence 撤销与编辑范围留待 `TIME-01D`。
+
+## AI-01 自然语言解析检查（2026-11-12）
+
+- 实现 `POST /ai/parse`：`IAiParseProvider` 抽象 + 确定性规则 Provider（docs/09「先规则解析」），支持 `今天/明天/后天`、`下周X`、`YYYY-MM-DD` 与常用时间短语，输出草稿（不写库）；缺少/非法 context、超长输入 `400`，scope 不含 `task_drafts` `403 AI_SCOPE_DENIED`，`AI_PROVIDER=none` `503 AI_UNAVAILABLE`；提示注入文本仅作为标题文本处理。
+- `spec/openapi.yaml` 的 `/ai/parse` 补充 400/401 与语义描述；契约测试增至 20 项。无 schema 变更、无新迁移、无 AI 凭据进入仓库。
+- [PostgreSQL 18 CI 运行 43070714045](https://github.com/yml-qq/Planna/actions/runs/43070714045) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、校验/时区/scope 错误、provider 关闭 503、相对/绝对/下周日期、仅有日期/无日期的 assumptions 与 unresolved、提示注入不改数据（任务数、revision、sync_changes、client_mutations 均不变）。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、20 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。真实 LLM Provider（超时/重试/限流/预算/审计）、AI-02 拆解草案与 AI-03/04 计划留待后续切片。
