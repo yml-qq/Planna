@@ -132,3 +132,10 @@
 - 无 schema 变更、无新迁移；契约测试增至 14 项。
 - [PostgreSQL 18 CI 运行 43052396833](https://github.com/yml-qq/Planna/actions/runs/43052396833) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、空集合、替换/子集/清空、幂等重放与换键冲突、版本冲突 details（`changed_fields=tag_ids`）、非法/跨 owner/已软删标签与 21 个标签上限、`tag_id` 过滤与错误、任务/关联/revision/mutations 原子性、删除账号 401。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、14 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
+
+## TASK-STEP-01 任务步骤 CRUD 检查（2026-11-11）
+
+- 实现 `GET/POST /tasks/{id}/steps` 与 `PATCH/DELETE /steps/{id}`：步骤按 `position,id` 排序；创建/更新/软删均带幂等键，`PATCH` 版本化并支持 `is_done`/`position`/`estimate_minutes`（`null` 清空估算）；`DELETE` 带 `If-Match: "vN"` 并写 `sync_changes(entity_type='step')` tombstone。步骤写入独立推进 revision 与步骤版本，不改变所属任务版本；读取走 Dapper，写入走 EF Core 事务服务。
+- `spec/openapi.yaml` 新增 `/tasks/{id}/steps` 与 `/steps/{id}` 路径及 `TaskStep` schema（原机器契约未定义步骤端点，按 `docs/02` 任务步骤语义补齐）；契约测试增至 15 项。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43053807500](https://github.com/yml-qq/Planna/actions/runs/43053807500) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、排序、创建重放/换键冲突/ID 冲突、版本冲突 details、估算清空、软删 tombstone、跨 owner/已软删任务与步骤 404、删除账号 401、revision/步骤版本/任务版本不变与幂等记录原子性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、15 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
