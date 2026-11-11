@@ -153,3 +153,10 @@
 - `spec/openapi.yaml` 的 `/sync/push` 补充语义与 `400` 响应；契约测试增至 17 项。无 schema 变更、无新迁移。
 - [PostgreSQL 18 CI 运行 43056737863](https://github.com/yml-qq/Planna/actions/runs/43056737863) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖批内 accepted/duplicate/conflict/rejected 矩阵、跨 mutation 幂等重放、冲突 server_entity/retryable、删除重复、非法整批（空 device/空数组/101 条/空 mutation_id）、owner 隔离、revision/变更/幂等记录原子性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、17 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
+
+## SYNC-BOOTSTRAP-01 一致快照引导检查（2026-11-12）
+
+- 实现 `POST /sync/bootstrap`：在 `REPEATABLE READ` 只读事务内读取 committed revision 与全部未软删 `tasks`/`lists`，返回 `{snapshot_cursor, next_page_token, tasks, lists}`；快照游标编码 `(revision, int.MaxValue)`，可直接交给 `GET /sync/pull` 继续增量，快照后提交的变更由 pull 返回。软删数据排除、`next_page_token` 预留为 null、快照只读。
+- `spec/openapi.yaml` 补充语义与 `401` 响应；契约测试增至 18 项。无 schema 变更、无新迁移。
+- [PostgreSQL 18 CI 运行 43058072416](https://github.com/yml-qq/Planna/actions/runs/43058072416) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、快照过滤与投影、owner 隔离、空 owner、快照游标与 pull 衔接（快照后 revision 7 变更可由游标增量获取）、只读无副作用。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、18 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。
