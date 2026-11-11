@@ -290,6 +290,34 @@ class Spec01Contracts(unittest.TestCase):
         set_schema = api["components"]["schemas"]["TaskTagSet"]
         self.assertEqual(set(set_schema["required"]), {"task_id", "version", "tag_ids"})
 
+    def test_step_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        task_steps = api["paths"]["/tasks/{id}/steps"]
+        self.assertEqual(task_steps["parameters"], [{"$ref": "#/components/parameters/TaskId"}])
+        self.assertEqual(set(task_steps["get"]["responses"]), {"200", "400", "401", "404"})
+        post = task_steps["post"]
+        self.assertEqual(set(post["responses"]), {"201", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, post["parameters"])
+        body = post["requestBody"]["content"]["application/json"]["schema"]
+        self.assertFalse(body["additionalProperties"])
+        self.assertEqual(set(body["required"]), {"id", "title"})
+        step = api["paths"]["/steps/{id}"]
+        patch = step["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        patch_body = patch["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(patch_body["required"]), {"expected_version", "patch"})
+        self.assertEqual(set(patch_body["properties"]["patch"]["properties"]),
+                         {"title", "is_done", "position", "estimate_minutes"})
+        delete = step["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
+        params = {}
+        for p in delete["parameters"]:
+            name = p["$ref"].rsplit("/", 1)[-1] if "$ref" in p else p["name"]
+            params[name] = p
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+        schema = api["components"]["schemas"]["TaskStep"]
+        self.assertEqual(set(schema["required"]), {"id", "title", "is_done", "position", "version"})
+
 
 if __name__ == "__main__":
     unittest.main()

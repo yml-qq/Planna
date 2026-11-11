@@ -9,6 +9,7 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
     public DbSet<MutationRow> Mutations => Set<MutationRow>();
     public DbSet<SyncChangeRow> Changes => Set<SyncChangeRow>();
     public DbSet<TagRow> Tags => Set<TagRow>();
+    public DbSet<StepRow> Steps => Set<StepRow>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -83,6 +84,20 @@ public sealed class TaskWriteContext(DbContextOptions<TaskWriteContext> options)
             e.Property(x => x.Version).HasColumnName("version");
             e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
         });
+        model.Entity<StepRow>(e =>
+        {
+            e.ToTable("task_steps", t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.OwnerId).HasColumnName("owner_id");
+            e.Property(x => x.TaskId).HasColumnName("task_id");
+            e.Property(x => x.Title).HasColumnName("title");
+            e.Property(x => x.IsDone).HasColumnName("is_done");
+            e.Property(x => x.Position).HasColumnName("position");
+            e.Property(x => x.EstimateMinutes).HasColumnName("estimate_minutes");
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
+        });
     }
 }
 
@@ -148,6 +163,19 @@ public sealed class TagRow
     public Guid OwnerId { get; set; }
     public string Name { get; set; } = "";
     public string? Color { get; set; }
+    public long Version { get; set; } = 1;
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+
+public sealed class StepRow
+{
+    public Guid Id { get; set; }
+    public Guid OwnerId { get; set; }
+    public Guid TaskId { get; set; }
+    public string Title { get; set; } = "";
+    public bool IsDone { get; set; }
+    public decimal Position { get; set; }
+    public short? EstimateMinutes { get; set; }
     public long Version { get; set; } = 1;
     public DateTimeOffset? DeletedAt { get; set; }
 }

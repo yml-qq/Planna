@@ -53,6 +53,7 @@
 | 40 | `docs/40-TASK-LIST-01.md` | 清单 CRUD、owner 权限、软删与 inbox 保护 |
 | 41 | `docs/41-TAG-01A.md` | 标签 CRUD、名称唯一与软删 |
 | 42 | `docs/42-TAG-01B.md` | 任务标签关联替换与按标签过滤 |
+| 43 | `docs/43-STEP-01.md` | 任务步骤 CRUD、排序与软删 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

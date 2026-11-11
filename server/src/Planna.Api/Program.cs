@@ -70,6 +70,10 @@ builder.Services.AddScoped<IUpdateTag, TagUpdateService>();
 builder.Services.AddScoped<IDeleteTag, TagDeleteService>();
 builder.Services.AddScoped<ITaskTagQuery>(_ => new TaskTagQuery(connection));
 builder.Services.AddScoped<ISetTaskTags, SetTaskTagsService>();
+builder.Services.AddScoped<IStepReadQuery>(_ => new StepQuery(connection));
+builder.Services.AddScoped<ICreateStep, StepCreateService>();
+builder.Services.AddScoped<IUpdateStep, StepUpdateService>();
+builder.Services.AddScoped<IDeleteStep, StepDeleteService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer>(sp => new AccessTokenIssuer(
     issuer, audience, signingKey, sp.GetRequiredService<TimeProvider>()));
@@ -144,6 +148,7 @@ app.MapAuthEndpoints();
 app.MapDeviceEndpoints();
 app.MapListEndpoints();
 app.MapTagEndpoints();
+app.MapStepEndpoints();
 app.Run();
 
 public partial class Program;

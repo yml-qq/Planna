@@ -77,6 +77,8 @@
 
 `TASK-TAG-01B` 实现任务标签关联：`PUT /tasks/{id}/tags` 以 `{expected_version, tag_ids}` 整份替换（最多 20 个唯一标签、空数组清空），标签必须属于 owner 且未软删；版本冲突 `409 VERSION_CONFLICT`、非法集合 `422 INVALID_TAG_SET`，任务版本 +1 并写含 `tag_ids` 的 `sync_changes`，同键重放原响应。`GET /tasks/{id}/tags` 返回任务标签；`GET /tasks?tag_id=` 在游标分页上追加标签过滤，非法/跨 owner/已软删标签分别返回 `400 INVALID_TAG_ID`/`404 TAG_NOT_FOUND`。详见 `42-TAG-01B.md`。
 
+`TASK-STEP-01` 实现任务步骤：`GET /tasks/{id}/steps` 返回未软删步骤（按 `position,id`），`POST /tasks/{id}/steps` 带 `Idempotency-Key` 与 `{id, title, position?, estimate_minutes?}`，`PATCH /steps/{id}` 以 `{expected_version, patch}` 更新标题/完成态/位置/估算（`null` 清空估算），`DELETE /steps/{id}` 带 `If-Match: "vN"` 软删并写 `sync_changes(entity_type='step')` tombstone。步骤写入独立推进 revision 与版本，不改变所属任务版本；跨 owner 或已软删任务/步骤一律 `404`。详见 `43-STEP-01.md`。
+
 ## 3. Task 示例
 
 ### POST /tasks

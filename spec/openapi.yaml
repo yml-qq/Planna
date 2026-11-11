@@ -15,6 +15,7 @@ tags:
   - name: Tasks
   - name: Lists
   - name: Tags
+  - name: Steps
   - name: Sync
   - name: AI
 paths:
@@ -781,6 +782,113 @@ paths:
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '422': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/steps:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Steps]
+      operationId: listSteps
+      description: List the non-deleted steps of an owned, non-deleted task ordered by position then id; foreign or soft-deleted tasks return 404.
+      responses:
+        '200':
+          description: Steps of the task
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/TaskStep'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Steps]
+      operationId: createStep
+      description: Create a step under an owned, non-deleted task. Title is trimmed to 1..500 characters, position is non-negative (default 0), estimate_minutes is optional 1..1440. The same idempotency key replays the original 201.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [id, title]
+              properties:
+                id: {type: string, format: uuid}
+                title: {type: string, minLength: 1, maxLength: 500}
+                position: {type: number, minimum: 0}
+                estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+      responses:
+        '201':
+          description: Created step
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskStep'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+  /steps/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      tags: [Steps]
+      operationId: updateStep
+      description: Versioned partial update of an owned, non-deleted step. Omitted fields keep their values and null clears estimate_minutes; a stale expected_version returns 409 with error.details containing entity_id, server_version and changed_fields. The same idempotency key replays the original response.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, patch]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                patch:
+                  type: object
+                  additionalProperties: false
+                  minProperties: 1
+                  properties:
+                    title: {type: string, minLength: 1, maxLength: 500}
+                    is_done: {type: boolean}
+                    position: {type: number, minimum: 0}
+                    estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+      responses:
+        '200':
+          description: Updated step
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskStep'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Steps]
+      operationId: deleteStep
+      description: Soft-delete an owned step with a strong If-Match version. Writes deleted_at, bumps version and records a sync_changes op=delete tombstone in one transaction; the same idempotency key replays as 204.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        '204': {description: Soft-deleted step or identical replay}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
   /sync/push:
     post:
       tags: [Sync]
@@ -1140,6 +1248,17 @@ components:
           uniqueItems: true
           maxItems: 20
           items: {type: string, format: uuid}
+    TaskStep:
+      type: object
+      additionalProperties: false
+      required: [id, title, is_done, position, version]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 500}
+        is_done: {type: boolean}
+        position: {type: number, minimum: 0}
+        estimate_minutes: {type: [integer, 'null'], minimum: 1, maximum: 1440}
+        version: {type: integer, minimum: 1}
     CreateTask:
       type: object
       additionalProperties: false
