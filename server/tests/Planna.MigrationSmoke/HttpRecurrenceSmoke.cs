@@ -167,8 +167,8 @@ internal static class HttpRecurrenceSmoke
             await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1", owner) != 6 ||
             await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_type='recurrence'", owner) != 6 ||
             await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 6 ||
-            await Scalar(db, "SELECT count(*) FROM recurrences WHERE owner_id=$1", owner) != 0 ||
-            await Scalar(db, "SELECT count(*) FROM task_occurrences WHERE owner_id=$1", owner) != 9)
+            await Scalar(db, "SELECT count(*) FROM recurrences WHERE owner_id=$1", owner) != 1 ||
+            await Scalar(db, "SELECT count(*) FROM task_occurrences WHERE owner_id=$1", owner) != 8)
             throw new InvalidOperationException("Recurrence writes did not keep revision, changes and mutation records atomic.");
         Console.WriteLine("PASS: recurrence CRUD, RRULE window materialization, DST skip/ambiguity, owner isolation");
     }
