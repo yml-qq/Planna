@@ -174,3 +174,10 @@
 - 迭代修复：首轮 CI 因重放分支固定按 `TaskReadView` 反序列化、无法重放 occurrence 完成而失败；改为按存储 JSON 形态（`original_local_start` 判定）分派后通过。最终 [PostgreSQL 18 CI 运行 43065790621](https://github.com/yml-qq/Planna/actions/runs/43065790621) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖规则创建→occurrence 物化→完成端到端、幂等重放、重复完成、受信时间、随机/缺失 occurrence、非循环任务、跨 owner 与删除账号、revision/变更/幂等记录原子性。
 - `spec/openapi.yaml` 的 complete 200 响应改为 `oneOf [Task, Occurrence]` 并补充说明；契约测试保持 19 项并通过。无 schema 变更、无新迁移。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。`after_completion`/法定工作日规则与 occurrence 撤销留待 `TIME-01C`。
+
+## TIME-01C after_completion 规则检查（2026-11-12）
+
+- 实现 `kind="after_completion"` 规则（`interval_days` 1..3650、`rrule` 必空；与 rrule 混用 `422 INVALID_RECURRENCE`）：任务按任务完成（不接受 occurrence_id），完成时在同一事务内生成下一次 occurrence（完成时刻在规则时区的本地日期 + N 天，时刻取 `dtstart_local`，DST 不存在时刻跳过，唯一键幂等）。`legal_workday` 仍 `422 UNSUPPORTED_RECURRENCE`。
+- `spec/openapi.yaml` 的 Recurrence/put 请求更新为双 kind 并加入 `interval_days`；契约测试保持 19 项并通过。无 schema 变更、无新迁移。
+- 迭代修复：旧递归冒烟把 `after_completion` 当 unsupported（改测 `legal_workday`）；新冒烟重复完成未使用当前任务版本（改为 v2）。最终 [PostgreSQL 18 CI 运行 43069324140](https://github.com/yml-qq/Planna/actions/runs/43069324140) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖规则校验/双 kind、完成生成下一次 occurrence（固定本地日期与 UTC instant）、重放不重复、reopen 后再完成追加、跨 owner、删除账号与 revision/变更记录一致性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、19 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。法定工作日、occurrence 撤销与编辑范围留待 `TIME-01D`。
