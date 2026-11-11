@@ -49,7 +49,8 @@
 | E08 | AI-CONSENT-01 | AI 数据授权存储与 parse scope 校验（已交付，见 `57-AI-CONSENT-01.md`） | AI-01 | consent tests |
 | E09 | UX-01 | 设计系统/无障碍/空状态 | E06 | accessibility tests |
 | E09 | UX-02 | 可选模块入口与轻量首页（V1.1） | UX-01 | 隐藏/恢复不丢数据 |
-| E10 | HAB-01 | 习惯/打卡 | E04 | repeat tests |
+| E10 | HAB-01A | 习惯 CRUD（服务端，已交付，见 `68-HAB-01A.md`） | E04 | repeat tests |
+| E10 | HAB-01B | 打卡日志、连续天数与习惯同步/导出 | HAB-01A | repeat tests |
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |

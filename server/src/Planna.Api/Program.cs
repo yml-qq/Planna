@@ -10,6 +10,7 @@ using Planna.Application.Tags;
 using Planna.Application.Sync;
 using Planna.Application.Ai;
 using Planna.Application.Export;
+using Planna.Application.Habits;
 using Planna.Application.Privacy;
 using Planna.Api.Identity;
 using Planna.Api.Lists;
@@ -18,6 +19,7 @@ using Planna.Api.Sync;
 using Planna.Api.Tags;
 using Planna.Api.Tasks;
 using Planna.Api.Ai;
+using Planna.Api.Habits;
 using Planna.Api.Http;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
@@ -26,6 +28,7 @@ using Planna.Infrastructure.Tasks;
 using Planna.Infrastructure.Tags;
 using Planna.Infrastructure.Ai;
 using Planna.Infrastructure.Export;
+using Planna.Infrastructure.Habits;
 using Planna.Infrastructure.Privacy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -106,6 +109,10 @@ if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringCompariso
 builder.Services.AddScoped<IAccountExportService>(sp =>
     new AccountExportService(connection, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddScoped<IAiConsent, AiConsentService>();
+builder.Services.AddScoped<IHabitCreate, HabitService>();
+builder.Services.AddScoped<IHabitUpdate, HabitService>();
+builder.Services.AddScoped<IHabitDelete, HabitService>();
+builder.Services.AddScoped<IHabitQuery, HabitService>();
 builder.Services.AddScoped<IAccountDeletionService>(sp => new AccountDeletionService(
     sp.GetRequiredService<TaskWriteContext>(), sp.GetRequiredService<IStepUpService>(),
     sp.GetRequiredService<TimeProvider>()));
@@ -198,6 +205,7 @@ app.MapStepEndpoints();
 app.MapSyncEndpoints();
 app.MapRecurrenceEndpoints();
 app.MapAiEndpoints();
+app.MapHabitEndpoints();
 app.MapMeEndpoints();
 app.Run();
 

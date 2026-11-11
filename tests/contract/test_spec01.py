@@ -459,6 +459,35 @@ class Spec01Contracts(unittest.TestCase):
         response_ref = deletion["responses"]["202"]["content"]["application/json"]["schema"]["$ref"]
         self.assertEqual(response_ref, "./account-deletion.schema.json")
 
+    def test_habit_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        habits = api["paths"]["/habits"]
+        self.assertEqual(set(habits["get"]["responses"]), {"200", "401"})
+        post = habits["post"]
+        self.assertEqual(set(post["responses"]), {"201", "400", "401", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, post["parameters"])
+        body = post["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(body["required"]), {"title", "schedule_type", "time_zone"})
+        self.assertEqual(body["properties"]["schedule_type"]["enum"], ["daily", "weekly", "weekdays"])
+        self.assertEqual(body["properties"]["weekdays"]["maxItems"], 7)
+        habit = api["components"]["schemas"]["Habit"]
+        self.assertEqual(set(habit["required"]),
+                         {"id", "title", "schedule_type", "target_quantity", "unit", "time_zone",
+                          "version", "created_at", "updated_at"})
+        self.assertEqual(habit["properties"]["schedule_type"]["enum"], ["daily", "weekly", "weekdays"])
+        by_id = api["paths"]["/habits/{id}"]
+        self.assertEqual(set(by_id["get"]["responses"]), {"200", "400", "401", "404"})
+        patch = by_id["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        patch_body = patch["requestBody"]["content"]["application/json"]["schema"]
+        self.assertEqual(set(patch_body["required"]), {"expected_version", "patch"})
+        self.assertEqual(api["components"]["schemas"]["HabitPatch"]["minProperties"], 1)
+        delete = by_id["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404", "409"})
+        if_match = {parameter["name"]: parameter for parameter in delete["parameters"]
+                    if parameter.get("name") == "If-Match"}
+        self.assertEqual(if_match["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+
     def test_ai_consent_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         consent = api["paths"]["/ai/consent"]
