@@ -111,7 +111,6 @@ builder.Services.AddScoped<IAuthService>(sp => new AuthService(
 builder.Services.AddScoped<IStepUpService>(sp => new StepUpService(
     sp.GetRequiredService<AuthContext>(), sp.GetRequiredService<LoginCodeCipher>(),
     sp.GetRequiredService<TimeProvider>(), codePepper));
-builder.Services.AddScoped<StepUpEmailDispatcher>();
 builder.Services.AddScoped<IDeviceSessionQuery>(_ => new DeviceSessionQuery(connection));
 builder.Services.AddScoped<IRevokeDeviceSession, RevokeDeviceSession>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
