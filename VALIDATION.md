@@ -269,3 +269,10 @@
 - `.github/workflows/desktop.yml` 新增 `desktop-web-ui` 作业（ubuntu、pnpm 11、Node 24）。
 - **CI 已完成**：早先提交 `4e4233a` 的运行在 GitHub Actions 侧排队近 1 小时后仍 0 job（外部容量问题）；改用最新提交 `1ea4b02` 触发后：[Desktop core 43102722257](https://github.com/yml-qq/Planna/actions/runs/43102722257)（Rust core + Desktop web UI 两个作业）与 [Server integration 43102722183](https://github.com/yml-qq/Planna/actions/runs/43102722183) 均 **success**（`pnpm install --frozen-lockfile`、`pnpm test`、`pnpm build`、`cargo fmt/clippy/test`、服务端迁移与冒烟）。
 - 未连接生产库、未提交凭据；Tauri 外壳与同步调度仍属 `DESK-01C`。
+
+## DESK-01C Tauri 外壳检查（2026-11-12）
+
+- 新增 `apps/desktop/src-tauri`（Tauri 2 独立 workspace）：窗口/CSP/能力配置（仅 `core:default`）、生成的 PNG/ICO 图标、`AppState { Mutex<Store> }` 与命令 `list_tasks`/`create_task`/`pending_mutations`（本地任务与 outbox 同事务；重复 id 返回 `DUPLICATE_MUTATION`），启动时打开 app data 目录的 `planna.db` 并确保 inbox 清单。
+- 本地验证：`cargo check`（Tauri 2.12 + webview2-com 0.39，2m08s）、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings` 全部通过；未在本机执行 `tauri build` 安装包或真实窗口冒烟。
+- 桌面 CI 新增 `Windows Tauri shell`（fmt/clippy/check + rust-cache）。[Desktop core 43103429108](https://github.com/yml-qq/Planna/actions/runs/43103429108) 三个作业（Windows Rust core / Windows Tauri shell / Desktop web UI）与 [Server integration 43103429062](https://github.com/yml-qq/Planna/actions/runs/43103429062) 均 **success**。
+- 未连接生产库、未提交凭据；登录/同步调度与安装包签名留待 `DESK-01D`。

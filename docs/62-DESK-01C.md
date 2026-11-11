@@ -1,6 +1,6 @@
 # 62｜DESK-01C：Tauri 2 外壳与 Rust 命令层
 
-状态：代码已实现；本地 `cargo check`、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings` 通过，桌面 CI 见 `VALIDATION.md` 的 DESK-01C 小节。登录/同步调度与安装包签名属 `DESK-01D`。
+状态：代码已实现；本地 `cargo check`、`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings` 通过；[Desktop core 43103429108](https://github.com/yml-qq/Planna/actions/runs/43103429108) 的 `Windows Tauri shell` 作业 **success**（同次 Rust core 与 Web UI 作业亦通过），[Server integration 43103429062](https://github.com/yml-qq/Planna/actions/runs/43103429062) **success**。登录/同步调度与安装包签名属 `DESK-01D`。
 
 ## 范围与验收
 
