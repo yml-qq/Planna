@@ -195,3 +195,10 @@
 - `spec/openapi.yaml` 三个端点补充语义、400/401 与 apply 幂等说明；契约测试增至 21 项。无 schema 变更、无新迁移、无凭据入库。
 - 迭代修复：首轮创建重放应返回 201（改为按操作映射状态）；次轮冒烟对同一响应重复读取内容导致 `ObjectDisposedException`（改一次读取复用）。最终 [PostgreSQL 18 CI 运行 43073409894](https://github.com/yml-qq/Planna/actions/runs/43073409894) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、任务/版本校验、创建/编辑/应用重放、旧 token/快照拒绝、非法步骤、过期草案、重复应用、跨 owner、步骤原子写入与 revision/变更/审计一致性。
 - 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、21 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。AI-03/04 计划与配额、consent 持久化留待后续切片。
+
+## AI-03/04 计划预览与应用检查（2026-11-12）
+
+- 实现 `POST /ai/plans`（确定性排程：顺序时间块、`estimate_minutes` 缺省 30、范围 ≤ 7 天、最多 20 个操作；与既有 `task_time_blocks` 重叠的任务进 `conflicts` 且不排程，超范围/超操作数进 `unplanned_task_ids`；计划持久化 30 分钟有效，不写业务数据）与 `POST /ai/plans/{id}/apply`（校验 owner、状态、过期、快照、token 哈希、accepted 操作集合完全一致与每个任务 `expected_version`；通过后同一事务创建全部时间块、推进一次 revision、按块写 `sync_changes(entity_type='time_block')`、写 `ai_action_audits(plan_apply)` 与幂等结果；失败 `409 PLAN_STALE` 不部分执行，同键重放同一结果）。
+- `spec/openapi.yaml` 两个端点补充语义与 400/401/404/422 响应；契约测试增至 22 项。无 schema 变更、无新迁移、无凭据入库。
+- [PostgreSQL 18 CI 运行 43074823842](https://github.com/yml-qq/Planna/actions/runs/43074823842) 已通过迁移重放、构建、格式、静态契约与 HTTP 冒烟，覆盖鉴权、范围/任务校验、冲突与 unplanned、错误快照/token/操作集合拒绝、原子时间块写入、重放、陈旧任务版本、过期计划、跨 owner、删除账号与 revision/变更/审计一致性。
+- 本机仍无 PostgreSQL 服务且 Docker Linux 引擎不可连接，未在本地执行隔离库冒烟；本地构建零警告、format 通过、22 项静态契约测试与 OpenAPI 3.1 校验通过。未连接或修改任何生产库。多操作类型、consent 与配额限流留待后续切片。
