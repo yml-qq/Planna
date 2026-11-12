@@ -493,3 +493,12 @@
 - 首次 Server CI 失败（[43181418917](https://github.com/yml-qq/Planna/actions/runs/43181418917)）：冒烟为 foreign owner 签发 token 时使用了未落库的随机 session id，导致 401；修正为复用已插入的 `foreign_session`（提交 `a6182d8`）。
 - 修复后 [Server integration 43183482907](https://github.com/yml-qq/Planna/actions/runs/43183482907) 与 [Desktop core 43183482934](https://github.com/yml-qq/Planna/actions/runs/43183482934) 均 **success**；本地 build/format/契约 29 项通过。
 - 未连接生产库、未提交凭据；统计 UI、休息提醒与任务联动留待 `FOCUS-05`。
+
+## GOAL-01 目标/里程碑 API 检查（2026-11-12）
+
+- 迁移 `202611140002_Goals`：`goals`（状态/版本/软删/目标日期）与 `milestones`（完成/位置/版本/软删）；里程碑复合外键引用 `goals(owner_id,id)`。
+- 契约：`GET/POST /goals`、`GET/PATCH/DELETE /goals/{id}`、`POST /goals/{id}/milestones`、`PATCH/DELETE /goals/{id}/milestones/{mid}`；`Idempotency-Key`、`expected_version`/`If-Match`、进度派生（completed/total/percent）、owner 隔离、422/404/409 映射。OpenAPI 新增 5 路径与 10 schema，契约测试新增 `test_goal_contract`（**30 项**）。
+- 冒烟 `HttpGoalSmoke`：创建/重放/同 key 复用、两里程碑与 position、完成里程碑 progress 50%、目标状态更新、陈旧版本、删除里程碑后进度、跨 owner 404、非法输入与删除目标后列表为空。
+- 首次 Server CI 失败（[43184881234](https://github.com/yml-qq/Planna/actions/runs/43184881234)）：迁移 `42830 there is no unique constraint matching given keys for referenced table "goals"`；为 `goals` 增加 `ak_goals_owner_id (owner_id,id)` 唯一约束（提交 `6edf7fc`）。
+- 修复后 [Server integration 43186872041](https://github.com/yml-qq/Planna/actions/runs/43186872041) 与 [Desktop core 43186872036](https://github.com/yml-qq/Planna/actions/runs/43186872036) 均 **success**；本地 build/format/契约 30 项通过。
+- 未连接生产库、未提交凭据；目标/里程碑尚未进入 `/sync`，客户端 UI 与 AI 拆解留待 `GOAL-02`。
