@@ -18,8 +18,9 @@ internal static class HttpFocusStatsSmoke
         var foreign = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,'focus-stats-one@example.test'),($2,'focus-stats-two@example.test')", owner, foreign);
         var ownerSession = Guid.NewGuid();
+        var foreignSession = Guid.NewGuid();
         await AddSession(db, owner, ownerSession);
-        await AddSession(db, foreign, Guid.NewGuid());
+        await AddSession(db, foreign, foreignSession);
 
         await InsertSession(db, owner, "2026-11-10T10:00:00Z", "completed", 600);
         await InsertSession(db, owner, "2026-11-10T23:30:00Z", "completed", 300);
@@ -35,7 +36,7 @@ internal static class HttpFocusStatsSmoke
         using var client = factory.CreateClient();
         var token = factory.Services.GetRequiredService<IAccessTokenIssuer>().Issue(owner, ownerSession);
         var foreignToken = factory.Services.GetRequiredService<IAccessTokenIssuer>()
-            .Issue(foreign, Guid.NewGuid());
+            .Issue(foreign, foreignSession);
 
         Check(await Get(client, null, "from=2026-11-10&to=2026-11-11"), HttpStatusCode.Unauthorized);
 
