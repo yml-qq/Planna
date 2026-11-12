@@ -62,6 +62,8 @@ const tasks = createTaskStore(bridge)
 const habits = createHabitStore(bridge, {
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
 })
+const focusTaskId = ref('')
+const focusMinutes = ref('')
 const focus = createFocusStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
@@ -163,7 +165,7 @@ async function submitHabit(): Promise<void> {
 }
 
 async function startFocus(plannedSeconds: number): Promise<void> {
-  await focus.start(plannedSeconds)
+  await focus.start(plannedSeconds, focusTaskId.value === '' ? null : focusTaskId.value)
 }
 
 async function pauseFocus(): Promise<void> {
@@ -175,7 +177,9 @@ async function resumeFocus(): Promise<void> {
 }
 
 async function completeFocus(): Promise<void> {
-  await focus.complete()
+  const minutes = Number.parseInt(focusMinutes.value, 10)
+  const override = Number.isFinite(minutes) && minutes >= 0 ? minutes * 60 : undefined
+  if (await focus.complete(override)) focusMinutes.value = ''
 }
 
 async function checkInHabit(habitId: string): Promise<void> {
@@ -476,17 +480,33 @@ onMounted(async () => {
           计划 {{ formatDuration(focus.snapshot.value.plannedSeconds) }} ·
           {{ focus.snapshot.value.state === 'active' ? '进行中' : '已暂停' }}
         </p>
+        <p v-if="focus.driftSeconds.value > 60" class="status status--error">
+          检测到约 {{ Math.round(focus.driftSeconds.value / 60) }} 分钟的后台中断，可在完成前修正实际专注时长。
+        </p>
         <div class="composer__row">
           <button v-if="focus.snapshot.value.state === 'active'" class="button" type="button" @click="pauseFocus">
             暂停
           </button>
           <button v-else class="button" type="button" @click="resumeFocus">继续</button>
+          <input
+            v-model="focusMinutes"
+            class="input input--narrow"
+            type="number"
+            min="0"
+            max="1440"
+            placeholder="实际分钟"
+            aria-label="实际专注分钟"
+          />
           <button class="button button--ghost" type="button" @click="completeFocus">完成</button>
         </div>
       </template>
       <template v-else>
         <p class="empty">开始一段专注，退出后重新打开会按服务端记录恢复。</p>
         <div class="composer__row">
+          <select v-model="focusTaskId" class="input" aria-label="关联任务">
+            <option value="">不关联任务</option>
+            <option v-for="task in tasks.tasks.value" :key="task.id" :value="task.id">{{ task.title }}</option>
+          </select>
           <button class="button" type="button" :disabled="focus.loading.value" @click="startFocus(1500)">
             开始 25 分钟
           </button>

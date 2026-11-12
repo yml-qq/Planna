@@ -131,6 +131,37 @@ describe('focus store', () => {
     expect(store.snapshot.value?.resumedAt).toBe(clock)
   })
 
+  it('links a task and applies an explicit completion duration', async () => {
+    const clock = 4_000_000
+    const { store, bridge } = createStore(() => clock)
+    expect(await store.start(1500, 'task-1')).toBe(true)
+    expect(store.session.value?.taskId).toBe('task-1')
+    expect(await store.complete(2400)).toBe(true)
+    expect(store.session.value?.actualSeconds).toBe(2400)
+    expect(await bridge.focusList('', 'token')).toHaveLength(1)
+  })
+
+  it('flags background drift when ticks are far apart', async () => {
+    let clock = 5_000_000
+    const { store } = createStore(() => clock)
+    await store.start(1500)
+    clock += 120_000
+    store.tick()
+    expect(store.driftSeconds.value).toBe(120)
+    clock += 1_000
+    store.tick()
+    expect(store.driftSeconds.value).toBe(120)
+    expect(store.seconds.value).toBe(121)
+  })
+
+  it('rejects invalid completion overrides', async () => {
+    const { store } = createStore(() => 6_000_000)
+    await store.start(1500)
+    expect(await store.complete(-5)).toBe(false)
+    expect(store.error.value).toBe('INVALID_FOCUS_ACTUAL')
+    expect(store.snapshot.value?.state).toBe('active')
+  })
+
   it('maps open-session conflicts and requires a token', async () => {
     const bridge = new MemoryBridge()
     await bridge.focusStart('', 'token', 1500)

@@ -76,12 +76,13 @@ export interface FocusStore {
   session: Ref<FocusSession | null>
   snapshot: Ref<FocusSnapshot | null>
   seconds: Ref<number>
+  driftSeconds: Ref<number>
   loading: Ref<boolean>
   error: Ref<string | null>
-  start: (plannedSeconds: number) => Promise<boolean>
+  start: (plannedSeconds: number, taskId?: string | null) => Promise<boolean>
   pause: () => Promise<boolean>
   resume: () => Promise<boolean>
-  complete: () => Promise<boolean>
+  complete: (actualSeconds?: number) => Promise<boolean>
   abandon: () => Promise<boolean>
   recover: () => Promise<void>
   tick: () => void
@@ -95,6 +96,8 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const seconds = ref(snapshot.value ? elapsedSeconds(snapshot.value, options.now?.() ?? Date.now()) : 0)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const driftSeconds = ref(0)
+  let lastTickAt = 0
   const now = options.now ?? (() => Date.now())
   const read = options.read ?? (() => null)
   const write =
@@ -113,7 +116,18 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   }
 
   function tick(): void {
-    if (snapshot.value) seconds.value = elapsedSeconds(snapshot.value, now())
+    if (!snapshot.value) return
+    const current = now()
+    if (
+      snapshot.value.state === 'active' &&
+      snapshot.value.resumedAt !== null &&
+      lastTickAt > 0 &&
+      current - lastTickAt > 60_000
+    ) {
+      driftSeconds.value = Math.floor((current - lastTickAt) / 1000)
+    }
+    lastTickAt = current
+    seconds.value = elapsedSeconds(snapshot.value, current)
   }
 
   function requireToken(): string | null {
@@ -125,13 +139,13 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     return token
   }
 
-  async function start(plannedSeconds: number): Promise<boolean> {
+  async function start(plannedSeconds: number, taskId: string | null = null): Promise<boolean> {
     const token = requireToken()
     if (!token) return false
     loading.value = true
     error.value = null
     try {
-      const created = await bridge.focusStart(options.baseUrl(), token, plannedSeconds)
+      const created = await bridge.focusStart(options.baseUrl(), token, plannedSeconds, taskId)
       session.value = created
       persist({
         sessionId: created.id,
@@ -142,6 +156,8 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
         resumedAt: now()
       })
       seconds.value = created.actualSeconds
+      driftSeconds.value = 0
+      lastTickAt = now()
       return true
     } catch (failure) {
       error.value = errorCode(failure)
@@ -180,6 +196,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
       if (terminal) {
         persist(null)
         seconds.value = actual
+        driftSeconds.value = 0
       } else {
         persist({
           sessionId: updated.id,
@@ -235,16 +252,30 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     }
   }
 
+  async function completeWith(actualSeconds?: number): Promise<boolean> {
+    const current = snapshot.value
+    if (actualSeconds !== undefined && current !== null) {
+      if (!Number.isFinite(actualSeconds) || actualSeconds < 0 || actualSeconds > 86400) {
+        error.value = 'INVALID_FOCUS_ACTUAL'
+        return false
+      }
+      seconds.value = Math.floor(actualSeconds)
+      snapshot.value = { ...current, accumulatedSeconds: Math.floor(actualSeconds), resumedAt: null, state: 'paused' }
+    }
+    return transition('completed')
+  }
+
   return {
     session,
     snapshot,
     seconds,
+    driftSeconds,
     loading,
     error,
     start,
     pause: () => transition('paused'),
     resume: () => transition('active'),
-    complete: () => transition('completed'),
+    complete: (actualSeconds?: number) => completeWith(actualSeconds),
     abandon: () => transition('abandoned'),
     recover,
     tick

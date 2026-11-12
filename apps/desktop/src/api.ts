@@ -138,7 +138,7 @@ export interface DesktopBridge {
   resolveConflict(mutationId: string, strategy: ConflictStrategy): Promise<boolean>
   exportConflicts(): Promise<string>
   focusList(baseUrl: string, accessToken: string, limit?: number): Promise<FocusSession[]>
-  focusStart(baseUrl: string, accessToken: string, plannedSeconds: number): Promise<FocusSession>
+  focusStart(baseUrl: string, accessToken: string, plannedSeconds: number, taskId?: string | null): Promise<FocusSession>
   focusUpdate(
     baseUrl: string,
     accessToken: string,
@@ -294,7 +294,8 @@ export class MemoryBridge implements DesktopBridge {
   async focusStart(
     _baseUrl: string,
     _accessToken: string,
-    plannedSeconds: number
+    plannedSeconds: number,
+    taskId: string | null = null
   ): Promise<FocusSession> {
     if ([...this.focusSessions.values()].some((session) => session.state === 'active' || session.state === 'paused')) {
       throw new Error('409:FOCUS_SESSION_ACTIVE')
@@ -303,7 +304,7 @@ export class MemoryBridge implements DesktopBridge {
     const now = new Date().toISOString()
     const session: FocusSession = {
       id: crypto.randomUUID(),
-      taskId: null,
+      taskId,
       startedAt: now,
       endedAt: null,
       plannedSeconds,
@@ -640,12 +641,13 @@ export class TauriBridge implements DesktopBridge {
   async focusStart(
     baseUrl: string,
     accessToken: string,
-    plannedSeconds: number
+    plannedSeconds: number,
+    taskId: string | null = null
   ): Promise<FocusSession> {
     const row = await this.invoke<RawFocusSession>('focus_start', {
       baseUrl,
       accessToken,
-      taskId: null,
+      taskId,
       plannedSeconds
     })
     return toFocusSession(row)
