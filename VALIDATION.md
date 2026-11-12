@@ -447,3 +447,12 @@
 - 前端提醒测试改为固定 UTC 时区 + 动态本地时间，**36 项**与 `pnpm build` 通过；core/shell `cargo clippy/fmt` 通过；服务端无变更。
 - [Server integration 43171888623](https://github.com/yml-qq/Planna/actions/runs/43171888623) 与 [Desktop core 43171888640](https://github.com/yml-qq/Planna/actions/runs/43171888640) 均 **success**。
 - 未连接生产库、未提交凭据；通知真机验证、台账导出与服务端 streak 一致性抽查留待 `HAB-01P`。
+
+## HAB-01P 冲突台账导出检查（2026-11-12）
+
+- Tauri 新增 `export_conflicts`，输出 `conflict-ledger-v1` JSON（schema_version/exported_at/conflicts[] 含服务器实体与版本）；桥接 `exportConflicts()`；UI 在存在冲突时提供“导出冲突台账”，优先写剪贴板并展示 JSON。
+- 前端新增导出测试（Memory 桥返回合法版本化空台账），测试增至 **37 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- streak 一致性：服务端规则由 HAB-01C 冒烟覆盖，客户端按同一规则在习惯时区计算（HAB-01I/O）；本切片记录抽查依据，未新增跨栈自动比对。
+- **通知真机投递未验证**：当前环境无桌面通知运行时，仅验证插件编译、能力配置、调度/免打扰/去重逻辑。
+- [Server integration 43173459806](https://github.com/yml-qq/Planna/actions/runs/43173459806) 与 [Desktop core 43173459876](https://github.com/yml-qq/Planna/actions/runs/43173459876) 均 **success**。
+- 未连接生产库、未提交凭据；人工 QA（通知投递、签名安装包、streak 抽查、台账字段评审）留待 `HAB-01Q`。
