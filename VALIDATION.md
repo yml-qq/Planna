@@ -360,3 +360,12 @@
 - 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format` 通过、契约测试 28/28、OpenAPI 校验 OK。
 - [Server integration 43155930310](https://github.com/yml-qq/Planna/actions/runs/43155930310) 与 [Desktop core 43155930298](https://github.com/yml-qq/Planna/actions/runs/43155930298) 均 **success**。
 - 未连接生产库、未提交凭据；客户端打卡 UI、提醒与离线习惯 outbox 留待 `HAB-01F`。
+
+## HAB-01F 桌面本地习惯存储检查（2026-11-12）
+
+- core 本地 SQLite 新增 `habits` 与 `habit_logs`（同日唯一）；`create_habit` 与 `upsert_habit_log` 在单事务内写本地行与 outbox（habit/habit_log，新建 base_version=0、同日更新为更新前版本），同 mutation id 幂等；非法值/wеekly 缺 weekdays/习惯不存在整体回滚。
+- `apply_pull` 新增 habit（版本单调、软删墓碑）与 habit_log（仅 upsert、版本单调）分支；同步引擎 pull 过滤器接受 `task/habit/habit_log`，推送复用既有 transport；新增 `uuid` 依赖用于本地日志 id。
+- 新增 `habit_tests.rs` 8 项：原子写、幂等、weekly 校验、同日复用与 base_version 递增、非法回滚、拉取新旧/墓碑、未知实体与日志删除、同步引擎推送并清空 outbox/推进游标；core 测试合计 **28 项**。
+- 本地：`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test` 全部通过。
+- [Server integration 43157421165](https://github.com/yml-qq/Planna/actions/runs/43157421165) 与 [Desktop core 43157421097](https://github.com/yml-qq/Planna/actions/runs/43157421097) 均 **success**；服务端无变更。
+- 未连接生产库、未提交凭据；Tauri 习惯命令、Vue 打卡 UI 与提醒留待 `HAB-01G`。
