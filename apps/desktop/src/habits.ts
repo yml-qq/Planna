@@ -10,6 +10,40 @@ export function localDate(now: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
+/** Calendar date (YYYY-MM-DD) for `timeZone`; falls back to the local zone. */
+export function dateInTimeZone(timeZone: string, now: Date = new Date()): string {
+  try {
+    const formatted = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(now)
+    return formatted.replaceAll('/', '-')
+  } catch {
+    return localDate(now)
+  }
+}
+
+/** Wall-clock time (HH:MM) for `timeZone`; falls back to the local zone. */
+export function timeInTimeZone(timeZone: string, now: Date = new Date()): string {
+  try {
+    const formatted = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(now)
+    return formatted
+  } catch {
+    return localTimeFallback(now)
+  }
+}
+
+function localTimeFallback(now: Date): string {
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+}
+
 export function addDays(date: string, delta: number): string {
   const [year, month, day] = date.split('-').map((part) => Number.parseInt(part, 10))
   const utc = new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, (day ?? 1) + delta))
@@ -67,7 +101,6 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
   const streaks = ref<Record<string, number>>({})
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const today = options.today ?? (() => localDate())
   const newId = options.newId ?? (() => crypto.randomUUID())
 
   function applyLogs(habitId: string, rows: HabitLog[], day: string): void {
@@ -91,12 +124,12 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     error.value = null
     try {
       habits.value = await bridge.listHabits()
-      const day = today()
-      const from = addDays(day, -(STREAK_WINDOW_DAYS - 1))
       const nextLogs: Record<string, HabitLog[]> = {}
       const nextTodayLogs: Record<string, HabitLog> = {}
       const nextStreaks: Record<string, number> = {}
       for (const habit of habits.value) {
+        const day = dateInTimeZone(habit.timeZone)
+        const from = addDays(day, -(STREAK_WINDOW_DAYS - 1))
         const rows = await bridge.listHabitLogs(habit.id, from, day)
         nextLogs[habit.id] = rows
         const todayLog = rows.find((log) => log.logDate === day)
@@ -175,7 +208,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
         unit: patch.unit.trim() || habit.unit
       })
       habits.value = habits.value.map((candidate) => (candidate.id === habitId ? updated : candidate))
-      applyLogs(habitId, logs.value[habitId] ?? [], today())
+      applyLogs(habitId, logs.value[habitId] ?? [], dateInTimeZone(updated.timeZone))
       return true
     } catch {
       error.value = 'HABIT_UPDATE_FAILED'
@@ -214,16 +247,17 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     loading.value = true
     error.value = null
     try {
+      const day = dateInTimeZone(habit.timeZone)
       const log = await bridge.upsertHabitLog({
         habitId,
-        logDate: today(),
+        logDate: day,
         quantity: habit.targetQuantity,
         status: 'done'
       })
       const rows = [...(logs.value[habitId] ?? []).filter((entry) => entry.logDate !== log.logDate), log].sort(
         (left, right) => left.logDate.localeCompare(right.logDate)
       )
-      applyLogs(habitId, rows, today())
+      applyLogs(habitId, rows, day)
       return true
     } catch {
       error.value = 'CHECK_IN_FAILED'

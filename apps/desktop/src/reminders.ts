@@ -1,4 +1,5 @@
-import type { Habit, HabitLog } from './api'
+import type { Habit } from './api'
+import { dateInTimeZone, timeInTimeZone } from './habits'
 
 export interface HabitReminder {
   habitId: string
@@ -47,20 +48,20 @@ export function localTime(now: Date = new Date()): string {
   return `${hours}:${minutes}`
 }
 
-/** Reminders that are enabled for this clock minute and still need today's check-in. */
+/** Reminders due at `now` in each habit's own time zone and still missing today's check-in. */
 export function dueReminders(
   habits: Habit[],
-  todayLogs: Record<string, HabitLog>,
   reminders: HabitReminder[],
-  time: string
+  now: Date,
+  hasDone: (habitId: string, date: string) => boolean
 ): HabitReminder[] {
   const habitsById = new Map(habits.map((habit) => [habit.id, habit]))
   return reminders.filter((reminder) => {
-    if (!reminder.enabled || reminder.time !== time) return false
+    if (!reminder.enabled) return false
     const habit = habitsById.get(reminder.habitId)
     if (!habit || habit.pausedAt !== null) return false
-    const log = todayLogs[reminder.habitId]
-    return log?.status !== 'done'
+    if (reminder.time !== timeInTimeZone(habit.timeZone, now)) return false
+    return !hasDone(habit.id, dateInTimeZone(habit.timeZone, now))
   })
 }
 
@@ -68,21 +69,20 @@ export function dueReminders(
 export async function runReminders(
   notifier: Notifier,
   habits: Habit[],
-  todayLogs: Record<string, HabitLog>,
   reminders: HabitReminder[],
-  date: string,
-  time: string,
+  now: Date,
   sent: Set<string>,
-  quiet: QuietHours | null = null
+  quiet: QuietHours | null = null,
+  hasDone: (habitId: string, date: string) => boolean = () => false
 ): Promise<number> {
-  if (quiet && withinQuietHours(time, quiet)) return 0
+  if (quiet && withinQuietHours(localTime(now), quiet)) return 0
   let count = 0
-  for (const reminder of dueReminders(habits, todayLogs, reminders, time)) {
-    const key = `${reminder.habitId}:${date}`
-    if (sent.has(key)) continue
-    sent.add(key)
+  for (const reminder of dueReminders(habits, reminders, now, hasDone)) {
     const habit = habits.find((candidate) => candidate.id === reminder.habitId)
     if (!habit) continue
+    const key = `${habit.id}:${dateInTimeZone(habit.timeZone, now)}`
+    if (sent.has(key)) continue
+    sent.add(key)
     try {
       await notifier.notify(
         '习惯打卡提醒',

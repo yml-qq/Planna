@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Habit, HabitLog } from './api'
+import type { Habit } from './api'
 import { MemoryNotifier } from './notifier'
+import { dateInTimeZone, timeInTimeZone } from './habits'
 import {
   dueReminders,
   isReminderTime,
@@ -28,17 +29,6 @@ function habit(id: string, overrides: Partial<Habit> = {}): Habit {
   }
 }
 
-function log(habitId: string, status: 'done' | 'skipped'): HabitLog {
-  return {
-    id: `log-${habitId}`,
-    habitId,
-    logDate: '2026-11-12',
-    quantity: 2,
-    status,
-    version: 1,
-    updatedAt: ''
-  }
-}
 
 const reminders: HabitReminder[] = [
   { habitId: 'a', time: '09:00', enabled: true },
@@ -56,24 +46,39 @@ describe('reminder helpers', () => {
     expect(localTime(new Date(2026, 10, 12, 7, 5))).toBe('07:05')
   })
 
-  it('selects enabled reminders whose time matches and are still pending', () => {
-    const due = dueReminders([habit('a'), habit('b'), habit('c'), habit('d')], { b: log('b', 'done') }, reminders, '09:00')
+  it('selects enabled reminders whose habit-local time matches and are still pending', () => {
+    const morning = new Date('2026-11-12T09:00:00Z')
+    const zoned = [habit('a', { timeZone: 'UTC' }), habit('b', { timeZone: 'UTC' }), habit('c', { timeZone: 'UTC' }), habit('d', { timeZone: 'UTC' })]
+    const localReminders: HabitReminder[] = [
+      { habitId: 'a', time: '09:00', enabled: true },
+      { habitId: 'b', time: '09:00', enabled: true },
+      { habitId: 'c', time: '18:00', enabled: true },
+      { habitId: 'd', time: '09:00', enabled: false }
+    ]
+    const due = dueReminders(zoned, localReminders, morning, (habitId, date) => habitId === 'b' && date === dateInTimeZone('UTC', morning))
     expect(due.map((item) => item.habitId)).toEqual(['a'])
-    expect(dueReminders([habit('c')], {}, reminders, '18:00').map((item) => item.habitId)).toEqual(['c'])
+    expect(
+      dueReminders([habit('c', { timeZone: 'UTC' })], localReminders, new Date('2026-11-12T18:00:00Z'), () => false).map((item) => item.habitId)
+    ).toEqual(['c'])
   })
 
   it('skips paused habits and disabled reminders', () => {
-    const paused = [habit('a', { pausedAt: '2026-11-12T00:00:00Z' }), habit('d')]
-    expect(dueReminders(paused, {}, reminders, '09:00')).toEqual([])
+    const paused = [habit('a', { pausedAt: '2026-11-12T00:00:00Z', timeZone: 'UTC' }), habit('d', { timeZone: 'UTC' })]
+    expect(dueReminders(paused, reminders, new Date('2026-11-12T09:00:00Z'), () => false)).toEqual([])
   })
 
   it('sends each habit at most once per day and isolates notifier failures', async () => {
     const notifier = new MemoryNotifier()
     const sent = new Set<string>()
-    const habits = [habit('a'), habit('b')]
-    expect(await runReminders(notifier, habits, {}, reminders, '2026-11-12', '09:00', sent)).toBe(2)
+    const habits = [habit('a', { timeZone: 'UTC' }), habit('b', { timeZone: 'UTC' })]
+    const zonedReminders: HabitReminder[] = [
+      { habitId: 'a', time: '09:00', enabled: true },
+      { habitId: 'b', time: '09:00', enabled: true }
+    ]
+    const morning = new Date('2026-11-12T09:00:00Z')
+    expect(await runReminders(notifier, habits, zonedReminders, morning, sent)).toBe(2)
     expect(notifier.sent).toHaveLength(2)
-    expect(await runReminders(notifier, habits, {}, reminders, '2026-11-12', '09:00', sent)).toBe(0)
+    expect(await runReminders(notifier, habits, zonedReminders, morning, sent)).toBe(0)
     expect(notifier.sent).toHaveLength(2)
 
     const failing = {
@@ -82,7 +87,7 @@ describe('reminder helpers', () => {
       }
     }
     const failures = new Set<string>()
-    expect(await runReminders(failing, habits, {}, reminders, '2026-11-13', '09:00', failures)).toBe(0)
+    expect(await runReminders(failing, habits, zonedReminders, new Date('2026-11-13T09:00:00Z'), failures)).toBe(0)
     expect(failures.size).toBe(2)
   })
 
@@ -108,13 +113,12 @@ describe('quiet hours', () => {
   it('suppresses notifications during quiet hours', async () => {
     const notifier = new MemoryNotifier()
     const sent = new Set<string>()
+    const now = new Date(2026, 10, 12, 9, 0)
     const count = await runReminders(
       notifier,
-      [habit('a')],
-      {},
-      reminders,
-      '2026-11-12',
-      '09:00',
+      [habit('a', { timeZone: 'UTC' })],
+      [{ habitId: 'a', time: timeInTimeZone('UTC', now), enabled: true }],
+      now,
       sent,
       { start: '08:00', end: '10:00' }
     )

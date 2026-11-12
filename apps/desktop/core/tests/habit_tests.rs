@@ -507,3 +507,18 @@ fn conflict_resolution_retry_and_overwrite_reset_outbox_state() {
     assert!(store.conflicts().expect("conflicts").is_empty());
     assert!(!store.resolve_conflict_retry("missing").expect("missing"));
 }
+
+#[test]
+fn prune_conflicts_drops_entries_without_pending_mutation() {
+    let mut store = store_with_habit();
+    store
+        .record_conflict("mutation-1", "habit", "habit-1", "{}", 2, "now")
+        .expect("existing");
+    store
+        .record_conflict("orphan", "habit", "habit-1", "{}", 2, "now")
+        .expect("orphan");
+    assert_eq!(store.prune_conflicts().expect("prune"), 1);
+    let conflicts = store.conflicts().expect("conflicts");
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(conflicts[0].mutation_id, "mutation-1");
+}

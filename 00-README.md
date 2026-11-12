@@ -92,6 +92,7 @@
 | 79 | `docs/79-HAB-01L.md` | 同步冲突的列表与放弃处置 |
 | 80 | `docs/80-HAB-01M.md` | weekly 日程编辑与 server-wins 冲突收敛 |
 | 81 | `docs/81-HAB-01N.md` | 冲突三态处置与冲突台账 |
+| 82 | `docs/82-HAB-01O.md` | 跨时区打卡/提醒与台账清理 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

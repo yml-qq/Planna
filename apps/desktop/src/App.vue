@@ -2,13 +2,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
-import { createHabitStore, localDate } from './habits'
+import { createHabitStore } from './habits'
 import { createNotifier } from './notifier'
 import {
   isReminderTime,
   loadQuietHours,
   loadReminders,
-  localTime,
   runReminders,
   type HabitReminder,
   type QuietHours
@@ -297,12 +296,14 @@ async function tickReminders(): Promise<void> {
   await runReminders(
     notifier,
     habits.habits.value,
-    habits.todayLogs.value,
     reminders.value,
-    localDate(),
-    localTime(),
+    new Date(),
     sentReminders,
-    quietHours()
+    quietHours(),
+    (habitId, date) => {
+      const log = habits.todayLogs.value[habitId]
+      return log?.logDate === date && log.status === 'done'
+    }
   )
 }
 
@@ -488,7 +489,9 @@ onMounted(async () => {
           </template>
           <template v-else>
           <span class="habits__title">{{ habit.title }}</span>
-          <span class="habits__meta">{{ scheduleLabel(habit) }} · {{ habit.targetQuantity }} {{ habit.unit }}</span>
+          <span class="habits__meta">
+            {{ scheduleLabel(habit) }} · {{ habit.targetQuantity }} {{ habit.unit }} · {{ habit.timeZone }}
+          </span>
           <span class="habits__streak" aria-label="连续天数">
             连续 {{ habits.streaks.value[habit.id] ?? 0 }} 天
           </span>

@@ -994,6 +994,15 @@ impl Store {
         Ok(())
     }
 
+    /// Drops conflict entries whose pending mutation is gone (resolved elsewhere or discarded).
+    pub fn prune_conflicts(&self) -> StoreResult<usize> {
+        Ok(self.connection.execute(
+            "DELETE FROM sync_conflicts WHERE NOT EXISTS
+                (SELECT 1 FROM outbox WHERE outbox.mutation_id = sync_conflicts.mutation_id)",
+            [],
+        )?)
+    }
+
     pub fn conflicts(&self) -> StoreResult<Vec<ConflictEntry>> {
         let mut statement = self.connection.prepare(
             "SELECT mutation_id, entity_type, entity_id, server_entity, server_version, created_at

@@ -63,7 +63,8 @@
 | E10 | HAB-01L | 同步冲突可见处置：列出并放弃失败 mutation（已交付，见 `79-HAB-01L.md`） | HAB-01K | fault tests |
 | E10 | HAB-01M | weekly 日程编辑与 server-wins 冲突收敛（已交付，见 `80-HAB-01M.md`） | HAB-01L | fault tests |
 | E10 | HAB-01N | 冲突三态处置与冲突台账（已交付，见 `81-HAB-01N.md`） | HAB-01M | fault tests |
-| E10 | HAB-01O | 通知真机验证、跨时区展示与台账审计 | HAB-01N | fault tests |
+| E10 | HAB-01O | 跨时区打卡/提醒与冲突台账清理（已交付，见 `82-HAB-01O.md`） | HAB-01N | tz tests |
+| E10 | HAB-01P | 通知真机验证、台账导出与服务端 streak 一致性抽查 | HAB-01O | device tests |
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
