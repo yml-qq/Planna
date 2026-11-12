@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
-import { createHabitStore, localDate } from './habits'
+import { addDays, createHabitStore, currentStreak, localDate } from './habits'
 
 describe('localDate', () => {
   it('formats the local calendar date with padding', () => {
@@ -141,6 +141,9 @@ describe('habit store', () => {
       listHabitLogs: async () => [],
       upsertHabitLog: async () => {
         throw new Error('offline')
+      },
+      updateHabit: async () => {
+        throw new Error('offline')
       }
     }
     const store = createHabitStore(failing, storeOptions())
@@ -149,5 +152,64 @@ describe('habit store', () => {
     expect(store.error.value).toBe('CHECK_IN_FAILED')
     expect(await store.checkIn('missing')).toBe(false)
     expect(store.error.value).toBe('HABIT_NOT_FOUND')
+  })
+})
+
+describe('streak helpers', () => {
+  it('adds days across month boundaries', () => {
+    expect(addDays('2026-11-01', -1)).toBe('2026-10-31')
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
+  })
+
+  it('counts consecutive qualifying days ending at today', () => {
+    const logs = [
+      { id: 'a', habitId: 'h', logDate: '2026-11-09', quantity: 1, status: 'done' as const, version: 1, updatedAt: '' },
+      { id: 'b', habitId: 'h', logDate: '2026-11-10', quantity: 2, status: 'done' as const, version: 1, updatedAt: '' },
+      { id: 'c', habitId: 'h', logDate: '2026-11-11', quantity: 2, status: 'done' as const, version: 1, updatedAt: '' },
+      { id: 'd', habitId: 'h', logDate: '2026-11-12', quantity: 2, status: 'done' as const, version: 1, updatedAt: '' }
+    ]
+    expect(currentStreak(logs, 2, '2026-11-12')).toBe(3)
+    expect(currentStreak(logs, 1, '2026-11-12')).toBe(4)
+    expect(currentStreak(logs, 3, '2026-11-12')).toBe(0)
+  })
+})
+
+describe('habit pause and streaks', () => {
+  it('computes streaks on refresh from the log window', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    for (const date of ['2026-11-10', '2026-11-11', '2026-11-12']) {
+      await bridge.upsertHabitLog({ habitId: 'habit-1', logDate: date, quantity: 2, status: 'done' })
+    }
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(store.streaks.value['habit-1']).toBe(3)
+    expect(store.logs.value['habit-1']).toHaveLength(3)
+  })
+
+  it('toggles pause through the bridge and keeps the habit version', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(await store.togglePause('habit-1')).toBe(true)
+    expect(store.habits.value[0]?.pausedAt).not.toBeNull()
+    expect(await store.togglePause('habit-1')).toBe(true)
+    expect(store.habits.value[0]?.pausedAt).toBeNull()
+    expect(store.habits.value[0]?.version).toBe(3)
   })
 })

@@ -77,6 +77,10 @@ export interface DesktopBridge {
   runSync(input: SyncInput): Promise<SyncSummary>
   listHabits(): Promise<Habit[]>
   createHabit(input: CreateHabitInput): Promise<Habit>
+  updateHabit(
+    habitId: string,
+    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+  ): Promise<Habit>
   listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
@@ -179,6 +183,31 @@ export class MemoryBridge implements DesktopBridge {
     }
     this.habits.set(habit.id, habit)
     return habit
+  }
+
+  async updateHabit(
+    habitId: string,
+    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+  ): Promise<Habit> {
+    const habit = this.habits.get(habitId)
+    if (!habit) throw new Error('HABIT_NOT_FOUND')
+    const updated: Habit = {
+      ...habit,
+      title: patch.title?.trim() ?? habit.title,
+      targetQuantity: patch.targetQuantity ?? habit.targetQuantity,
+      unit: patch.unit?.trim() ?? habit.unit,
+      pausedAt:
+        patch.paused === true
+          ? habit.pausedAt ?? new Date().toISOString()
+          : patch.paused === false
+            ? null
+            : habit.pausedAt,
+      version: habit.version + 1,
+      updatedAt: new Date().toISOString()
+    }
+    if (updated.title.length === 0 || updated.title.length > 200) throw new Error('INVALID_HABIT')
+    this.habits.set(habitId, updated)
+    return updated
   }
 
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
@@ -369,6 +398,20 @@ export class TauriBridge implements DesktopBridge {
       targetQuantity: input.targetQuantity,
       unit: input.unit,
       timeZone: input.timeZone
+    })
+    return toHabit(row)
+  }
+
+  async updateHabit(
+    habitId: string,
+    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+  ): Promise<Habit> {
+    const row = await this.invoke<RawHabit>('update_habit', {
+      habitId,
+      title: patch.title ?? null,
+      targetQuantity: patch.targetQuantity ?? null,
+      unit: patch.unit ?? null,
+      paused: patch.paused ?? null
     })
     return toHabit(row)
   }

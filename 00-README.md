@@ -86,6 +86,7 @@
 | 73 | `docs/73-HAB-01F.md` | 桌面本地习惯/日志存储与 outbox |
 | 74 | `docs/74-HAB-01G.md` | Tauri 习惯命令与 Vue 打卡面板 |
 | 75 | `docs/75-HAB-01H.md` | 习惯暂停的同步与本地更新 |
+| 76 | `docs/76-HAB-01I.md` | 暂停开关与连续天数 UI |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -185,3 +185,13 @@ body {
   font-size: 12px;
   color: var(--accent);
 }
+
+.habits__streak {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.habits__paused {
+  font-size: 12px;
+  color: var(--danger);
+}

@@ -92,6 +92,9 @@ describe('task store', () => {
       },
       upsertHabitLog: async () => {
         throw new Error('offline')
+      },
+      updateHabit: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')

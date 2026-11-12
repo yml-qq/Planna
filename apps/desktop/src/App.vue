@@ -64,6 +64,7 @@ const errorText = computed(() => {
     HABIT_CREATE_FAILED: '习惯创建失败，请重试',
     INVALID_HABIT: '习惯名称需为 1~200 字，目标需在 1~1000 之间',
     CHECK_IN_FAILED: '打卡失败，请重试',
+    HABIT_PAUSE_FAILED: '暂停操作失败，请重试',
     HABIT_NOT_FOUND: '习惯不存在'
   }
   return messages[error] ?? '操作失败，请重试'
@@ -105,6 +106,10 @@ async function submitHabit(): Promise<void> {
 
 async function checkInHabit(habitId: string): Promise<void> {
   await habits.checkIn(habitId)
+}
+
+async function toggleHabitPause(habitId: string): Promise<void> {
+  await habits.togglePause(habitId)
 }
 
 async function submitTask(): Promise<void> {
@@ -211,7 +216,11 @@ onMounted(async () => {
         <li v-for="habit in habits.habits.value" :key="habit.id" class="habits__item">
           <span class="habits__title">{{ habit.title }}</span>
           <span class="habits__meta">{{ habit.targetQuantity }} {{ habit.unit }}</span>
-          <span v-if="habits.todayLogs.value[habit.id]" class="habits__done">
+          <span class="habits__streak" aria-label="连续天数">
+            连续 {{ habits.streaks.value[habit.id] ?? 0 }} 天
+          </span>
+          <span v-if="habit.pausedAt" class="habits__paused">已暂停</span>
+          <span v-else-if="habits.todayLogs.value[habit.id]" class="habits__done">
             今日已打卡（v{{ habits.todayLogs.value[habit.id]?.version }}）
           </span>
           <button
@@ -222,6 +231,14 @@ onMounted(async () => {
             @click="checkInHabit(habit.id)"
           >
             打卡
+          </button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="habits.loading.value"
+            @click="toggleHabitPause(habit.id)"
+          >
+            {{ habit.pausedAt ? '恢复' : '暂停' }}
           </button>
         </li>
       </ul>
