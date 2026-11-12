@@ -60,6 +60,15 @@ export interface CreateHabitInput {
   timeZone: string
 }
 
+export interface OutboxIssue {
+  mutationId: string
+  entityType: string
+  entityId: string
+  operation: string
+  attempts: number
+  lastError: string | null
+}
+
 export interface SyncInput {
   baseUrl: string
   accessToken: string
@@ -83,6 +92,8 @@ export interface DesktopBridge {
   ): Promise<Habit>
   listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]>
   outboxStatus(): Promise<{ pending: number; failed: number }>
+  outboxIssues(): Promise<OutboxIssue[]>
+  discardMutation(mutationId: string): Promise<boolean>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -209,6 +220,14 @@ export class MemoryBridge implements DesktopBridge {
     if (updated.title.length === 0 || updated.title.length > 200) throw new Error('INVALID_HABIT')
     this.habits.set(habitId, updated)
     return updated
+  }
+
+  async outboxIssues(): Promise<OutboxIssue[]> {
+    return []
+  }
+
+  async discardMutation(_mutationId: string): Promise<boolean> {
+    return false
   }
 
   async outboxStatus(): Promise<{ pending: number; failed: number }> {
@@ -424,6 +443,31 @@ export class TauriBridge implements DesktopBridge {
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
     const rows = await this.invoke<RawHabitLog[]>('list_habit_logs', { habitId, from, to })
     return rows.map(toHabitLog)
+  }
+
+  async outboxIssues(): Promise<OutboxIssue[]> {
+    const rows = await this.invoke<
+      Array<{
+        mutation_id: string
+        entity_type: string
+        entity_id: string
+        operation: string
+        attempts: number
+        last_error: string | null
+      }>
+    >('outbox_issues')
+    return rows.map((row) => ({
+      mutationId: row.mutation_id,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      operation: row.operation,
+      attempts: row.attempts,
+      lastError: row.last_error
+    }))
+  }
+
+  async discardMutation(mutationId: string): Promise<boolean> {
+    return this.invoke<boolean>('discard_mutation', { mutationId })
   }
 
   async outboxStatus(): Promise<{ pending: number; failed: number }> {

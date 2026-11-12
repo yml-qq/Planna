@@ -151,6 +151,7 @@ fn outbox_failure_tracking_and_removal() {
         .expect("failure");
     let entries = store.pending_mutations(10).expect("pending");
     assert_eq!(entries[0].attempts, 1);
+    assert_eq!(entries[0].last_error.as_deref(), Some("VERSION_CONFLICT"));
     store.remove_mutation("mutation-1").expect("removed");
     assert!(store.pending_mutations(10).expect("pending").is_empty());
 }

@@ -89,6 +89,7 @@
 | 76 | `docs/76-HAB-01I.md` | 暂停开关与连续天数 UI |
 | 77 | `docs/77-HAB-01J.md` | 习惯本地提醒与通知适配 |
 | 78 | `docs/78-HAB-01K.md` | 习惯编辑、冲突可见性与免打扰 |
+| 79 | `docs/79-HAB-01L.md` | 同步冲突的列表与放弃处置 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

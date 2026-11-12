@@ -157,6 +157,7 @@ pub struct OutboxEntry {
     pub base_version: i64,
     pub created_at: String,
     pub attempts: i64,
+    pub last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -452,7 +453,7 @@ impl Store {
     pub fn pending_mutations(&self, limit: i64) -> StoreResult<Vec<OutboxEntry>> {
         let mut statement = self.connection.prepare(
             "SELECT mutation_id, entity_type, entity_id, operation, payload, request_hash,
-                base_version, created_at, attempts
+                base_version, created_at, attempts, last_error
              FROM outbox ORDER BY created_at, mutation_id LIMIT ?1",
         )?;
         let rows = statement.query_map(params![limit], |row| {
@@ -466,6 +467,7 @@ impl Store {
                 base_version: row.get(6)?,
                 created_at: row.get(7)?,
                 attempts: row.get(8)?,
+                last_error: row.get(9)?,
             })
         })?;
         let mut entries = Vec::new();

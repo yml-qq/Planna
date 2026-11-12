@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { createBridge } from './api'
+import { createBridge, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
 import { createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
@@ -72,6 +72,7 @@ const editHabitTitle = ref('')
 const editHabitTarget = ref('1')
 const editHabitUnit = ref('')
 const outbox = ref({ pending: 0, failed: 0 })
+const issues = ref<OutboxIssue[]>([])
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
@@ -239,6 +240,17 @@ async function refreshOutbox(): Promise<void> {
   } catch {
     outbox.value = { pending: 0, failed: 0 }
   }
+  try {
+    issues.value = await bridge.outboxIssues()
+  } catch {
+    issues.value = []
+  }
+}
+
+async function discardIssue(mutationId: string): Promise<void> {
+  await bridge.discardMutation(mutationId)
+  await refreshOutbox()
+  await habits.refresh()
 }
 
 function quietHours(): QuietHours | null {
@@ -384,6 +396,22 @@ onMounted(async () => {
       <p v-if="outbox.failed > 0" class="status status--error" role="alert">
         同步冲突：{{ outbox.failed }} 条变更未上传，请稍后重试
       </p>
+      <ul v-if="issues.length > 0" class="issues" aria-label="待处理同步冲突">
+        <li v-for="issue in issues" :key="issue.mutationId" class="issues__item">
+          <span class="issues__text">
+            {{ issue.entityType }} · {{ issue.operation }} · 已尝试 {{ issue.attempts }} 次
+            <small v-if="issue.lastError">（{{ issue.lastError }}）</small>
+          </span>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="habits.loading.value"
+            @click="discardIssue(issue.mutationId)"
+          >
+            放弃本地变更
+          </button>
+        </li>
+      </ul>
       <ul v-if="habits.habits.value.length > 0" class="habits">
         <li v-for="habit in habits.habits.value" :key="habit.id" class="habits__item">
           <template v-if="editingHabit === habit.id">

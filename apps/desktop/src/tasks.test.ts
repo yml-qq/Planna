@@ -96,7 +96,9 @@ describe('task store', () => {
       updateHabit: async () => {
         throw new Error('offline')
       },
-      outboxStatus: async () => ({ pending: 0, failed: 0 })
+      outboxStatus: async () => ({ pending: 0, failed: 0 }),
+      outboxIssues: async () => [],
+      discardMutation: async () => false
     }
     const store = createTaskStore(failing, 'inbox')
     await store.refresh()

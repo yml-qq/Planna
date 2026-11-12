@@ -361,6 +361,53 @@ struct OutboxStatusDto {
     failed: i64,
 }
 
+#[derive(Serialize)]
+struct OutboxIssueDto {
+    mutation_id: String,
+    entity_type: String,
+    entity_id: String,
+    operation: String,
+    attempts: i64,
+    last_error: Option<String>,
+}
+
+#[tauri::command]
+fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let entries = store
+        .pending_mutations(1000)
+        .map_err(|error| error.to_string())?;
+    Ok(entries
+        .into_iter()
+        .filter(|entry| entry.attempts > 0)
+        .map(|entry| OutboxIssueDto {
+            mutation_id: entry.mutation_id,
+            entity_type: entry.entity_type,
+            entity_id: entry.entity_id,
+            operation: entry.operation,
+            attempts: entry.attempts,
+            last_error: entry.last_error,
+        })
+        .collect())
+}
+
+#[tauri::command]
+fn discard_mutation(state: State<'_, AppState>, mutation_id: String) -> Result<bool, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let before = store
+        .pending_mutations(1000)
+        .map_err(|error| error.to_string())?
+        .iter()
+        .any(|entry| entry.mutation_id == mutation_id);
+    if !before {
+        return Ok(false);
+    }
+    store
+        .remove_mutation(&mutation_id)
+        .map_err(|error| error.to_string())?;
+    Ok(true)
+}
+
 #[tauri::command]
 fn outbox_status(state: State<'_, AppState>) -> Result<OutboxStatusDto, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -594,6 +641,8 @@ pub fn run() {
             upsert_habit_log,
             list_habit_logs,
             outbox_status,
+            outbox_issues,
+            discard_mutation,
             run_sync,
             request_login_code,
             login_with_code,
