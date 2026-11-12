@@ -98,6 +98,7 @@
 | 85 | `docs/85-FOCUS-02.md` | 桌面专注计时与恢复 |
 | 86 | `docs/86-FOCUS-03.md` | 任务关联、完成时长修正与漂移提示 |
 | 87 | `docs/87-FOCUS-04.md` | 专注统计聚合 API |
+| 88 | `docs/88-GOAL-01.md` | 目标与里程碑服务端 API |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

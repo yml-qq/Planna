@@ -583,6 +583,38 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(schema["properties"]["next_page_token"]["type"], ["string", "null"])
 
 
+    def test_goal_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        goals = api["paths"]["/goals"]
+        self.assertEqual(set(goals["get"]["responses"]), {"200", "401"})
+        create = goals["post"]
+        self.assertEqual(set(create["responses"]), {"200", "201", "400", "401", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+
+        by_id = api["paths"]["/goals/{id}"]
+        self.assertEqual(set(by_id["get"]["responses"]), {"200", "400", "401", "404"})
+        self.assertEqual(set(by_id["patch"]["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertEqual(set(by_id["delete"]["responses"]), {"204", "400", "401", "404", "409"})
+        params = {parameter.get("name"): parameter for parameter in by_id["delete"]["parameters"]}
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+
+        milestones = api["paths"]["/goals/{id}/milestones"]["post"]
+        self.assertEqual(set(milestones["responses"]), {"200", "201", "400", "401", "404", "409", "422"})
+        milestone = api["paths"]["/goals/{id}/milestones/{milestoneId}"]
+        self.assertEqual(set(milestone["patch"]["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertEqual(set(milestone["delete"]["responses"]), {"204", "400", "401", "404", "409"})
+
+        goal = api["components"]["schemas"]["Goal"]
+        self.assertEqual(set(goal["required"]),
+                         {"id", "title", "description", "target_date", "status", "version",
+                          "created_at", "updated_at", "progress", "milestones"})
+        self.assertEqual(goal["properties"]["status"]["enum"], ["active", "completed", "archived"])
+        self.assertEqual(set(api["components"]["schemas"]["GoalProgress"]["required"]),
+                         {"completed_milestones", "total_milestones", "percent"})
+        self.assertEqual(set(api["components"]["schemas"]["Milestone"]["required"]),
+                         {"id", "goal_id", "title", "due_date", "completed", "position", "version",
+                          "created_at", "updated_at"})
+
     def test_focus_session_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         collection = api["paths"]["/focus-sessions"]

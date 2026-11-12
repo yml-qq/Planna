@@ -52,6 +52,7 @@
 | POST | `/habits/{id}/check-in` | 打卡 | V1.1 |
 | GET/POST | `/goals` | 目标 | V1.1 |
 | GET/POST/PATCH | `/focus-sessions`、`/focus-sessions/stats` | 专注会话与统计（见 `84-FOCUS-01.md`、`87-FOCUS-04.md`） | V1.1 |
+| GET/POST/PATCH/DELETE | `/goals`、`/goals/{id}/milestones` | 目标/里程碑与进度（见 `88-GOAL-01.md`） | V1.1 |
 | GET/POST | `/notes` | 轻笔记 | V1.1 |
 | GET | `/stats/weekly` | 周统计 | V1.1 |
 
