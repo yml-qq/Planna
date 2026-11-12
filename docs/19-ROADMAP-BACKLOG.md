@@ -66,7 +66,8 @@
 | E10 | HAB-01O | 跨时区打卡/提醒与冲突台账清理（已交付，见 `82-HAB-01O.md`） | HAB-01N | tz tests |
 | E10 | HAB-01P | 冲突台账导出（已交付，见 `83-HAB-01P.md`）；通知真机投递未验证 | HAB-01O | export tests |
 | E10 | HAB-01Q | 人工 QA：通知投递、签名安装包、streak 抽查与台账字段评审 | HAB-01P | manual QA |
-| E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
+| E10 | FOCUS-01 | 专注会话服务端 API（已交付，见 `84-FOCUS-01.md`） | E04 | interruption tests |
+| E10 | FOCUS-02 | 专注计时 UI、断电恢复与休息周期 | FOCUS-01 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
 | E11 | PRIV-EXPORT-01 | 云端数据导出（快照/下载/24h，已交付，见 `53-PRIV-EXPORT-01.md`） | SYNC-PULL-01 | 导出测试 |

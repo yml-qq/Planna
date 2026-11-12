@@ -583,5 +583,39 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(schema["properties"]["next_page_token"]["type"], ["string", "null"])
 
 
+    def test_focus_session_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        collection = api["paths"]["/focus-sessions"]
+        list_op = collection["get"]
+        self.assertEqual(set(list_op["responses"]), {"200", "400", "401"})
+        self.assertEqual(list_op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/FocusSessionList")
+        limit = {parameter["name"]: parameter for parameter in list_op["parameters"]}["limit"]
+        self.assertEqual(limit["schema"], {"type": "integer", "minimum": 1, "maximum": 100, "default": 20})
+        create = collection["post"]
+        self.assertEqual(set(create["responses"]), {"200", "201", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
+        self.assertEqual(create["requestBody"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/CreateFocusSessionRequest")
+
+        by_id = api["paths"]["/focus-sessions/{id}"]
+        self.assertEqual(set(by_id["get"]["responses"]), {"200", "400", "401", "404"})
+        patch = by_id["patch"]
+        self.assertEqual(set(patch["responses"]), {"200", "400", "401", "404", "409", "422"})
+        params = {parameter.get("name"): parameter for parameter in patch["parameters"]}
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, patch["parameters"])
+
+        session = api["components"]["schemas"]["FocusSession"]
+        self.assertEqual(set(session["required"]),
+                         {"id", "task_id", "started_at", "ended_at", "planned_seconds", "actual_seconds",
+                          "break_seconds", "state", "version", "created_at", "updated_at"})
+        self.assertEqual(session["properties"]["state"]["enum"],
+                         ["active", "paused", "completed", "abandoned"])
+        self.assertEqual(api["components"]["schemas"]["UpdateFocusSessionRequest"]["required"], ["state"])
+        self.assertEqual(api["components"]["schemas"]["CreateFocusSessionRequest"]["properties"]
+                         ["planned_seconds"]["default"], 1500)
+
+
 if __name__ == "__main__":
     unittest.main()

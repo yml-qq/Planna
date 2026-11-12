@@ -94,6 +94,7 @@
 | 81 | `docs/81-HAB-01N.md` | 冲突三态处置与冲突台账 |
 | 82 | `docs/82-HAB-01O.md` | 跨时区打卡/提醒与台账清理 |
 | 83 | `docs/83-HAB-01P.md` | 冲突台账导出与通知验证边界 |
+| 84 | `docs/84-FOCUS-01.md` | 专注会话服务端 API |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -16,6 +16,7 @@ tags:
   - name: Lists
   - name: Tags
   - name: Steps
+  - name: Focus
   - name: Sync
   - name: AI
 paths:
@@ -1188,6 +1189,91 @@ paths:
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
+  /focus-sessions:
+    get:
+      tags: [Focus]
+      summary: List owned focus sessions, newest first
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: Focus sessions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FocusSessionList'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Focus]
+      summary: Start a focus session; at most one active or paused session per owner
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateFocusSessionRequest'}
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FocusSession'}
+        "200":
+          description: Idempotent replay
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FocusSession'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+  /focus-sessions/{id}:
+    get:
+      tags: [Focus]
+      summary: Read one owned focus session
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "200":
+          description: Focus session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FocusSession'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+    patch:
+      tags: [Focus]
+      summary: Transition a session (active/paused/completed/abandoned) with If-Match and client supplied timings
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateFocusSessionRequest'}
+      responses:
+        "200":
+          description: Updated session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FocusSession'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
   /sync/push:
     post:
       tags: [Sync]
@@ -1827,6 +1913,46 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused: {type: boolean}
+    FocusSession:
+      type: object
+      additionalProperties: false
+      required: [id, task_id, started_at, ended_at, planned_seconds, actual_seconds, break_seconds, state, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        task_id: {type: [string, "null"], format: uuid}
+        started_at: {type: string, format: date-time}
+        ended_at: {type: [string, "null"], format: date-time}
+        planned_seconds: {type: integer, minimum: 60, maximum: 86400}
+        actual_seconds: {type: integer, minimum: 0, maximum: 86400}
+        break_seconds: {type: integer, minimum: 0, maximum: 86400}
+        state: {type: string, enum: [active, paused, completed, abandoned]}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    FocusSessionList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/FocusSession'}
+    CreateFocusSessionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        task_id: {type: [string, "null"], format: uuid}
+        planned_seconds: {type: integer, minimum: 60, maximum: 86400, default: 1500}
+        started_at: {type: string, format: date-time}
+    UpdateFocusSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [state]
+      properties:
+        state: {type: string, enum: [active, paused, completed, abandoned]}
+        actual_seconds: {type: integer, minimum: 0, maximum: 86400}
+        break_seconds: {type: integer, minimum: 0, maximum: 86400}
+        ended_at: {type: string, format: date-time}
     AiConsentScope:
       type: string
       enum: [task_drafts, plan_preview, task_notes, calendar_free_slots]
