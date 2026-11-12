@@ -377,3 +377,12 @@
 - 前端测试增至 **21 项**（新增 6 项习惯）；`pnpm build`（vue-tsc + vite）通过；shell `cargo fmt/clippy/check` 通过；服务端无变更。
 - [Server integration 43158924568](https://github.com/yml-qq/Planna/actions/runs/43158924568) 与 [Desktop core 43158924686](https://github.com/yml-qq/Planna/actions/runs/43158924686)（Windows Rust core / Windows Tauri shell / Desktop web UI）均 **success**。
 - 未连接生产库、未提交凭据；提醒/本地通知、习惯暂停与冲突 UI 留待 `HAB-01H`。
+
+## HAB-01H 习惯暂停检查（2026-11-12）
+
+- 服务端 `/sync/push` habit upsert payload 新增可选 `paused`：创建时 true 写入 `paused_at`，更新时 true 保留/写入、false 清除、缺省不变；版本/冲突/审计语义不变。
+- 桌面 core 新增 `HabitPatchLocal` 与 `Store::update_habit`（本地标题/目标/单位/暂停时间 + outbox 同事务、`base_version=旧版本`、payload 仅含改动字段、空/非法补丁与删除习惯报错、幂等）；Tauri 新增 `update_habit` 命令。core 测试新增 3 项（合计 **31 项**）。
+- 服务端冒烟扩展：`paused=true`（v3）、`paused=false`（v4）均 accepted，删除基于 v4；账目核对 revision=7、habit 变更 5、habit_log 2、幂等记录 7、墓碑版本 5。
+- 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format`/契约测试 28 项、`cargo fmt/clippy/test` 通过。
+- [Server integration 43160586192](https://github.com/yml-qq/Planna/actions/runs/43160586192) 与 [Desktop core 43160586061](https://github.com/yml-qq/Planna/actions/runs/43160586061) 均 **success**。
+- 未连接生产库、未提交凭据；暂停/连续天数 UI、冲突解决与提醒/本地通知留待 `HAB-01I`。
