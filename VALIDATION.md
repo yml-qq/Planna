@@ -341,3 +341,13 @@
 - 迭代修复：streak 的跨 owner 断言在删除外账号后执行，改为断言 `ACCOUNT_DELETED`。
 - [Server integration 43122545563](https://github.com/yml-qq/Planna/actions/runs/43122545563) 与 [Desktop core 43122545668](https://github.com/yml-qq/Planna/actions/runs/43122545668) 均 **success**。
 - 未连接生产库、未提交凭据；习惯同步/导出与客户端打卡留待 `HAB-01D`。
+
+## HAB-01D 导出 v2 检查（2026-11-12）
+
+- 新增 `spec/account-export-v2.schema.json`（`schema_version: account-export-v2`；`data` 必填新增 `habits`/`habit_logs`，含 habit 与 habit_log 子 schema）；v1 保留供历史参考。
+- 导出服务在同一 `REPEATABLE READ` 快照内新增习惯（排除软删）与日志查询，输出 v2；`log_date` 以 `yyyy-MM-dd` 序列化。OpenAPI 下载引用切换为 v2；示例 `account-export-local/cloud.json` 更新为 v2。
+- 契约测试保持 **28 项**并通过（示例按 v2 校验，cloud `pending_mutation_ids` 约束保留）。
+- 导出 smoke 增加习惯/日志 fixture 并断言版本、数量与字段；既有任务/清单/标签/提醒/时间块/授权断言不变。
+- 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format` 通过、契约测试 28/28、OpenAPI 校验 OK。
+- [Server integration 43154224559](https://github.com/yml-qq/Planna/actions/runs/43154224559) 与 [Desktop core 43154224514](https://github.com/yml-qq/Planna/actions/runs/43154224514) 均 **success**。
+- 未连接生产库、未提交凭据；习惯/日志的 push 同步、客户端打卡与提醒留待 `HAB-01E`。
