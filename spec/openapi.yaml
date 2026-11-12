@@ -317,7 +317,7 @@ paths:
               description: attachment filename; never includes user supplied text.
           content:
             application/json:
-              schema: {$ref: './account-export.schema.json'}
+              schema: {$ref: './account-export-v2.schema.json'}
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}

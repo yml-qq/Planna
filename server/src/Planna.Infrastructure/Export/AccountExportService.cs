@@ -145,6 +145,20 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
         var scopes = await connection.ExecuteScalarAsync<string[]?>(new CommandDefinition(
             "SELECT allowed_scopes FROM ai_consents WHERE owner_id=@Owner",
             new { Owner = ownerId }, transaction, cancellationToken: ct));
+        var habits = (await connection.QueryAsync<HabitRow>(new CommandDefinition("""
+            SELECT id AS "Id", title AS "Title", schedule_type AS "ScheduleType",
+                weekdays AS "Weekdays", target_quantity AS "TargetQuantity", unit AS "Unit",
+                time_zone AS "TimeZone", paused_at AS "PausedAt", version AS "Version",
+                created_at AS "CreatedAt", updated_at AS "UpdatedAt"
+            FROM habits WHERE owner_id=@Owner AND deleted_at IS NULL ORDER BY created_at, id
+            """, new { Owner = ownerId }, transaction, cancellationToken: ct))).ToList();
+        var habitLogs = (await connection.QueryAsync<HabitLogRow>(new CommandDefinition("""
+            SELECT l.id AS "Id", l.habit_id AS "HabitId", l.log_date AS "LogDate",
+                l.quantity AS "Quantity", l.status AS "Status", l.version AS "Version"
+            FROM habit_logs l JOIN habits h ON h.owner_id = l.owner_id AND h.id = l.habit_id
+            WHERE l.owner_id=@Owner AND h.deleted_at IS NULL
+            ORDER BY l.log_date, l.id
+            """, new { Owner = ownerId }, transaction, cancellationToken: ct))).ToList();
 
         var data = new JsonObject
         {
@@ -205,6 +219,31 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
                 ["start_at"] = Instant(block.StartAt),
                 ["end_at"] = Instant(block.EndAt)
             }).ToArray()),
+            ["habits"] = new JsonArray(habits.Select(habit => (JsonNode)new JsonObject
+            {
+                ["id"] = habit.Id,
+                ["title"] = habit.Title,
+                ["schedule_type"] = habit.ScheduleType,
+                ["weekdays"] = habit.Weekdays is null
+                    ? null
+                    : new JsonArray(habit.Weekdays.Select(day => (JsonNode)day).ToArray()),
+                ["target_quantity"] = habit.TargetQuantity,
+                ["unit"] = habit.Unit,
+                ["time_zone"] = habit.TimeZone,
+                ["paused_at"] = Instant(habit.PausedAt),
+                ["version"] = habit.Version,
+                ["created_at"] = Instant(habit.CreatedAt),
+                ["updated_at"] = Instant(habit.UpdatedAt)
+            }).ToArray()),
+            ["habit_logs"] = new JsonArray(habitLogs.Select(log => (JsonNode)new JsonObject
+            {
+                ["id"] = log.Id,
+                ["habit_id"] = log.HabitId,
+                ["log_date"] = log.LogDate.ToString("yyyy-MM-dd"),
+                ["quantity"] = log.Quantity,
+                ["status"] = log.Status,
+                ["version"] = log.Version
+            }).ToArray()),
             ["ai_consents"] = scopes is { Length: > 0 }
                 ? new JsonArray(new JsonObject
                 {
@@ -215,7 +254,7 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
         };
         var export = new JsonObject
         {
-            ["schema_version"] = "account-export-v1",
+            ["schema_version"] = "account-export-v2",
             ["source"] = "cloud",
             ["generated_at"] = now,
             ["snapshot_at"] = now,
@@ -312,6 +351,31 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
         public Guid TaskId { get; set; }
         public DateTime ScheduledAt { get; set; }
         public bool Enabled { get; set; }
+    }
+
+    private sealed class HabitRow
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = "";
+        public string ScheduleType { get; set; } = "daily";
+        public short[]? Weekdays { get; set; }
+        public int TargetQuantity { get; set; } = 1;
+        public string Unit { get; set; } = "count";
+        public string TimeZone { get; set; } = "";
+        public DateTime? PausedAt { get; set; }
+        public long Version { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    private sealed class HabitLogRow
+    {
+        public Guid Id { get; set; }
+        public Guid HabitId { get; set; }
+        public DateOnly LogDate { get; set; }
+        public int Quantity { get; set; }
+        public string Status { get; set; } = "done";
+        public long Version { get; set; }
     }
 
     private sealed class BlockRow

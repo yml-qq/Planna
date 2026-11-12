@@ -26,6 +26,7 @@ internal static class HttpExportSmoke
         var tag = Guid.NewGuid();
         var reminder = Guid.NewGuid();
         var block = Guid.NewGuid();
+        var habit = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,'http-export-one@example.test'),($2,'http-export-two@example.test')", owner, foreign);
         await Exec(db, "INSERT INTO owner_sync_clocks(owner_id) VALUES($1),($2)", owner, foreign);
         await Exec(db, "INSERT INTO task_lists(id,owner_id,name,kind) VALUES($1,$2,'A','custom'),($3,$2,'Gone','custom')", list, owner, deletedList);
@@ -40,6 +41,10 @@ internal static class HttpExportSmoke
         await Exec(db, "INSERT INTO reminders(id,owner_id,task_id,scheduled_at) VALUES($1,$2,$3,'2026-12-01T09:00:00Z')", reminder, owner, task);
         await Exec(db, "INSERT INTO task_time_blocks(id,owner_id,task_id,start_at,end_at) VALUES($1,$2,$3,'2026-12-01T10:00:00Z','2026-12-01T10:30:00Z')", block, owner, task);
         await Exec(db, "INSERT INTO ai_consents(owner_id,allowed_scopes) VALUES($1,ARRAY['task_drafts'])", owner);
+        await Exec(db, "INSERT INTO habits(id,owner_id,title,schedule_type,target_quantity,unit,time_zone) VALUES($1,$2,'Read','daily',2,'pages','Asia/Shanghai')",
+            habit, owner);
+        await Exec(db, "INSERT INTO habit_logs(owner_id,habit_id,log_date,quantity,status) VALUES($1,$2,'2026-11-01',2,'done')",
+            owner, habit);
         var ownerSession = Guid.NewGuid();
         var foreignSession = Guid.NewGuid();
         await AddSession(db, owner, ownerSession);
@@ -87,7 +92,7 @@ internal static class HttpExportSmoke
         using var payload = JsonDocument.Parse(await download.Content.ReadAsStringAsync());
         var root = payload.RootElement;
         var data = root.GetProperty("data");
-        if (root.GetProperty("schema_version").GetString() != "account-export-v1" ||
+        if (root.GetProperty("schema_version").GetString() != "account-export-v2" ||
             root.GetProperty("source").GetString() != "cloud" ||
             root.GetProperty("pending_mutation_ids").GetArrayLength() != 0 ||
             data.GetProperty("lists").GetArrayLength() != 1 ||
@@ -97,8 +102,17 @@ internal static class HttpExportSmoke
             data.GetProperty("reminders").GetArrayLength() != 1 ||
             data.GetProperty("time_blocks").GetArrayLength() != 1 ||
             data.GetProperty("ai_memories").GetArrayLength() != 0 ||
+            data.GetProperty("habits").GetArrayLength() != 1 ||
+            data.GetProperty("habit_logs").GetArrayLength() != 1 ||
             data.GetProperty("ai_consents")[0].GetProperty("allowed_scopes")[0].GetString() != "task_drafts")
             throw new InvalidOperationException("Export payload content mismatch.");
+        var exportedHabit = data.GetProperty("habits")[0];
+        if (exportedHabit.GetProperty("title").GetString() != "Read" ||
+            exportedHabit.GetProperty("target_quantity").GetInt64() != 2 ||
+            exportedHabit.GetProperty("unit").GetString() != "pages" ||
+            data.GetProperty("habit_logs")[0].GetProperty("log_date").GetString() != "2026-11-01" ||
+            data.GetProperty("habit_logs")[0].GetProperty("quantity").GetInt64() != 2)
+            throw new InvalidOperationException("Exported habit projection mismatch.");
         var exportedTask = data.GetProperty("tasks")[0];
         if (exportedTask.GetProperty("title").GetString() != "Export task" ||
             exportedTask.GetProperty("version").GetInt64() != 2 ||

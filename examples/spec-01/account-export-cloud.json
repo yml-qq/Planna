@@ -1,12 +1,23 @@
 {
-  "schema_version": "account-export-v1",
+  "schema_version": "account-export-v2",
   "source": "cloud",
   "generated_at": "2026-11-03T10:10:00Z",
   "snapshot_at": "2026-11-03T10:05:00Z",
   "pending_mutation_ids": [],
   "data": {
-    "account": {"id": "018f4400-1234-7000-8000-000000000040", "time_zone": "Asia/Shanghai"},
-    "lists": [], "tasks": [], "steps": [], "tags": [],
-    "reminders": [], "time_blocks": [], "ai_consents": [], "ai_memories": []
+    "account": {
+      "id": "018f4400-1234-7000-8000-000000000040",
+      "time_zone": "Asia/Shanghai"
+    },
+    "lists": [],
+    "tasks": [],
+    "steps": [],
+    "tags": [],
+    "reminders": [],
+    "time_blocks": [],
+    "ai_consents": [],
+    "ai_memories": [],
+    "habits": [],
+    "habit_logs": []
   }
 }

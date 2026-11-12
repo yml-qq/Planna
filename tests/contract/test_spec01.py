@@ -39,18 +39,18 @@ class Spec01Contracts(unittest.TestCase):
         samples = {
             "ai-plan.schema.json": "examples/ai-plan-preview.json",
             "ai-breakdown.schema.json": "examples/spec-01/ai-breakdown-preview.json",
-            "account-export.schema.json": "examples/spec-01/account-export-local.json",
+            "account-export-v2.schema.json": "examples/spec-01/account-export-local.json",
             "account-deletion.schema.json": "examples/spec-01/account-deletion-accepted.json",
         }
         for schema, file in samples.items():
             with self.subTest(file=file):
                 validate(schema, file)
-        validate("account-export.schema.json", "examples/spec-01/account-export-cloud.json")
+        validate("account-export-v2.schema.json", "examples/spec-01/account-export-cloud.json")
 
     def test_cloud_export_cannot_claim_pending_mutations(self):
         value = json.loads((ROOT / "examples/spec-01/account-export-cloud.json").read_text(encoding="utf-8"))
         value["pending_mutation_ids"] = ["018f4400-1234-7000-8000-000000000041"]
-        errors = list(Draft202012Validator(SCHEMAS["account-export.schema.json"], registry=REGISTRY).iter_errors(value))
+        errors = list(Draft202012Validator(SCHEMAS["account-export-v2.schema.json"], registry=REGISTRY).iter_errors(value))
         self.assertTrue(errors)
 
     def test_breakdown_rejects_more_than_20_steps(self):
@@ -424,7 +424,7 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(set(download["responses"]), {"200", "400", "401", "404", "409", "410"})
         self.assertIn("EXPORT_EXPIRED", download["description"])
         schema_ref = download["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
-        self.assertEqual(schema_ref, "./account-export.schema.json")
+        self.assertEqual(schema_ref, "./account-export-v2.schema.json")
         job = api["components"]["schemas"]["AccountExportJob"]
         self.assertEqual(set(job["required"]),
                          {"export_id", "status", "requested_at", "snapshot_at", "expires_at"})
