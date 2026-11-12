@@ -1,6 +1,6 @@
 use planna_desktop_core::{
-    Change, NewHabit, PullChange, PullResponse, PushResponse, PushResult, Store, SyncTransport,
-    sync_once,
+    Change, HabitPatchLocal, NewHabit, PullChange, PullResponse, PushResponse, PushResult, Store,
+    SyncTransport, sync_once,
 };
 
 fn habit() -> NewHabit {
@@ -339,4 +339,96 @@ fn sync_engine_pushes_habit_mutations_and_clears_outbox() {
         store.cursor_value().expect("cursor"),
         Some("c1".to_string())
     );
+}
+
+#[test]
+fn update_habit_pauses_and_resumes_with_base_version() {
+    let mut store = store_with_habit();
+    let pause = HabitPatchLocal {
+        paused: Some(true),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &pause, "mutation-2", "2026-11-12T01:00:00Z")
+            .expect("paused")
+    );
+    let habits = store.habits().expect("habits");
+    assert_eq!(habits[0].version, 2);
+    assert_eq!(habits[0].paused_at.as_deref(), Some("2026-11-12T01:00:00Z"));
+    let pending = store.pending_mutations(10).expect("pending");
+    let last = pending.last().expect("mutation");
+    assert_eq!(last.base_version, 1);
+    let payload: serde_json::Value = serde_json::from_str(&last.payload).expect("payload");
+    assert_eq!(payload["paused"], true);
+
+    let resume = HabitPatchLocal {
+        paused: Some(false),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &resume, "mutation-3", "2026-11-12T02:00:00Z")
+            .expect("resumed")
+    );
+    let habits = store.habits().expect("habits");
+    assert_eq!(habits[0].version, 3);
+    assert!(habits[0].paused_at.is_none());
+    let pending = store.pending_mutations(10).expect("pending");
+    assert_eq!(pending.last().expect("mutation").base_version, 2);
+}
+
+#[test]
+fn update_habit_edits_title_target_and_unit() {
+    let mut store = store_with_habit();
+    let patch = HabitPatchLocal {
+        title: Some("Read daily".to_string()),
+        target_quantity: Some(30),
+        unit: Some("minutes".to_string()),
+        paused: None,
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &patch, "mutation-2", "2026-11-12T01:00:00Z")
+            .expect("updated")
+    );
+    let habits = store.habits().expect("habits");
+    assert_eq!(habits[0].title, "Read daily");
+    assert_eq!(habits[0].target_quantity, 30);
+    assert_eq!(habits[0].unit, "minutes");
+    assert_eq!(habits[0].version, 2);
+}
+
+#[test]
+fn update_habit_rejects_invalid_patch_and_replays_idempotently() {
+    let mut store = store_with_habit();
+    assert!(
+        store
+            .update_habit("habit-1", &HabitPatchLocal::default(), "mutation-2", "now")
+            .is_err()
+    );
+    let invalid = HabitPatchLocal {
+        target_quantity: Some(0),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &invalid, "mutation-2", "now")
+            .is_err()
+    );
+    let pause = HabitPatchLocal {
+        paused: Some(true),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &pause, "mutation-2", "2026-11-12T01:00:00Z")
+            .expect("paused")
+    );
+    assert!(
+        !store
+            .update_habit("habit-1", &pause, "mutation-2", "2026-11-12T02:00:00Z")
+            .expect("replay")
+    );
+    assert_eq!(store.habits().expect("habits")[0].version, 2);
 }

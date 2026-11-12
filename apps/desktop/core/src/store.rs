@@ -138,6 +138,14 @@ pub struct StoredHabitLog {
     pub updated_at: String,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct HabitPatchLocal {
+    pub title: Option<String>,
+    pub target_quantity: Option<i64>,
+    pub unit: Option<String>,
+    pub paused: Option<bool>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutboxEntry {
     pub mutation_id: String,
@@ -569,6 +577,117 @@ impl Store {
         }
         transaction.commit()?;
         Ok(outcome)
+    }
+
+    /// Applies a local habit edit (title/target/unit/pause) with an outbox mutation in one
+    /// transaction; the mutation carries the pre-edit version as base_version.
+    pub fn update_habit(
+        &mut self,
+        habit_id: &str,
+        patch: &HabitPatchLocal,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        if mutation_id.is_empty()
+            || now.is_empty()
+            || (patch.title.is_none()
+                && patch.target_quantity.is_none()
+                && patch.unit.is_none()
+                && patch.paused.is_none())
+        {
+            return Err(StoreError::Validation("empty habit patch"));
+        }
+        if let Some(title) = &patch.title
+            && (title.trim().is_empty() || title.chars().count() > 200)
+        {
+            return Err(StoreError::Validation("invalid habit title"));
+        }
+        if let Some(target) = patch.target_quantity
+            && !(1..=1000).contains(&target)
+        {
+            return Err(StoreError::Validation("invalid habit target"));
+        }
+        if let Some(unit) = &patch.unit
+            && (unit.trim().is_empty() || unit.chars().count() > 20)
+        {
+            return Err(StoreError::Validation("invalid habit unit"));
+        }
+        if mutation_exists(&self.connection, mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        let row = transaction
+            .query_row(
+                "SELECT id, title, schedule_type, weekdays, target_quantity, unit, time_zone,
+                    paused_at, version, updated_at, deleted_at
+                 FROM habits WHERE id = ?1",
+                params![habit_id],
+                map_habit,
+            )
+            .optional()?
+            .ok_or(StoreError::Validation("habit not found"))?;
+        if row.deleted_at.is_some() {
+            return Err(StoreError::Validation("habit is deleted"));
+        }
+        let title = patch
+            .title
+            .as_ref()
+            .map(|value| value.trim().to_string())
+            .unwrap_or_else(|| row.title.clone());
+        let target = patch.target_quantity.unwrap_or(row.target_quantity);
+        let unit = patch
+            .unit
+            .as_ref()
+            .map(|value| value.trim().to_string())
+            .unwrap_or_else(|| row.unit.clone());
+        let paused_at = match patch.paused {
+            Some(true) => Some(now.to_string()),
+            Some(false) => None,
+            None => row.paused_at.clone(),
+        };
+        let version = row.version + 1;
+        transaction.execute(
+            "UPDATE habits SET title = ?2, target_quantity = ?3, unit = ?4, paused_at = ?5,
+                version = ?6, updated_at = ?7 WHERE id = ?1",
+            params![habit_id, title, target, unit, paused_at, version, now],
+        )?;
+        let mut payload = serde_json::Map::new();
+        if let Some(value) = &patch.title {
+            payload.insert(
+                "title".to_string(),
+                serde_json::Value::String(value.trim().to_string()),
+            );
+        }
+        if let Some(value) = patch.target_quantity {
+            payload.insert(
+                "target_quantity".to_string(),
+                serde_json::Value::from(value),
+            );
+        }
+        if let Some(value) = &patch.unit {
+            payload.insert(
+                "unit".to_string(),
+                serde_json::Value::String(value.trim().to_string()),
+            );
+        }
+        if let Some(value) = patch.paused {
+            payload.insert("paused".to_string(), serde_json::Value::Bool(value));
+        }
+        let payload = serde_json::Value::Object(payload).to_string();
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "habit",
+                entity_id: habit_id,
+                operation: "upsert",
+                base_version: row.version,
+                payload: &payload,
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
     }
 
     /// Creates a habit locally and queues its push mutation in the same transaction.

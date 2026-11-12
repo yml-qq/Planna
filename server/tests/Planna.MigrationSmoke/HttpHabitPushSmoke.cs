@@ -95,7 +95,17 @@ internal static class HttpHabitPushSmoke
         Check(logUpdate, HttpStatusCode.OK);
         if ((await Result(logUpdate)).EntityVersion != 2)
             throw new InvalidOperationException("Habit log push update mismatch.");
-        var deleted = await Push(client, token, device, Mutation(Guid.NewGuid(), "habit", habit, "delete", 2, "{}"));
+        var paused = await Push(client, token, device, Mutation(Guid.NewGuid(), "habit", habit, "upsert", 2,
+            "{\"paused\":true}"));
+        Check(paused, HttpStatusCode.OK);
+        if ((await Result(paused)).EntityVersion != 3)
+            throw new InvalidOperationException("Habit pause push mismatch.");
+        var resumed = await Push(client, token, device, Mutation(Guid.NewGuid(), "habit", habit, "upsert", 3,
+            "{\"paused\":false}"));
+        Check(resumed, HttpStatusCode.OK);
+        if ((await Result(resumed)).EntityVersion != 4)
+            throw new InvalidOperationException("Habit resume push mismatch.");
+        var deleted = await Push(client, token, device, Mutation(Guid.NewGuid(), "habit", habit, "delete", 4, "{}"));
         Check(deleted, HttpStatusCode.OK);
         if ((await Result(deleted)).Status != "accepted")
             throw new InvalidOperationException("Habit push delete mismatch.");
@@ -120,11 +130,11 @@ internal static class HttpHabitPushSmoke
             throw new InvalidOperationException("Foreign habit push was not rejected.");
 
         // Five accepted mutations, two entity types, one revision each.
-        if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 5 ||
-            await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_type='habit'", owner) != 3 ||
+        if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 7 ||
+            await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_type='habit'", owner) != 5 ||
             await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_type='habit_log'", owner) != 2 ||
-            await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 5 ||
-            await Scalar(db, "SELECT count(*) FROM habits WHERE id=$1 AND deleted_at IS NOT NULL AND version=3", habit) != 1)
+            await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 7 ||
+            await Scalar(db, "SELECT count(*) FROM habits WHERE id=$1 AND deleted_at IS NOT NULL AND version=5", habit) != 1)
             throw new InvalidOperationException("Habit push sync accounting mismatch.");
         Console.WriteLine("PASS: sync push habits and logs, replay, conflict, validation, tombstones, owner isolation");
     }

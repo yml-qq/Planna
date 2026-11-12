@@ -1,8 +1,9 @@
 use std::sync::Mutex;
 
 use planna_desktop_core::{
-    NewHabit, NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse, Store, StoredHabit,
-    StoredHabitLog, StoredTask, SyncOutcome, SyncTransport, TransportError, sync_with_retry,
+    HabitPatchLocal, NewHabit, NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse,
+    Store, StoredHabit, StoredHabitLog, StoredTask, SyncOutcome, SyncTransport, TransportError,
+    sync_with_retry,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
@@ -156,6 +157,35 @@ fn create_habit(
         .find(|stored| stored.id == id)
         .map(HabitDto::from)
         .ok_or_else(|| "HABIT_NOT_FOUND_AFTER_CREATE".to_string())
+}
+
+#[tauri::command]
+fn update_habit(
+    state: State<'_, AppState>,
+    habit_id: String,
+    title: Option<String>,
+    target_quantity: Option<i64>,
+    unit: Option<String>,
+    paused: Option<bool>,
+) -> Result<HabitDto, String> {
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let patch = HabitPatchLocal {
+        title,
+        target_quantity,
+        unit,
+        paused,
+    };
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    store
+        .update_habit(&habit_id, &patch, &mutation_id, &now())
+        .map_err(|error| error.to_string())?;
+    store
+        .habits()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|habit| habit.id == habit_id)
+        .map(HabitDto::from)
+        .ok_or_else(|| "HABIT_NOT_FOUND_AFTER_UPDATE".to_string())
 }
 
 #[tauri::command]
@@ -541,6 +571,7 @@ pub fn run() {
             pending_mutations,
             list_habits,
             create_habit,
+            update_habit,
             upsert_habit_log,
             list_habit_logs,
             run_sync,

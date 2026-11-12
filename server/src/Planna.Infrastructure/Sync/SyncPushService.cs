@@ -255,6 +255,8 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
         public bool HasAllDay { get; set; }
         public string? TimeZone { get; set; }
         public bool HasTimeZone { get; set; }
+        public bool? Paused { get; set; }
+        public bool HasPaused { get; set; }
         public short? EstimateMinutes { get; set; }
         public bool HasEstimateMinutes { get; set; }
 
@@ -319,6 +321,11 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
                         payload.TimeZone = value.GetString();
                         payload.HasTimeZone = true;
                         break;
+                    case "paused":
+                        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return false;
+                        payload.Paused = value.GetBoolean();
+                        payload.HasPaused = true;
+                        break;
                     case "estimate_minutes":
                         if (value.ValueKind == JsonValueKind.Null) payload.EstimateMinutes = null;
                         else if (value.ValueKind == JsonValueKind.Number && value.TryGetInt16(out var estimate))
@@ -354,10 +361,12 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
                     payload.Unit ?? "count", payload.TimeZone!, out var weekdays))
                 return Rejected(mutation.MutationId);
             var now = clock.GetUtcNow();
+            var createdPausedAt = payload.HasPaused && payload.Paused == true ? now : (DateTimeOffset?)null;
             await ExecuteAsync(db, """
                 INSERT INTO habits(id, owner_id, title, schedule_type, weekdays, target_quantity, unit,
-                    time_zone, version, created_at, updated_at)
-                VALUES(@Id, @Owner, @Title, @Schedule, @Weekdays, @Target, @Unit, @Zone, 1, @Now, @Now)
+                    time_zone, paused_at, version, created_at, updated_at)
+                VALUES(@Id, @Owner, @Title, @Schedule, @Weekdays, @Target, @Unit, @Zone, @Paused,
+                    1, @Now, @Now)
                 """, p =>
             {
                 p.Add(new NpgsqlParameter("Id", mutation.EntityId));
@@ -368,6 +377,10 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
                 p.Add(new NpgsqlParameter("Target", payload.TargetQuantity ?? 1));
                 p.Add(new NpgsqlParameter("Unit", payload.Unit ?? "count"));
                 p.Add(new NpgsqlParameter("Zone", payload.TimeZone!));
+                p.Add(new NpgsqlParameter("Paused", NpgsqlDbType.TimestampTz)
+                {
+                    Value = createdPausedAt?.UtcDateTime ?? (object)DBNull.Value
+                });
                 p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = now.UtcDateTime });
             }, ct);
             var revision = await BumpRevision(ownerId, ct);
@@ -413,9 +426,17 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
             return Rejected(mutation.MutationId);
         var newVersion = row.Version + 1;
         var updatedAt = clock.GetUtcNow();
+        DateTimeOffset? pausedAt = row.PausedAt is { } existingPause
+            ? new DateTimeOffset(DateTime.SpecifyKind(existingPause, DateTimeKind.Utc))
+            : null;
+        if (payload.HasPaused)
+        {
+            pausedAt = payload.Paused == true ? pausedAt ?? updatedAt : null;
+        }
         await ExecuteAsync(db, """
             UPDATE habits SET title=@Title, schedule_type=@Schedule, weekdays=@Weekdays,
-                target_quantity=@Target, unit=@Unit, time_zone=@Zone, version=@Version, updated_at=@Now
+                target_quantity=@Target, unit=@Unit, time_zone=@Zone, paused_at=@Paused,
+                version=@Version, updated_at=@Now
             WHERE id=@Id AND owner_id=@Owner
             """, p =>
         {
@@ -425,6 +446,10 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
             p.Add(new NpgsqlParameter("Target", payload.TargetQuantity ?? row.TargetQuantity));
             p.Add(new NpgsqlParameter("Unit", payload.Unit ?? row.Unit));
             p.Add(new NpgsqlParameter("Zone", payload.TimeZone ?? row.TimeZone));
+            p.Add(new NpgsqlParameter("Paused", NpgsqlDbType.TimestampTz)
+            {
+                Value = pausedAt?.UtcDateTime ?? (object)DBNull.Value
+            });
             p.Add(new NpgsqlParameter("Version", newVersion));
             p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = updatedAt.UtcDateTime });
             p.Add(new NpgsqlParameter("Id", mutation.EntityId));
@@ -731,6 +756,8 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
         public string? Unit { get; set; }
         public string? TimeZone { get; set; }
         public bool HasTimeZone { get; set; }
+        public bool? Paused { get; set; }
+        public bool HasPaused { get; set; }
 
         public static bool TryParse(JsonElement element, out HabitPayload payload)
         {
@@ -775,6 +802,11 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
                         if (value.ValueKind != JsonValueKind.String) return false;
                         payload.TimeZone = value.GetString();
                         payload.HasTimeZone = true;
+                        break;
+                    case "paused":
+                        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return false;
+                        payload.Paused = value.GetBoolean();
+                        payload.HasPaused = true;
                         break;
                     default:
                         return false;

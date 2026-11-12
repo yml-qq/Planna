@@ -56,7 +56,8 @@
 | E10 | HAB-01E | 习惯/日志的同步 push（已交付，见 `72-HAB-01E.md`） | HAB-01D | replay tests |
 | E10 | HAB-01F | 桌面本地习惯/日志存储、outbox 与拉取（已交付，见 `73-HAB-01F.md`） | HAB-01E | offline tests |
 | E10 | HAB-01G | Tauri 习惯命令与 Vue 打卡面板（已交付，见 `74-HAB-01G.md`） | HAB-01F | offline tests |
-| E10 | HAB-01H | 提醒/本地通知、习惯暂停 UI 与冲突解决 | HAB-01G | notification tests |
+| E10 | HAB-01H | 习惯暂停的 push 与本地更新（已交付，见 `75-HAB-01H.md`） | HAB-01G | replay tests |
+| E10 | HAB-01I | 暂停/连续天数 UI、冲突解决与提醒/本地通知 | HAB-01H | notification tests |
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
