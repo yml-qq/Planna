@@ -412,3 +412,13 @@
 - 前端测试增至 **35 项**（新增编辑成功/非法/失败、跨午夜与同日窗口、抑制通知、持久化解析），`pnpm build` 通过；shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 43165263336](https://github.com/yml-qq/Planna/actions/runs/43165263336) 与 [Desktop core 43165263376](https://github.com/yml-qq/Planna/actions/runs/43165263376) 均 **success**。
 - 未连接生产库、未提交凭据；冲突逐条处置、weekly 日程编辑与通知真机验证留待 `HAB-01L`。
+
+## HAB-01L 同步冲突处置检查（2026-11-12）
+
+- core `OutboxEntry` 增加 `last_error`（`pending_mutations` 返回），core 测试补充失败原因断言（31 项）；无 schema 变更。
+- Tauri 新增 `outbox_issues`（仅 attempts>0 的 mutation）与 `discard_mutation`（存在才删除并返回 true）；桥接新增 `outboxIssues()/discardMutation()`。
+- UI 在同步/启动后显示冲突数量与逐条列表（实体/操作/尝试次数/最后错误），“放弃本地变更”删除 outbox 记录并刷新列表、计数与习惯数据。
+- 明确记录语义限制：放弃仅删本地 outbox，不向服务端回滚；后续拉取按版本单调规则收敛，完整覆盖/重试语义留 `HAB-01M`。
+- 前端 35 项测试与 `pnpm build`、shell `cargo check/clippy/fmt`、core 31 项测试均通过；服务端无变更。
+- [Server integration 43166817174](https://github.com/yml-qq/Planna/actions/runs/43166817174) 与 [Desktop core 43166817100](https://github.com/yml-qq/Planna/actions/runs/43166817100) 均 **success**。
+- 未连接生产库、未提交凭据；weekly 编辑、覆盖/重试与通知真机验证留待 `HAB-01M`。
