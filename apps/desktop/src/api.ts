@@ -88,7 +88,14 @@ export interface DesktopBridge {
   createHabit(input: CreateHabitInput): Promise<Habit>
   updateHabit(
     habitId: string,
-    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+    patch: {
+      title?: string
+      scheduleType?: 'daily' | 'weekly' | 'weekdays'
+      weekdays?: number[] | null
+      targetQuantity?: number
+      unit?: string
+      paused?: boolean
+    }
   ): Promise<Habit>
   listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]>
   outboxStatus(): Promise<{ pending: number; failed: number }>
@@ -199,13 +206,22 @@ export class MemoryBridge implements DesktopBridge {
 
   async updateHabit(
     habitId: string,
-    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+    patch: {
+      title?: string
+      scheduleType?: 'daily' | 'weekly' | 'weekdays'
+      weekdays?: number[] | null
+      targetQuantity?: number
+      unit?: string
+      paused?: boolean
+    }
   ): Promise<Habit> {
     const habit = this.habits.get(habitId)
     if (!habit) throw new Error('HABIT_NOT_FOUND')
     const updated: Habit = {
       ...habit,
       title: patch.title?.trim() ?? habit.title,
+      scheduleType: patch.scheduleType ?? habit.scheduleType,
+      weekdays: patch.scheduleType === 'weekly' ? patch.weekdays ?? habit.weekdays : patch.scheduleType ? null : habit.weekdays,
       targetQuantity: patch.targetQuantity ?? habit.targetQuantity,
       unit: patch.unit?.trim() ?? habit.unit,
       pausedAt:
@@ -428,11 +444,20 @@ export class TauriBridge implements DesktopBridge {
 
   async updateHabit(
     habitId: string,
-    patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
+    patch: {
+      title?: string
+      scheduleType?: 'daily' | 'weekly' | 'weekdays'
+      weekdays?: number[] | null
+      targetQuantity?: number
+      unit?: string
+      paused?: boolean
+    }
   ): Promise<Habit> {
     const row = await this.invoke<RawHabit>('update_habit', {
       habitId,
       title: patch.title ?? null,
+      scheduleType: patch.scheduleType ?? null,
+      weekdays: patch.weekdays ?? null,
       targetQuantity: patch.targetQuantity ?? null,
       unit: patch.unit ?? null,
       paused: patch.paused ?? null

@@ -48,7 +48,13 @@ export interface HabitStore {
   create: (title: string, targetQuantity: number, unit: string) => Promise<Habit | null>
   updateDetails: (
     habitId: string,
-    patch: { title: string; targetQuantity: number; unit: string }
+    patch: {
+      title: string
+      scheduleType?: 'daily' | 'weekly' | 'weekdays'
+      weekdays?: number[]
+      targetQuantity: number
+      unit: string
+    }
   ) => Promise<boolean>
   togglePause: (habitId: string) => Promise<boolean>
   checkIn: (habitId: string) => Promise<boolean>
@@ -140,7 +146,13 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
 
   async function updateDetails(
     habitId: string,
-    patch: { title: string; targetQuantity: number; unit: string }
+    patch: {
+      title: string
+      scheduleType?: 'daily' | 'weekly' | 'weekdays'
+      weekdays?: number[]
+      targetQuantity: number
+      unit: string
+    }
   ): Promise<boolean> {
     const habit = habits.value.find((candidate) => candidate.id === habitId)
     if (!habit) {
@@ -157,6 +169,8 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     try {
       const updated = await bridge.updateHabit(habitId, {
         title,
+        scheduleType: patch.scheduleType,
+        weekdays: patch.weekdays,
         targetQuantity: patch.targetQuantity,
         unit: patch.unit.trim() || habit.unit
       })

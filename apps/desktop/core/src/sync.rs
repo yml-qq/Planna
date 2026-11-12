@@ -28,6 +28,8 @@ pub struct PushResult {
     pub entity_version: Option<i64>,
     #[serde(default)]
     pub retryable: bool,
+    #[serde(default)]
+    pub server_entity: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -93,6 +95,7 @@ pub struct SyncOutcome {
     pub rejected: usize,
     pub pulled: usize,
     pub skipped_stale: usize,
+    pub resolved_conflicts: usize,
     pub cursor: Option<String>,
 }
 
@@ -124,6 +127,15 @@ pub fn sync_once(
             device_id: device_id.to_string(),
             mutations,
         })?;
+        let pending_by_id: std::collections::HashMap<_, _> = pending
+            .iter()
+            .map(|entry| {
+                (
+                    entry.mutation_id.clone(),
+                    (entry.entity_type.clone(), entry.entity_id.clone()),
+                )
+            })
+            .collect();
         for result in response.results {
             match result.status.as_str() {
                 "accepted" => {
@@ -139,10 +151,29 @@ pub fn sync_once(
                     outcome.duplicates += 1;
                 }
                 "conflict" => {
-                    store
-                        .record_failure(&result.mutation_id, "VERSION_CONFLICT")
-                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
-                    outcome.conflicts.push(result.mutation_id.clone());
+                    let target = pending_by_id.get(&result.mutation_id);
+                    let applied = match (&result.server_entity, target) {
+                        (Some(entity), Some((entity_type, entity_id))) => store
+                            .force_apply_snapshot(
+                                entity_type,
+                                entity_id,
+                                &entity.to_string(),
+                                result.entity_version.unwrap_or(1),
+                            )
+                            .is_ok(),
+                        _ => false,
+                    };
+                    if applied {
+                        store
+                            .remove_mutation(&result.mutation_id)
+                            .map_err(|error| TransportError::Fatal(error.to_string()))?;
+                        outcome.resolved_conflicts += 1;
+                    } else {
+                        store
+                            .record_failure(&result.mutation_id, "VERSION_CONFLICT")
+                            .map_err(|error| TransportError::Fatal(error.to_string()))?;
+                        outcome.conflicts.push(result.mutation_id.clone());
+                    }
                 }
                 "rejected" => {
                     store

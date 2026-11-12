@@ -242,3 +242,11 @@ body {
 .issues__text small {
   color: var(--danger);
 }
+
+.habits__weekdays {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

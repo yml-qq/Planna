@@ -107,6 +107,7 @@ fn accepted(mutation_id: &str) -> PushResult {
         status: "accepted".to_string(),
         entity_version: Some(1),
         retryable: false,
+        server_entity: None,
     }
 }
 
@@ -166,6 +167,7 @@ fn duplicate_results_are_dropped_without_retry() {
             status: "duplicate".to_string(),
             entity_version: Some(1),
             retryable: false,
+            server_entity: None,
         }],
         vec![],
     );
@@ -183,6 +185,7 @@ fn conflicts_keep_outbox_and_record_attempts() {
             status: "conflict".to_string(),
             entity_version: Some(2),
             retryable: false,
+            server_entity: None,
         }],
         vec![],
     );
@@ -351,4 +354,40 @@ fn repeated_cursor_expiry_is_reported() {
         sync_once(&mut store, &mut transport, "device-1", 1),
         Err(TransportError::CursorExpired)
     );
+}
+
+#[test]
+fn conflict_with_server_entity_applies_server_state_and_clears_outbox() {
+    let mut store = store_with_task();
+    let mut transport = FakeTransport::new(
+        vec![PushResult {
+            mutation_id: "mutation-1".to_string(),
+            status: "conflict".to_string(),
+            entity_version: Some(2),
+            retryable: false,
+            server_entity: Some(serde_json::json!({
+                "id": "task-1",
+                "list_id": "list-inbox",
+                "title": "From server",
+                "description": "",
+                "status": "todo",
+                "priority": 0,
+                "all_day": false,
+                "time_zone": "Asia/Shanghai",
+                "due_at": null,
+                "due_local_date": null,
+                "version": 2,
+                "updated_at": "2026-11-12T00:00:00Z",
+                "deleted_at": null
+            })),
+        }],
+        vec![],
+    );
+    let outcome = sync_once(&mut store, &mut transport, "device-1", 1).expect("sync");
+    assert_eq!(outcome.resolved_conflicts, 1);
+    assert!(outcome.conflicts.is_empty());
+    assert!(store.pending_mutations(10).expect("pending").is_empty());
+    let tasks = store.tasks_for_list("list-inbox").expect("tasks");
+    assert_eq!(tasks[0].title, "From server");
+    assert_eq!(tasks[0].version, 2);
 }

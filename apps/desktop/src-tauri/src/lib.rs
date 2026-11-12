@@ -160,10 +160,13 @@ fn create_habit(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 fn update_habit(
     state: State<'_, AppState>,
     habit_id: String,
     title: Option<String>,
+    schedule_type: Option<String>,
+    weekdays: Option<Vec<i16>>,
     target_quantity: Option<i64>,
     unit: Option<String>,
     paused: Option<bool>,
@@ -171,6 +174,8 @@ fn update_habit(
     let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let patch = HabitPatchLocal {
         title,
+        schedule_type,
+        weekdays,
         target_quantity,
         unit,
         paused,

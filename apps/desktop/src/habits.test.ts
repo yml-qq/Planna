@@ -265,3 +265,39 @@ describe('habit editing', () => {
     expect(store.error.value).toBe('HABIT_UPDATE_FAILED')
   })
 })
+
+describe('weekly habit editing', () => {
+  it('updates schedule and weekdays through the bridge', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Run',
+      scheduleType: 'daily',
+      targetQuantity: 1,
+      unit: 'km',
+      timeZone: 'Asia/Shanghai'
+    })
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(
+      await store.updateDetails('habit-1', {
+        title: 'Run',
+        scheduleType: 'weekly',
+        weekdays: [1, 3, 5],
+        targetQuantity: 1,
+        unit: 'km'
+      })
+    ).toBe(true)
+    expect(store.habits.value[0]?.scheduleType).toBe('weekly')
+    expect(store.habits.value[0]?.weekdays).toEqual([1, 3, 5])
+    expect(
+      await store.updateDetails('habit-1', {
+        title: 'Run',
+        scheduleType: 'daily',
+        targetQuantity: 1,
+        unit: 'km'
+      })
+    ).toBe(true)
+    expect(store.habits.value[0]?.weekdays).toBeNull()
+  })
+})

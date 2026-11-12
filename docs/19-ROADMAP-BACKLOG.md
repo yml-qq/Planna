@@ -61,7 +61,8 @@
 | E10 | HAB-01J | 习惯本地提醒与通知适配（已交付，见 `77-HAB-01J.md`） | HAB-01I | notification tests |
 | E10 | HAB-01K | 习惯编辑、同步冲突可见性与免打扰（已交付，见 `78-HAB-01K.md`） | HAB-01J | ui tests |
 | E10 | HAB-01L | 同步冲突可见处置：列出并放弃失败 mutation（已交付，见 `79-HAB-01L.md`） | HAB-01K | fault tests |
-| E10 | HAB-01M | 冲突覆盖/重试语义、weekly 日程编辑与通知真机验证 | HAB-01L | fault tests |
+| E10 | HAB-01M | weekly 日程编辑与 server-wins 冲突收敛（已交付，见 `80-HAB-01M.md`） | HAB-01L | fault tests |
+| E10 | HAB-01N | 冲突三态处置/台账、通知真机验证与跨时区展示 | HAB-01M | fault tests |
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |

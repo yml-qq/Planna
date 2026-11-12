@@ -297,12 +297,14 @@ fn sync_engine_pushes_habit_mutations_and_clears_outbox() {
                 status: "accepted".to_string(),
                 entity_version: Some(1),
                 retryable: false,
+                server_entity: None,
             },
             PushResult {
                 mutation_id: "mutation-log-1".to_string(),
                 status: "accepted".to_string(),
                 entity_version: Some(1),
                 retryable: false,
+                server_entity: None,
             },
         ],
         pull_pages: vec![PullResponse {
@@ -383,6 +385,8 @@ fn update_habit_edits_title_target_and_unit() {
     let mut store = store_with_habit();
     let patch = HabitPatchLocal {
         title: Some("Read daily".to_string()),
+        schedule_type: None,
+        weekdays: None,
         target_quantity: Some(30),
         unit: Some("minutes".to_string()),
         paused: None,
@@ -431,4 +435,32 @@ fn update_habit_rejects_invalid_patch_and_replays_idempotently() {
             .expect("replay")
     );
     assert_eq!(store.habits().expect("habits")[0].version, 2);
+}
+
+#[test]
+fn update_habit_changes_schedule_to_weekly_and_clears_weekdays_when_daily() {
+    let mut store = store_with_habit();
+    let weekly = HabitPatchLocal {
+        schedule_type: Some("weekly".to_string()),
+        weekdays: Some(vec![5, 1, 3]),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &weekly, "mutation-2", "2026-11-12T01:00:00Z")
+            .expect("weekly")
+    );
+    let habits = store.habits().expect("habits");
+    assert_eq!(habits[0].schedule_type, "weekly");
+    assert_eq!(habits[0].weekdays.as_deref(), Some([1, 3, 5].as_slice()));
+    let daily = HabitPatchLocal {
+        schedule_type: Some("daily".to_string()),
+        ..HabitPatchLocal::default()
+    };
+    assert!(
+        store
+            .update_habit("habit-1", &daily, "mutation-3", "2026-11-12T02:00:00Z")
+            .expect("daily")
+    );
+    assert!(store.habits().expect("habits")[0].weekdays.is_none());
 }

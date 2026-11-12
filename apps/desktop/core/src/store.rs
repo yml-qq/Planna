@@ -141,6 +141,8 @@ pub struct StoredHabitLog {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct HabitPatchLocal {
     pub title: Option<String>,
+    pub schedule_type: Option<String>,
+    pub weekdays: Option<Vec<i16>>,
     pub target_quantity: Option<i64>,
     pub unit: Option<String>,
     pub paused: Option<bool>,
@@ -593,6 +595,8 @@ impl Store {
         if mutation_id.is_empty()
             || now.is_empty()
             || (patch.title.is_none()
+                && patch.schedule_type.is_none()
+                && patch.weekdays.is_none()
                 && patch.target_quantity.is_none()
                 && patch.unit.is_none()
                 && patch.paused.is_none())
@@ -636,6 +640,32 @@ impl Store {
             .as_ref()
             .map(|value| value.trim().to_string())
             .unwrap_or_else(|| row.title.clone());
+        let schedule_type = patch
+            .schedule_type
+            .clone()
+            .unwrap_or_else(|| row.schedule_type.clone());
+        if !matches!(schedule_type.as_str(), "daily" | "weekly" | "weekdays") {
+            return Err(StoreError::Validation("invalid habit schedule"));
+        }
+        let weekdays: Option<Vec<i16>> = if schedule_type == "weekly" {
+            let days = patch
+                .weekdays
+                .clone()
+                .or_else(|| row.weekdays.clone())
+                .ok_or(StoreError::Validation("weekly habits need weekdays"))?;
+            let mut sorted = days;
+            sorted.sort_unstable();
+            sorted.dedup();
+            if sorted.is_empty()
+                || sorted.len() > 7
+                || sorted.iter().any(|day| !(1..=7).contains(day))
+            {
+                return Err(StoreError::Validation("invalid weekdays"));
+            }
+            Some(sorted)
+        } else {
+            None
+        };
         let target = patch.target_quantity.unwrap_or(row.target_quantity);
         let unit = patch
             .unit
@@ -648,16 +678,47 @@ impl Store {
             None => row.paused_at.clone(),
         };
         let version = row.version + 1;
+        let weekdays_json = weekdays
+            .as_ref()
+            .map(|days| serde_json::to_string(days).unwrap_or_else(|_| "[]".to_string()));
         transaction.execute(
-            "UPDATE habits SET title = ?2, target_quantity = ?3, unit = ?4, paused_at = ?5,
-                version = ?6, updated_at = ?7 WHERE id = ?1",
-            params![habit_id, title, target, unit, paused_at, version, now],
+            "UPDATE habits SET title = ?2, schedule_type = ?3, weekdays = ?4,
+                target_quantity = ?5, unit = ?6, paused_at = ?7, version = ?8, updated_at = ?9
+             WHERE id = ?1",
+            params![
+                habit_id,
+                title,
+                schedule_type,
+                weekdays_json,
+                target,
+                unit,
+                paused_at,
+                version,
+                now
+            ],
         )?;
         let mut payload = serde_json::Map::new();
         if let Some(value) = &patch.title {
             payload.insert(
                 "title".to_string(),
                 serde_json::Value::String(value.trim().to_string()),
+            );
+        }
+        if let Some(value) = &patch.schedule_type {
+            payload.insert(
+                "schedule_type".to_string(),
+                serde_json::Value::String(value.clone()),
+            );
+        }
+        if let Some(value) = &weekdays {
+            payload.insert(
+                "weekdays".to_string(),
+                serde_json::Value::Array(
+                    value
+                        .iter()
+                        .map(|day| serde_json::Value::from(*day))
+                        .collect(),
+                ),
             );
         }
         if let Some(value) = patch.target_quantity {
@@ -884,6 +945,109 @@ impl Store {
             logs.push(row?);
         }
         Ok(logs)
+    }
+
+    /// Forces a server snapshot into the local store (conflict resolution "server wins"),
+    /// ignoring local versions and removing nothing else.
+    pub fn force_apply_snapshot(
+        &mut self,
+        entity_type: &str,
+        _entity_id: &str,
+        payload: &str,
+        version: i64,
+    ) -> StoreResult<()> {
+        let value: serde_json::Value = serde_json::from_str(payload)
+            .map_err(|_| StoreError::Validation("snapshot payload is not JSON"))?;
+        let transaction = self.connection.transaction()?;
+        match entity_type {
+            "habit" => {
+                let stored: StoredHabit = serde_json::from_value(value)
+                    .map_err(|_| StoreError::Validation("snapshot is not a habit"))?;
+                let weekdays = stored
+                    .weekdays
+                    .as_ref()
+                    .map(|days| serde_json::to_string(days).unwrap_or_else(|_| "[]".to_string()));
+                transaction.execute(
+                    "INSERT INTO habits(id, title, schedule_type, weekdays, target_quantity, unit,
+                        time_zone, paused_at, version, updated_at, deleted_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                     ON CONFLICT(id) DO UPDATE SET title = excluded.title,
+                        schedule_type = excluded.schedule_type, weekdays = excluded.weekdays,
+                        target_quantity = excluded.target_quantity, unit = excluded.unit,
+                        time_zone = excluded.time_zone, paused_at = excluded.paused_at,
+                        version = excluded.version, updated_at = excluded.updated_at,
+                        deleted_at = excluded.deleted_at",
+                    params![
+                        stored.id,
+                        stored.title,
+                        stored.schedule_type,
+                        weekdays,
+                        stored.target_quantity,
+                        stored.unit,
+                        stored.time_zone,
+                        stored.paused_at,
+                        version,
+                        stored.updated_at,
+                        stored.deleted_at
+                    ],
+                )?;
+            }
+            "habit_log" => {
+                let stored: StoredHabitLog = serde_json::from_value(value)
+                    .map_err(|_| StoreError::Validation("snapshot is not a habit log"))?;
+                transaction.execute(
+                    "INSERT INTO habit_logs(id, habit_id, log_date, quantity, status, version, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                     ON CONFLICT(id) DO UPDATE SET habit_id = excluded.habit_id,
+                        log_date = excluded.log_date, quantity = excluded.quantity,
+                        status = excluded.status, version = excluded.version,
+                        updated_at = excluded.updated_at",
+                    params![
+                        stored.id,
+                        stored.habit_id,
+                        stored.log_date,
+                        stored.quantity,
+                        stored.status,
+                        version,
+                        stored.updated_at
+                    ],
+                )?;
+            }
+            "task" => {
+                let stored: StoredTask = serde_json::from_value(value)
+                    .map_err(|_| StoreError::Validation("snapshot is not a task"))?;
+                transaction.execute(
+                    "INSERT INTO tasks(id, list_id, title, description, status, priority, all_day,
+                        time_zone, due_at, due_local_date, version, updated_at, deleted_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+                     ON CONFLICT(id) DO UPDATE SET list_id = excluded.list_id,
+                        title = excluded.title, description = excluded.description,
+                        status = excluded.status, priority = excluded.priority,
+                        all_day = excluded.all_day, time_zone = excluded.time_zone,
+                        due_at = excluded.due_at, due_local_date = excluded.due_local_date,
+                        version = excluded.version, updated_at = excluded.updated_at,
+                        deleted_at = excluded.deleted_at",
+                    params![
+                        stored.id,
+                        stored.list_id,
+                        stored.title,
+                        stored.description,
+                        stored.status,
+                        stored.priority,
+                        stored.all_day,
+                        stored.time_zone,
+                        stored.due_at,
+                        stored.due_local_date,
+                        version,
+                        stored.updated_at,
+                        stored.deleted_at
+                    ],
+                )?;
+            }
+            _ => return Err(StoreError::Validation("unsupported snapshot entity")),
+        }
+        transaction.commit()?;
+        Ok(())
     }
 
     pub fn set_cursor_value(&self, value: &str) -> StoreResult<()> {

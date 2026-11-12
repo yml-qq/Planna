@@ -71,6 +71,8 @@ const editingHabit = ref<string | null>(null)
 const editHabitTitle = ref('')
 const editHabitTarget = ref('1')
 const editHabitUnit = ref('')
+const editHabitSchedule = ref<'daily' | 'weekly' | 'weekdays'>('daily')
+const editHabitWeekdays = ref<number[]>([])
 const outbox = ref({ pending: 0, failed: 0 })
 const issues = ref<OutboxIssue[]>([])
 const sentReminders = new Set<string>()
@@ -216,6 +218,21 @@ function startEditHabit(habitId: string): void {
   editHabitTitle.value = habit.title
   editHabitTarget.value = String(habit.targetQuantity)
   editHabitUnit.value = habit.unit
+  editHabitSchedule.value = habit.scheduleType
+  editHabitWeekdays.value = habit.weekdays ? [...habit.weekdays] : []
+}
+
+function toggleEditWeekday(day: number): void {
+  editHabitWeekdays.value = editHabitWeekdays.value.includes(day)
+    ? editHabitWeekdays.value.filter((value) => value !== day)
+    : [...editHabitWeekdays.value, day].sort((left, right) => left - right)
+}
+
+function scheduleLabel(habit: { scheduleType: string; weekdays: number[] | null }): string {
+  if (habit.scheduleType === 'daily') return '每日'
+  if (habit.scheduleType === 'weekdays') return '工作日'
+  const names = ['一', '二', '三', '四', '五', '六', '日']
+  return `每周${(habit.weekdays ?? []).map((day) => names[day - 1] ?? day).join('/')}`
 }
 
 function cancelEditHabit(): void {
@@ -228,6 +245,8 @@ async function saveEditHabit(): Promise<void> {
   const target = Number.parseInt(editHabitTarget.value, 10)
   const saved = await habits.updateDetails(habitId, {
     title: editHabitTitle.value,
+    scheduleType: editHabitSchedule.value,
+    weekdays: editHabitSchedule.value === 'weekly' ? editHabitWeekdays.value : [],
     targetQuantity: Number.isFinite(target) ? target : 1,
     unit: editHabitUnit.value
   })
@@ -416,6 +435,21 @@ onMounted(async () => {
         <li v-for="habit in habits.habits.value" :key="habit.id" class="habits__item">
           <template v-if="editingHabit === habit.id">
             <input v-model="editHabitTitle" class="input" type="text" maxlength="200" aria-label="习惯名称" />
+            <select v-model="editHabitSchedule" class="input" aria-label="日程">
+              <option value="daily">每日</option>
+              <option value="weekdays">工作日</option>
+              <option value="weekly">每周指定日</option>
+            </select>
+            <span v-if="editHabitSchedule === 'weekly'" class="habits__weekdays">
+              <label v-for="day in [1, 2, 3, 4, 5, 6, 7]" :key="day">
+                <input
+                  type="checkbox"
+                  :checked="editHabitWeekdays.includes(day)"
+                  @change="toggleEditWeekday(day)"
+                />
+                {{ day }}
+              </label>
+            </span>
             <input v-model="editHabitTarget" class="input input--narrow" type="number" min="1" max="1000" aria-label="目标数量" />
             <input v-model="editHabitUnit" class="input input--narrow" type="text" maxlength="20" aria-label="单位" />
             <button class="button" type="button" :disabled="habits.loading.value" @click="saveEditHabit">保存</button>
@@ -423,7 +457,7 @@ onMounted(async () => {
           </template>
           <template v-else>
           <span class="habits__title">{{ habit.title }}</span>
-          <span class="habits__meta">{{ habit.targetQuantity }} {{ habit.unit }}</span>
+          <span class="habits__meta">{{ scheduleLabel(habit) }} · {{ habit.targetQuantity }} {{ habit.unit }}</span>
           <span class="habits__streak" aria-label="连续天数">
             连续 {{ habits.streaks.value[habit.id] ?? 0 }} 天
           </span>
