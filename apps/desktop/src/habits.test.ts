@@ -1,0 +1,153 @@
+import { describe, expect, it } from 'vitest'
+import { MemoryBridge, type DesktopBridge } from './api'
+import { createHabitStore, localDate } from './habits'
+
+describe('localDate', () => {
+  it('formats the local calendar date with padding', () => {
+    expect(localDate(new Date(2026, 0, 5))).toBe('2026-01-05')
+    expect(localDate(new Date(2026, 11, 31))).toBe('2026-12-31')
+  })
+})
+
+function storeOptions(overrides: Record<string, unknown> = {}) {
+  return {
+    timeZone: () => 'Asia/Shanghai',
+    today: () => '2026-11-12',
+    newId: () => 'habit-1',
+    ...overrides
+  }
+}
+
+describe('habit store', () => {
+  it('creates a daily habit with target and unit through the bridge', async () => {
+    const bridge = new MemoryBridge()
+    const store = createHabitStore(bridge, storeOptions())
+    const habit = await store.create(' Read ', 20, 'pages')
+    expect(habit?.title).toBe('Read')
+    expect(habit?.targetQuantity).toBe(20)
+    expect(habit?.unit).toBe('pages')
+    expect(habit?.scheduleType).toBe('daily')
+    expect(store.habits.value).toHaveLength(1)
+    expect(store.error.value).toBeNull()
+  })
+
+  it('rejects invalid habit input without calling the bridge', async () => {
+    const bridge = new MemoryBridge()
+    let calls = 0
+    const spy: DesktopBridge = new Proxy(bridge, {
+      get(target, property, receiver) {
+        if (property === 'createHabit') {
+          return async (...args: Parameters<DesktopBridge['createHabit']>) => {
+            calls += 1
+            return target.createHabit(...args)
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const store = createHabitStore(spy, storeOptions())
+    expect(await store.create('   ', 1, 'count')).toBeNull()
+    expect(store.error.value).toBe('INVALID_HABIT')
+    expect(await store.create('Run', 0, 'km')).toBeNull()
+    expect(calls).toBe(0)
+  })
+
+  it('refreshes habits with only today\'s logs', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    await bridge.upsertHabitLog({
+      habitId: 'habit-1',
+      logDate: '2026-11-11',
+      quantity: 2,
+      status: 'done'
+    })
+    const today = await bridge.upsertHabitLog({
+      habitId: 'habit-1',
+      logDate: '2026-11-12',
+      quantity: 2,
+      status: 'done'
+    })
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(store.habits.value).toHaveLength(1)
+    expect(store.todayLogs.value['habit-1']?.id).toBe(today.id)
+    expect(store.todayLogs.value['habit-1']?.logDate).toBe('2026-11-12')
+  })
+
+  it('checks in the habit with its target quantity and updates today\'s log', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(await store.checkIn('habit-1')).toBe(true)
+    expect(store.todayLogs.value['habit-1']?.quantity).toBe(2)
+    expect(store.todayLogs.value['habit-1']?.status).toBe('done')
+
+    const again = await store.checkIn('habit-1')
+    expect(again).toBe(true)
+    expect(store.todayLogs.value['habit-1']?.version).toBe(2)
+  })
+
+  it('reports check-in failures and unknown habits', async () => {
+    const failing: DesktopBridge = {
+      listTasks: async () => [],
+      createTask: async () => {
+        throw new Error('offline')
+      },
+      requestLoginCode: async () => '',
+      login: async () => ({ accessToken: '', expiresIn: 0 }),
+      restoreSession: async () => ({ accessToken: '', expiresIn: 0 }),
+      signOut: async () => {},
+      runSync: async () => ({
+        pushed: 0,
+        duplicates: 0,
+        conflicts: [],
+        rejected: 0,
+        pulled: 0,
+        skippedStale: 0,
+        cursor: null
+      }),
+      listHabits: async () => [
+        {
+          id: 'habit-1',
+          title: 'Read',
+          scheduleType: 'daily',
+          weekdays: null,
+          targetQuantity: 1,
+          unit: 'count',
+          timeZone: 'Asia/Shanghai',
+          pausedAt: null,
+          version: 1,
+          updatedAt: ''
+        }
+      ],
+      createHabit: async () => {
+        throw new Error('offline')
+      },
+      listHabitLogs: async () => [],
+      upsertHabitLog: async () => {
+        throw new Error('offline')
+      }
+    }
+    const store = createHabitStore(failing, storeOptions())
+    await store.refresh()
+    expect(await store.checkIn('habit-1')).toBe(false)
+    expect(store.error.value).toBe('CHECK_IN_FAILED')
+    expect(await store.checkIn('missing')).toBe(false)
+    expect(store.error.value).toBe('HABIT_NOT_FOUND')
+  })
+})

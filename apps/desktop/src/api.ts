@@ -27,6 +27,39 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export interface Habit {
+  id: string
+  title: string
+  scheduleType: 'daily' | 'weekly' | 'weekdays'
+  weekdays: number[] | null
+  targetQuantity: number
+  unit: string
+  timeZone: string
+  pausedAt: string | null
+  version: number
+  updatedAt: string
+}
+
+export interface HabitLog {
+  id: string
+  habitId: string
+  logDate: string
+  quantity: number
+  status: 'done' | 'skipped'
+  version: number
+  updatedAt: string
+}
+
+export interface CreateHabitInput {
+  id: string
+  title: string
+  scheduleType: 'daily' | 'weekly' | 'weekdays'
+  weekdays?: number[]
+  targetQuantity: number
+  unit: string
+  timeZone: string
+}
+
 export interface SyncInput {
   baseUrl: string
   accessToken: string
@@ -42,6 +75,10 @@ export interface DesktopBridge {
   restoreSession(baseUrl: string): Promise<LoginResult>
   signOut(baseUrl: string, accessToken: string | null): Promise<void>
   runSync(input: SyncInput): Promise<SyncSummary>
+  listHabits(): Promise<Habit[]>
+  createHabit(input: CreateHabitInput): Promise<Habit>
+  listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]>
+  upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
 /** Deterministic in-memory bridge for `vite dev` in a browser and unit tests. */
@@ -116,6 +153,61 @@ export class MemoryBridge implements DesktopBridge {
       cursor: null
     }
   }
+
+  private readonly habits = new Map<string, Habit>()
+  private readonly habitLogs = new Map<string, HabitLog>()
+
+  async listHabits(): Promise<Habit[]> {
+    return [...this.habits.values()].sort((left, right) => left.title.localeCompare(right.title))
+  }
+
+  async createHabit(input: CreateHabitInput): Promise<Habit> {
+    const title = input.title.trim()
+    if (title.length === 0 || title.length > 200) throw new Error('INVALID_HABIT')
+    if (this.habits.has(input.id)) return this.habits.get(input.id)!
+    const habit: Habit = {
+      id: input.id,
+      title,
+      scheduleType: input.scheduleType,
+      weekdays: input.weekdays ?? null,
+      targetQuantity: Math.max(1, input.targetQuantity),
+      unit: input.unit.trim() || 'count',
+      timeZone: input.timeZone,
+      pausedAt: null,
+      version: 1,
+      updatedAt: new Date().toISOString()
+    }
+    this.habits.set(habit.id, habit)
+    return habit
+  }
+
+  async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
+    return [...this.habitLogs.values()]
+      .filter((log) => log.habitId === habitId && log.logDate >= from && log.logDate <= to)
+      .sort((left, right) => left.logDate.localeCompare(right.logDate))
+  }
+
+  async upsertHabitLog(input: {
+    habitId: string
+    logDate: string
+    quantity: number
+    status: 'done' | 'skipped'
+  }): Promise<HabitLog> {
+    if (!this.habits.has(input.habitId)) throw new Error('HABIT_NOT_FOUND')
+    const key = `${input.habitId}:${input.logDate}`
+    const existing = this.habitLogs.get(key)
+    const log: HabitLog = {
+      id: existing?.id ?? crypto.randomUUID(),
+      habitId: input.habitId,
+      logDate: input.logDate,
+      quantity: Math.max(0, input.quantity),
+      status: input.status,
+      version: (existing?.version ?? 0) + 1,
+      updatedAt: new Date().toISOString()
+    }
+    this.habitLogs.set(key, log)
+    return log
+  }
 }
 
 type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
@@ -138,6 +230,56 @@ interface RawSyncSummary {
   pulled: number
   skipped_stale: number
   cursor: string | null
+}
+
+interface RawHabit {
+  id: string
+  title: string
+  schedule_type: 'daily' | 'weekly' | 'weekdays'
+  weekdays: number[] | null
+  target_quantity: number
+  unit: string
+  time_zone: string
+  paused_at: string | null
+  version: number
+  updated_at: string
+}
+
+interface RawHabitLog {
+  id: string
+  habit_id: string
+  log_date: string
+  quantity: number
+  status: 'done' | 'skipped'
+  version: number
+  updated_at: string
+}
+
+function toHabit(row: RawHabit): Habit {
+  return {
+    id: row.id,
+    title: row.title,
+    scheduleType: row.schedule_type,
+    weekdays: row.weekdays,
+    targetQuantity: row.target_quantity,
+    unit: row.unit,
+    timeZone: row.time_zone,
+    pausedAt: row.paused_at,
+    version: row.version,
+    updatedAt: row.updated_at
+  }
+}
+
+function toHabitLog(row: RawHabitLog): HabitLog {
+  return {
+    id: row.id,
+    habitId: row.habit_id,
+    logDate: row.log_date,
+    quantity: row.quantity,
+    status: row.status,
+    version: row.version,
+    updatedAt: row.updated_at
+  }
 }
 
 /** The Tauri shell exposes the same operations as commands backed by the Rust core. */
@@ -211,6 +353,44 @@ export class TauriBridge implements DesktopBridge {
       skippedStale: result.skipped_stale,
       cursor: result.cursor
     }
+  }
+
+  async listHabits(): Promise<Habit[]> {
+    const rows = await this.invoke<RawHabit[]>('list_habits')
+    return rows.map(toHabit)
+  }
+
+  async createHabit(input: CreateHabitInput): Promise<Habit> {
+    const row = await this.invoke<RawHabit>('create_habit', {
+      id: input.id,
+      title: input.title,
+      scheduleType: input.scheduleType,
+      weekdays: input.weekdays ?? null,
+      targetQuantity: input.targetQuantity,
+      unit: input.unit,
+      timeZone: input.timeZone
+    })
+    return toHabit(row)
+  }
+
+  async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
+    const rows = await this.invoke<RawHabitLog[]>('list_habit_logs', { habitId, from, to })
+    return rows.map(toHabitLog)
+  }
+
+  async upsertHabitLog(input: {
+    habitId: string
+    logDate: string
+    quantity: number
+    status: 'done' | 'skipped'
+  }): Promise<HabitLog> {
+    const row = await this.invoke<RawHabitLog>('upsert_habit_log', {
+      habitId: input.habitId,
+      logDate: input.logDate,
+      quantity: input.quantity,
+      status: input.status
+    })
+    return toHabitLog(row)
   }
 }
 

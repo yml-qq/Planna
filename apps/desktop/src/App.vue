@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { createBridge } from './api'
 import { createSessionStore } from './session'
+import { createHabitStore } from './habits'
 import { createTaskStore } from './tasks'
 
 function readBaseUrl(): string {
@@ -32,10 +33,16 @@ const session = createSessionStore(bridge, {
   deviceId: deviceId.value
 })
 const tasks = createTaskStore(bridge)
+const habits = createHabitStore(bridge, {
+  timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
+})
 
 const email = ref('')
 const code = ref('')
 const title = ref('')
+const habitTitle = ref('')
+const habitTarget = ref('1')
+const habitUnit = ref('次')
 const syncing = ref(false)
 
 const signedIn = computed(() => session.status.value === 'signed_in')
@@ -52,7 +59,12 @@ const errorText = computed(() => {
     NOT_SIGNED_IN: '请先登录',
     INVALID_TITLE: '标题不能为空且不超过 500 字',
     SAVE_FAILED: '保存失败，请重试',
-    LOAD_FAILED: '加载失败，请重试'
+    LOAD_FAILED: '加载失败，请重试',
+    HABITS_LOAD_FAILED: '习惯加载失败，请重试',
+    HABIT_CREATE_FAILED: '习惯创建失败，请重试',
+    INVALID_HABIT: '习惯名称需为 1~200 字，目标需在 1~1000 之间',
+    CHECK_IN_FAILED: '打卡失败，请重试',
+    HABIT_NOT_FOUND: '习惯不存在'
   }
   return messages[error] ?? '操作失败，请重试'
 })
@@ -78,7 +90,21 @@ async function requestCode(): Promise<void> {
 async function submitLogin(): Promise<void> {
   if (await session.signIn(email.value, code.value)) {
     await tasks.refresh()
+    await habits.refresh()
   }
+}
+
+async function submitHabit(): Promise<void> {
+  const target = Number.parseInt(habitTarget.value, 10)
+  const created = await habits.create(habitTitle.value, Number.isFinite(target) ? target : 1, habitUnit.value)
+  if (created) {
+    habitTitle.value = ''
+    habitTarget.value = '1'
+  }
+}
+
+async function checkInHabit(habitId: string): Promise<void> {
+  await habits.checkIn(habitId)
 }
 
 async function submitTask(): Promise<void> {
@@ -99,10 +125,15 @@ async function syncNow(): Promise<void> {
 async function signOut(): Promise<void> {
   await session.signOut()
   tasks.tasks.value = []
+  habits.habits.value = []
+  habits.todayLogs.value = {}
 }
 
 onMounted(async () => {
-  if (await session.restore()) await tasks.refresh()
+  if (await session.restore()) {
+    await tasks.refresh()
+    await habits.refresh()
+  }
 })
 </script>
 
@@ -173,6 +204,61 @@ onMounted(async () => {
       </ul>
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
     </template>
+
+    <section v-if="signedIn" class="card" aria-labelledby="habits-title">
+      <h2 id="habits-title" class="card__title">习惯打卡</h2>
+      <ul v-if="habits.habits.value.length > 0" class="habits">
+        <li v-for="habit in habits.habits.value" :key="habit.id" class="habits__item">
+          <span class="habits__title">{{ habit.title }}</span>
+          <span class="habits__meta">{{ habit.targetQuantity }} {{ habit.unit }}</span>
+          <span v-if="habits.todayLogs.value[habit.id]" class="habits__done">
+            今日已打卡（v{{ habits.todayLogs.value[habit.id]?.version }}）
+          </span>
+          <button
+            v-else
+            class="button button--ghost"
+            type="button"
+            :disabled="habits.loading.value"
+            @click="checkInHabit(habit.id)"
+          >
+            打卡
+          </button>
+        </li>
+      </ul>
+      <p v-else class="empty">还没有习惯，先创建一个每日习惯。</p>
+      <form class="composer" @submit.prevent="submitHabit">
+        <label class="composer__label" for="habit-title">新增每日习惯</label>
+        <div class="composer__row">
+          <input
+            id="habit-title"
+            v-model="habitTitle"
+            class="input"
+            type="text"
+            maxlength="200"
+            placeholder="例如：阅读"
+            autocomplete="off"
+          />
+          <input
+            v-model="habitTarget"
+            class="input input--narrow"
+            type="number"
+            min="1"
+            max="1000"
+            aria-label="目标数量"
+          />
+          <input
+            v-model="habitUnit"
+            class="input input--narrow"
+            type="text"
+            maxlength="20"
+            aria-label="单位"
+          />
+          <button class="button" type="submit" :disabled="habits.loading.value || habitTitle.trim() === ''">
+            创建
+          </button>
+        </div>
+      </form>
+    </section>
 
     <p v-if="errorText" class="status status--error" role="alert">{{ errorText }}</p>
   </main>

@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 
 use planna_desktop_core::{
-    NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse, Store, StoredTask, SyncOutcome,
-    SyncTransport, TransportError, sync_with_retry,
+    NewHabit, NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse, Store, StoredHabit,
+    StoredHabitLog, StoredTask, SyncOutcome, SyncTransport, TransportError, sync_with_retry,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
@@ -56,6 +56,149 @@ impl From<OutboxEntry> for OutboxDto {
             attempts: entry.attempts,
         }
     }
+}
+
+#[derive(Serialize)]
+struct HabitDto {
+    id: String,
+    title: String,
+    schedule_type: String,
+    weekdays: Option<Vec<i16>>,
+    target_quantity: i64,
+    unit: String,
+    time_zone: String,
+    paused_at: Option<String>,
+    version: i64,
+    updated_at: String,
+}
+
+impl From<StoredHabit> for HabitDto {
+    fn from(habit: StoredHabit) -> Self {
+        HabitDto {
+            id: habit.id,
+            title: habit.title,
+            schedule_type: habit.schedule_type,
+            weekdays: habit.weekdays,
+            target_quantity: habit.target_quantity,
+            unit: habit.unit,
+            time_zone: habit.time_zone,
+            paused_at: habit.paused_at,
+            version: habit.version,
+            updated_at: habit.updated_at,
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct HabitLogDto {
+    id: String,
+    habit_id: String,
+    log_date: String,
+    quantity: i64,
+    status: String,
+    version: i64,
+    updated_at: String,
+}
+
+impl From<StoredHabitLog> for HabitLogDto {
+    fn from(log: StoredHabitLog) -> Self {
+        HabitLogDto {
+            id: log.id,
+            habit_id: log.habit_id,
+            log_date: log.log_date,
+            quantity: log.quantity,
+            status: log.status,
+            version: log.version,
+            updated_at: log.updated_at,
+        }
+    }
+}
+
+#[tauri::command]
+fn list_habits(state: State<'_, AppState>) -> Result<Vec<HabitDto>, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .habits()
+        .map(|habits| habits.into_iter().map(HabitDto::from).collect())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn create_habit(
+    state: State<'_, AppState>,
+    id: String,
+    title: String,
+    schedule_type: String,
+    weekdays: Option<Vec<i16>>,
+    target_quantity: i64,
+    unit: String,
+    time_zone: String,
+) -> Result<HabitDto, String> {
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let habit = NewHabit {
+        id: id.clone(),
+        title,
+        schedule_type,
+        weekdays,
+        target_quantity,
+        unit,
+        time_zone,
+    };
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    store
+        .create_habit(&habit, &mutation_id, &now())
+        .map_err(|error| error.to_string())?;
+    store
+        .habits()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|stored| stored.id == id)
+        .map(HabitDto::from)
+        .ok_or_else(|| "HABIT_NOT_FOUND_AFTER_CREATE".to_string())
+}
+
+#[tauri::command]
+fn upsert_habit_log(
+    state: State<'_, AppState>,
+    habit_id: String,
+    log_date: String,
+    quantity: i64,
+    status: String,
+) -> Result<HabitLogDto, String> {
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    store
+        .upsert_habit_log(
+            &habit_id,
+            &log_date,
+            quantity,
+            &status,
+            &mutation_id,
+            &now(),
+        )
+        .map_err(|error| error.to_string())?;
+    store
+        .habit_logs(&habit_id, &log_date, &log_date)
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .next()
+        .map(HabitLogDto::from)
+        .ok_or_else(|| "HABIT_LOG_NOT_FOUND_AFTER_UPSERT".to_string())
+}
+
+#[tauri::command]
+fn list_habit_logs(
+    state: State<'_, AppState>,
+    habit_id: String,
+    from: String,
+    to: String,
+) -> Result<Vec<HabitLogDto>, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .habit_logs(&habit_id, &from, &to)
+        .map(|logs| logs.into_iter().map(HabitLogDto::from).collect())
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -396,6 +539,10 @@ pub fn run() {
             list_tasks,
             create_task,
             pending_mutations,
+            list_habits,
+            create_habit,
+            upsert_habit_log,
+            list_habit_logs,
             run_sync,
             request_login_code,
             login_with_code,

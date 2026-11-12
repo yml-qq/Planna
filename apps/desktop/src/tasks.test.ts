@@ -80,6 +80,18 @@ describe('task store', () => {
       },
       runSync: async () => {
         throw new Error('offline')
+      },
+      listHabits: async () => {
+        throw new Error('offline')
+      },
+      createHabit: async () => {
+        throw new Error('offline')
+      },
+      listHabitLogs: async () => {
+        throw new Error('offline')
+      },
+      upsertHabitLog: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')
