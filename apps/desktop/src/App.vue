@@ -6,10 +6,12 @@ import { createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
   isReminderTime,
+  loadQuietHours,
   loadReminders,
   localTime,
   runReminders,
-  type HabitReminder
+  type HabitReminder,
+  type QuietHours
 } from './reminders'
 import { createTaskStore } from './tasks'
 
@@ -62,6 +64,14 @@ const habits = createHabitStore(bridge, {
 })
 
 const reminders = ref<HabitReminder[]>(loadReminders(readStorage('planna.habitReminders')))
+const storedQuiet = loadQuietHours(readStorage('planna.quietHours'))
+const quietStart = ref(storedQuiet?.start ?? '')
+const quietEnd = ref(storedQuiet?.end ?? '')
+const editingHabit = ref<string | null>(null)
+const editHabitTitle = ref('')
+const editHabitTarget = ref('1')
+const editHabitUnit = ref('')
+const outbox = ref({ pending: 0, failed: 0 })
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
@@ -94,6 +104,7 @@ const errorText = computed(() => {
     INVALID_HABIT: '习惯名称需为 1~200 字，目标需在 1~1000 之间',
     CHECK_IN_FAILED: '打卡失败，请重试',
     HABIT_PAUSE_FAILED: '暂停操作失败，请重试',
+    HABIT_UPDATE_FAILED: '习惯更新失败，请重试',
     HABIT_NOT_FOUND: '习惯不存在'
   }
   return messages[error] ?? '操作失败，请重试'
@@ -150,7 +161,10 @@ async function syncNow(): Promise<void> {
   if (syncing.value) return
   syncing.value = true
   try {
-    if (await session.sync()) await tasks.refresh()
+    if (await session.sync()) {
+    await tasks.refresh()
+    await refreshOutbox()
+  }
   } finally {
     syncing.value = false
   }
@@ -194,6 +208,45 @@ function setReminderEnabled(habitId: string, event: Event): void {
   upsertReminder(habitId, { enabled: (event.target as HTMLInputElement).checked })
 }
 
+function startEditHabit(habitId: string): void {
+  const habit = habits.habits.value.find((candidate) => candidate.id === habitId)
+  if (!habit) return
+  editingHabit.value = habitId
+  editHabitTitle.value = habit.title
+  editHabitTarget.value = String(habit.targetQuantity)
+  editHabitUnit.value = habit.unit
+}
+
+function cancelEditHabit(): void {
+  editingHabit.value = null
+}
+
+async function saveEditHabit(): Promise<void> {
+  const habitId = editingHabit.value
+  if (!habitId) return
+  const target = Number.parseInt(editHabitTarget.value, 10)
+  const saved = await habits.updateDetails(habitId, {
+    title: editHabitTitle.value,
+    targetQuantity: Number.isFinite(target) ? target : 1,
+    unit: editHabitUnit.value
+  })
+  if (saved) editingHabit.value = null
+}
+
+async function refreshOutbox(): Promise<void> {
+  try {
+    outbox.value = await bridge.outboxStatus()
+  } catch {
+    outbox.value = { pending: 0, failed: 0 }
+  }
+}
+
+function quietHours(): QuietHours | null {
+  if (!isReminderTime(quietStart.value) || !isReminderTime(quietEnd.value)) return null
+  if (quietStart.value === quietEnd.value) return null
+  return { start: quietStart.value, end: quietEnd.value }
+}
+
 async function tickReminders(): Promise<void> {
   if (!signedIn.value || habits.habits.value.length === 0) return
   const notifier = await notifierPromise
@@ -204,7 +257,8 @@ async function tickReminders(): Promise<void> {
     reminders.value,
     localDate(),
     localTime(),
-    sentReminders
+    sentReminders,
+    quietHours()
   )
 }
 
@@ -226,6 +280,14 @@ watch(
   { deep: true }
 )
 
+watch([quietStart, quietEnd], ([start, end]) => {
+  if (start === '' && end === '') {
+    writeStorage('planna.quietHours', '')
+    return
+  }
+  writeStorage('planna.quietHours', JSON.stringify({ start, end }))
+})
+
 onUnmounted(() => {
   if (reminderTimer) clearInterval(reminderTimer)
 })
@@ -234,6 +296,7 @@ onMounted(async () => {
   if (await session.restore()) {
     await tasks.refresh()
     await habits.refresh()
+    await refreshOutbox()
   }
   reminderTimer = setInterval(() => {
     void tickReminders()
@@ -311,8 +374,26 @@ onMounted(async () => {
 
     <section v-if="signedIn" class="card" aria-labelledby="habits-title">
       <h2 id="habits-title" class="card__title">习惯打卡</h2>
+      <div class="habits__quiet">
+        <span>免打扰</span>
+        <input v-model="quietStart" class="input input--time" type="time" aria-label="免打扰开始" />
+        <span>至</span>
+        <input v-model="quietEnd" class="input input--time" type="time" aria-label="免打扰结束" />
+        <span v-if="quietStart || quietEnd" class="status">此时段不发送提醒</span>
+      </div>
+      <p v-if="outbox.failed > 0" class="status status--error" role="alert">
+        同步冲突：{{ outbox.failed }} 条变更未上传，请稍后重试
+      </p>
       <ul v-if="habits.habits.value.length > 0" class="habits">
         <li v-for="habit in habits.habits.value" :key="habit.id" class="habits__item">
+          <template v-if="editingHabit === habit.id">
+            <input v-model="editHabitTitle" class="input" type="text" maxlength="200" aria-label="习惯名称" />
+            <input v-model="editHabitTarget" class="input input--narrow" type="number" min="1" max="1000" aria-label="目标数量" />
+            <input v-model="editHabitUnit" class="input input--narrow" type="text" maxlength="20" aria-label="单位" />
+            <button class="button" type="button" :disabled="habits.loading.value" @click="saveEditHabit">保存</button>
+            <button class="button button--ghost" type="button" @click="cancelEditHabit">取消</button>
+          </template>
+          <template v-else>
           <span class="habits__title">{{ habit.title }}</span>
           <span class="habits__meta">{{ habit.targetQuantity }} {{ habit.unit }}</span>
           <span class="habits__streak" aria-label="连续天数">
@@ -351,10 +432,19 @@ onMounted(async () => {
             class="button button--ghost"
             type="button"
             :disabled="habits.loading.value"
+            @click="startEditHabit(habit.id)"
+          >
+            编辑
+          </button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="habits.loading.value"
             @click="toggleHabitPause(habit.id)"
           >
             {{ habit.pausedAt ? '恢复' : '暂停' }}
           </button>
+          </template>
         </li>
       </ul>
       <p v-else class="empty">还没有习惯，先创建一个每日习惯。</p>

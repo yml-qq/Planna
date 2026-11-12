@@ -207,3 +207,12 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+.habits__quiet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

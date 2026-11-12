@@ -144,7 +144,8 @@ describe('habit store', () => {
       },
       updateHabit: async () => {
         throw new Error('offline')
-      }
+      },
+      outboxStatus: async () => ({ pending: 0, failed: 0 })
     }
     const store = createHabitStore(failing, storeOptions())
     await store.refresh()
@@ -211,5 +212,54 @@ describe('habit pause and streaks', () => {
     expect(await store.togglePause('habit-1')).toBe(true)
     expect(store.habits.value[0]?.pausedAt).toBeNull()
     expect(store.habits.value[0]?.version).toBe(3)
+  })
+})
+
+describe('habit editing', () => {
+  it('updates title, target and unit through the bridge', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    const store = createHabitStore(bridge, storeOptions())
+    await store.refresh()
+    expect(await store.updateDetails('habit-1', { title: 'Read daily', targetQuantity: 30, unit: 'minutes' })).toBe(true)
+    expect(store.habits.value[0]?.title).toBe('Read daily')
+    expect(store.habits.value[0]?.targetQuantity).toBe(30)
+    expect(store.habits.value[0]?.unit).toBe('minutes')
+    expect(store.error.value).toBeNull()
+    expect(await store.updateDetails('habit-1', { title: '  ', targetQuantity: 1, unit: 'x' })).toBe(false)
+    expect(store.error.value).toBe('INVALID_HABIT')
+  })
+
+  it('reports update failures', async () => {
+    const bridge = new MemoryBridge()
+    await bridge.createHabit({
+      id: 'habit-1',
+      title: 'Read',
+      scheduleType: 'daily',
+      targetQuantity: 2,
+      unit: 'pages',
+      timeZone: 'Asia/Shanghai'
+    })
+    const failing: DesktopBridge = new Proxy(bridge, {
+      get(target, property, receiver) {
+        if (property === 'updateHabit') {
+          return async () => {
+            throw new Error('offline')
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const store = createHabitStore(failing, storeOptions())
+    await store.refresh()
+    expect(await store.updateDetails('habit-1', { title: 'X', targetQuantity: 1, unit: 'x' })).toBe(false)
+    expect(store.error.value).toBe('HABIT_UPDATE_FAILED')
   })
 })

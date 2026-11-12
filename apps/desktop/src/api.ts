@@ -82,6 +82,7 @@ export interface DesktopBridge {
     patch: { title?: string; targetQuantity?: number; unit?: string; paused?: boolean }
   ): Promise<Habit>
   listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]>
+  outboxStatus(): Promise<{ pending: number; failed: number }>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -208,6 +209,10 @@ export class MemoryBridge implements DesktopBridge {
     if (updated.title.length === 0 || updated.title.length > 200) throw new Error('INVALID_HABIT')
     this.habits.set(habitId, updated)
     return updated
+  }
+
+  async outboxStatus(): Promise<{ pending: number; failed: number }> {
+    return { pending: 0, failed: 0 }
   }
 
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
@@ -419,6 +424,11 @@ export class TauriBridge implements DesktopBridge {
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
     const rows = await this.invoke<RawHabitLog[]>('list_habit_logs', { habitId, from, to })
     return rows.map(toHabitLog)
+  }
+
+  async outboxStatus(): Promise<{ pending: number; failed: number }> {
+    const row = await this.invoke<{ pending: number; failed: number }>('outbox_status')
+    return { pending: row.pending, failed: row.failed }
   }
 
   async upsertHabitLog(input: {

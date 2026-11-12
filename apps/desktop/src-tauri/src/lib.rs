@@ -355,6 +355,24 @@ impl SyncTransport for HttpTransport {
     }
 }
 
+#[derive(Serialize)]
+struct OutboxStatusDto {
+    pending: i64,
+    failed: i64,
+}
+
+#[tauri::command]
+fn outbox_status(state: State<'_, AppState>) -> Result<OutboxStatusDto, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let entries = store
+        .pending_mutations(1000)
+        .map_err(|error| error.to_string())?;
+    Ok(OutboxStatusDto {
+        pending: entries.len() as i64,
+        failed: entries.iter().filter(|entry| entry.attempts > 0).count() as i64,
+    })
+}
+
 #[tauri::command]
 fn run_sync(
     state: State<'_, AppState>,
@@ -575,6 +593,7 @@ pub fn run() {
             update_habit,
             upsert_habit_log,
             list_habit_logs,
+            outbox_status,
             run_sync,
             request_login_code,
             login_with_code,

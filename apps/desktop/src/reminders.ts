@@ -6,6 +6,33 @@ export interface HabitReminder {
   enabled: boolean
 }
 
+export interface QuietHours {
+  start: string
+  end: string
+}
+
+export function withinQuietHours(time: string, quiet: QuietHours): boolean {
+  if (!isReminderTime(quiet.start) || !isReminderTime(quiet.end) || quiet.start === quiet.end) {
+    return false
+  }
+  if (quiet.start < quiet.end) return time >= quiet.start && time < quiet.end
+  return time >= quiet.start || time < quiet.end
+}
+
+export function loadQuietHours(raw: string | null): QuietHours | null {
+  if (!raw) return null
+  try {
+    const value: unknown = JSON.parse(raw)
+    if (typeof value !== 'object' || value === null) return null
+    const record = value as Record<string, unknown>
+    if (typeof record.start !== 'string' || typeof record.end !== 'string') return null
+    if (!isReminderTime(record.start) || !isReminderTime(record.end)) return null
+    return { start: record.start, end: record.end }
+  } catch {
+    return null
+  }
+}
+
 export interface Notifier {
   notify(title: string, body: string): Promise<void>
 }
@@ -45,8 +72,10 @@ export async function runReminders(
   reminders: HabitReminder[],
   date: string,
   time: string,
-  sent: Set<string>
+  sent: Set<string>,
+  quiet: QuietHours | null = null
 ): Promise<number> {
+  if (quiet && withinQuietHours(time, quiet)) return 0
   let count = 0
   for (const reminder of dueReminders(habits, todayLogs, reminders, time)) {
     const key = `${reminder.habitId}:${date}`

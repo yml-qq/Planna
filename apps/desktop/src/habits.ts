@@ -46,6 +46,10 @@ export interface HabitStore {
   error: Ref<string | null>
   refresh: () => Promise<void>
   create: (title: string, targetQuantity: number, unit: string) => Promise<Habit | null>
+  updateDetails: (
+    habitId: string,
+    patch: { title: string; targetQuantity: number; unit: string }
+  ) => Promise<boolean>
   togglePause: (habitId: string) => Promise<boolean>
   checkIn: (habitId: string) => Promise<boolean>
 }
@@ -134,6 +138,39 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     }
   }
 
+  async function updateDetails(
+    habitId: string,
+    patch: { title: string; targetQuantity: number; unit: string }
+  ): Promise<boolean> {
+    const habit = habits.value.find((candidate) => candidate.id === habitId)
+    if (!habit) {
+      error.value = 'HABIT_NOT_FOUND'
+      return false
+    }
+    const title = patch.title.trim()
+    if (title.length === 0 || title.length > 200 || patch.targetQuantity < 1 || patch.targetQuantity > 1000) {
+      error.value = 'INVALID_HABIT'
+      return false
+    }
+    loading.value = true
+    error.value = null
+    try {
+      const updated = await bridge.updateHabit(habitId, {
+        title,
+        targetQuantity: patch.targetQuantity,
+        unit: patch.unit.trim() || habit.unit
+      })
+      habits.value = habits.value.map((candidate) => (candidate.id === habitId ? updated : candidate))
+      applyLogs(habitId, logs.value[habitId] ?? [], today())
+      return true
+    } catch {
+      error.value = 'HABIT_UPDATE_FAILED'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function togglePause(habitId: string): Promise<boolean> {
     const habit = habits.value.find((candidate) => candidate.id === habitId)
     if (!habit) {
@@ -191,6 +228,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     error,
     refresh,
     create,
+    updateDetails,
     togglePause,
     checkIn
   }

@@ -4,9 +4,11 @@ import { MemoryNotifier } from './notifier'
 import {
   dueReminders,
   isReminderTime,
+  loadQuietHours,
   loadReminders,
   localTime,
   runReminders,
+  withinQuietHours,
   type HabitReminder
 } from './reminders'
 
@@ -90,5 +92,44 @@ describe('reminder helpers', () => {
     expect(loadReminders(JSON.stringify([{ habitId: 'a', time: '09:00', enabled: true }, { bad: true }]))).toEqual([
       { habitId: 'a', time: '09:00', enabled: true }
     ])
+  })
+})
+
+describe('quiet hours', () => {
+  it('handles overnight and same-day windows', () => {
+    expect(withinQuietHours('23:00', { start: '22:00', end: '07:00' })).toBe(true)
+    expect(withinQuietHours('06:59', { start: '22:00', end: '07:00' })).toBe(true)
+    expect(withinQuietHours('07:00', { start: '22:00', end: '07:00' })).toBe(false)
+    expect(withinQuietHours('12:30', { start: '12:00', end: '13:00' })).toBe(true)
+    expect(withinQuietHours('13:00', { start: '12:00', end: '13:00' })).toBe(false)
+    expect(withinQuietHours('09:00', { start: '09:00', end: '09:00' })).toBe(false)
+  })
+
+  it('suppresses notifications during quiet hours', async () => {
+    const notifier = new MemoryNotifier()
+    const sent = new Set<string>()
+    const count = await runReminders(
+      notifier,
+      [habit('a')],
+      {},
+      reminders,
+      '2026-11-12',
+      '09:00',
+      sent,
+      { start: '08:00', end: '10:00' }
+    )
+    expect(count).toBe(0)
+    expect(notifier.sent).toHaveLength(0)
+    expect(sent.size).toBe(0)
+  })
+
+  it('parses quiet hours defensively', () => {
+    expect(loadQuietHours(null)).toBeNull()
+    expect(loadQuietHours('bad')).toBeNull()
+    expect(loadQuietHours(JSON.stringify({ start: '22:00' }))).toBeNull()
+    expect(loadQuietHours(JSON.stringify({ start: '22:00', end: '07:00' }))).toEqual({
+      start: '22:00',
+      end: '07:00'
+    })
   })
 })
