@@ -403,3 +403,12 @@
 - 前端测试增至 **30 项**（新增 5 项提醒）；`pnpm build` 通过。未在真机验证通知投递（headless 无桌面通知运行时），仅验证编译、能力配置与逻辑。
 - [Server integration 43163714732](https://github.com/yml-qq/Planna/actions/runs/43163714732) 与 [Desktop core 43163714684](https://github.com/yml-qq/Planna/actions/runs/43163714684) 均 **success**。
 - 未连接生产库、未提交凭据；冲突 UI、习惯编辑与免打扰设置留待 `HAB-01K`。
+
+## HAB-01K 编辑/冲突可见性/免打扰检查（2026-11-12）
+
+- 习惯编辑：桥接与 store 新增 `updateDetails`（标题/目标/单位校验，成功后替换列表项并重算 streak）；UI 内联编辑表单（保存/取消），错误码 `HABIT_UPDATE_FAILED`。
+- 冲突可见性：Tauri 新增 `outbox_status`（pending/failed 基于 attempts）与桥接 `outboxStatus()`；同步/启动后刷新，`failed>0` 显示“同步冲突：N 条变更未上传”，不静默丢弃。
+- 免打扰：`quietHours`（起止 `HH:MM`、支持跨午夜）持久化 `planna.quietHours`；提醒 tick 在窗口内不发送且不占用当日去重键；`withinQuietHours/loadQuietHours` 校验。
+- 前端测试增至 **35 项**（新增编辑成功/非法/失败、跨午夜与同日窗口、抑制通知、持久化解析），`pnpm build` 通过；shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 43165263336](https://github.com/yml-qq/Planna/actions/runs/43165263336) 与 [Desktop core 43165263376](https://github.com/yml-qq/Planna/actions/runs/43165263376) 均 **success**。
+- 未连接生产库、未提交凭据；冲突逐条处置、weekly 日程编辑与通知真机验证留待 `HAB-01L`。
