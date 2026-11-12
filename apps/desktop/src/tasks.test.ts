@@ -101,7 +101,14 @@ describe('task store', () => {
       discardMutation: async () => false,
       listConflicts: async () => [],
       resolveConflict: async () => false,
-      exportConflicts: async () => '{"schema_version":"conflict-ledger-v1","conflicts":[]}' 
+      exportConflicts: async () => '{"schema_version":"conflict-ledger-v1","conflicts":[]}' ,
+      focusList: async () => [],
+      focusStart: async () => {
+        throw new Error('offline')
+      },
+      focusUpdate: async () => {
+        throw new Error('offline')
+      }
     }
     const store = createTaskStore(failing, 'inbox')
     await store.refresh()

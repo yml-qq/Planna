@@ -452,6 +452,120 @@ fn resolve_conflict(
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct FocusSessionDto {
+    id: String,
+    task_id: Option<String>,
+    started_at: String,
+    ended_at: Option<String>,
+    planned_seconds: i64,
+    actual_seconds: i64,
+    break_seconds: i64,
+    state: String,
+    version: i64,
+    created_at: String,
+    updated_at: String,
+}
+
+#[derive(Deserialize)]
+struct FocusListResponse {
+    items: Vec<FocusSessionDto>,
+}
+
+fn focus_error(response: reqwest::blocking::Response) -> String {
+    let status = response.status().as_u16();
+    let code = response
+        .json::<serde_json::Value>()
+        .ok()
+        .and_then(|body| {
+            body.get("error")
+                .and_then(|error| error.get("code"))
+                .and_then(|code| code.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "HTTP_ERROR".to_string());
+    format!("{status}:{code}")
+}
+
+#[tauri::command]
+fn focus_list(
+    base_url: String,
+    access_token: String,
+    limit: Option<i64>,
+) -> Result<Vec<FocusSessionDto>, String> {
+    let response = http_client()
+        .get(format!(
+            "{}/focus-sessions?limit={}",
+            base(&base_url),
+            limit.unwrap_or(20)
+        ))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let page: FocusListResponse = response.json().map_err(|error| error.to_string())?;
+    Ok(page.items)
+}
+
+#[tauri::command]
+fn focus_start(
+    base_url: String,
+    access_token: String,
+    task_id: Option<String>,
+    planned_seconds: i64,
+) -> Result<FocusSessionDto, String> {
+    let response = http_client()
+        .post(format!("{}/focus-sessions", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "task_id": task_id,
+            "planned_seconds": planned_seconds
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn focus_update(
+    base_url: String,
+    access_token: String,
+    session_id: String,
+    expected_version: i64,
+    state: String,
+    actual_seconds: i64,
+    break_seconds: i64,
+    ended_at: Option<String>,
+) -> Result<FocusSessionDto, String> {
+    let mut body = serde_json::json!({
+        "state": state,
+        "actual_seconds": actual_seconds,
+        "break_seconds": break_seconds
+    });
+    if let Some(ended_at) = ended_at {
+        body["ended_at"] = serde_json::Value::String(ended_at);
+    }
+    let response = http_client()
+        .patch(format!("{}/focus-sessions/{session_id}", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .header("If-Match", format!("\"v{expected_version}\""))
+        .json(&body)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -722,6 +836,9 @@ pub fn run() {
             upsert_habit_log,
             list_habit_logs,
             outbox_status,
+            focus_list,
+            focus_start,
+            focus_update,
             outbox_issues,
             discard_mutation,
             list_conflicts,

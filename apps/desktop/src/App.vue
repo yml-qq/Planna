@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
+import { createFocusStore, formatDuration } from './focus'
 import { createHabitStore } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -61,6 +62,10 @@ const tasks = createTaskStore(bridge)
 const habits = createHabitStore(bridge, {
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
 })
+const focus = createFocusStore(bridge, {
+  baseUrl: () => baseUrl.value,
+  token: () => session.token.value
+})
 
 const reminders = ref<HabitReminder[]>(loadReminders(readStorage('planna.habitReminders')))
 const storedQuiet = loadQuietHours(readStorage('planna.quietHours'))
@@ -80,6 +85,7 @@ const ledgerStatus = ref('')
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
+let focusTimer: ReturnType<typeof setInterval> | null = null
 
 const email = ref('')
 const code = ref('')
@@ -92,7 +98,7 @@ const syncing = ref(false)
 const signedIn = computed(() => session.status.value === 'signed_in')
 const signedOut = computed(() => session.status.value === 'signed_out')
 const errorText = computed(() => {
-  const error = session.error.value ?? tasks.error.value
+  const error = session.error.value ?? tasks.error.value ?? habits.error.value ?? focus.error.value
   if (!error) return null
   const messages: Record<string, string> = {
     INVALID_EMAIL: '请输入有效邮箱',
@@ -110,6 +116,12 @@ const errorText = computed(() => {
     CHECK_IN_FAILED: '打卡失败，请重试',
     HABIT_PAUSE_FAILED: '暂停操作失败，请重试',
     HABIT_UPDATE_FAILED: '习惯更新失败，请重试',
+    FOCUS_SESSION_ACTIVE: '已有进行中的专注，先完成或放弃当前会话',
+    FOCUS_SESSION_FINISHED: '该专注会话已结束',
+    FOCUS_SIGNED_OUT: '请先登录再开始专注',
+    FOCUS_IDLE: '当前没有进行中的专注',
+    FOCUS_FAILED: '专注操作失败，请重试',
+    VERSION_CONFLICT: '专注状态已在其他设备更新，请刷新后重试',
     HABIT_NOT_FOUND: '习惯不存在'
   }
   return messages[error] ?? '操作失败，请重试'
@@ -137,6 +149,7 @@ async function submitLogin(): Promise<void> {
   if (await session.signIn(email.value, code.value)) {
     await tasks.refresh()
     await habits.refresh()
+    await focus.recover()
   }
 }
 
@@ -147,6 +160,22 @@ async function submitHabit(): Promise<void> {
     habitTitle.value = ''
     habitTarget.value = '1'
   }
+}
+
+async function startFocus(plannedSeconds: number): Promise<void> {
+  await focus.start(plannedSeconds)
+}
+
+async function pauseFocus(): Promise<void> {
+  await focus.pause()
+}
+
+async function resumeFocus(): Promise<void> {
+  await focus.resume()
+}
+
+async function completeFocus(): Promise<void> {
+  await focus.complete()
 }
 
 async function checkInHabit(habitId: string): Promise<void> {
@@ -180,6 +209,8 @@ async function signOut(): Promise<void> {
   tasks.tasks.value = []
   habits.habits.value = []
   habits.todayLogs.value = {}
+  focus.session.value = null
+  focus.snapshot.value = null
 }
 
 function reminderFor(habitId: string): HabitReminder {
@@ -352,17 +383,20 @@ watch([quietStart, quietEnd], ([start, end]) => {
 
 onUnmounted(() => {
   if (reminderTimer) clearInterval(reminderTimer)
+  if (focusTimer) clearInterval(focusTimer)
 })
 
 onMounted(async () => {
   if (await session.restore()) {
     await tasks.refresh()
     await habits.refresh()
+    await focus.recover()
     await refreshOutbox()
   }
   reminderTimer = setInterval(() => {
     void tickReminders()
   }, 30_000)
+  focusTimer = setInterval(() => focus.tick(), 1_000)
 })
 </script>
 
@@ -433,6 +467,35 @@ onMounted(async () => {
       </ul>
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
     </template>
+
+    <section v-if="signedIn" class="card" aria-labelledby="focus-title">
+      <h2 id="focus-title" class="card__title">专注</h2>
+      <template v-if="focus.snapshot.value">
+        <p class="focus__time">{{ formatDuration(focus.seconds.value) }}</p>
+        <p class="status">
+          计划 {{ formatDuration(focus.snapshot.value.plannedSeconds) }} ·
+          {{ focus.snapshot.value.state === 'active' ? '进行中' : '已暂停' }}
+        </p>
+        <div class="composer__row">
+          <button v-if="focus.snapshot.value.state === 'active'" class="button" type="button" @click="pauseFocus">
+            暂停
+          </button>
+          <button v-else class="button" type="button" @click="resumeFocus">继续</button>
+          <button class="button button--ghost" type="button" @click="completeFocus">完成</button>
+        </div>
+      </template>
+      <template v-else>
+        <p class="empty">开始一段专注，退出后重新打开会按服务端记录恢复。</p>
+        <div class="composer__row">
+          <button class="button" type="button" :disabled="focus.loading.value" @click="startFocus(1500)">
+            开始 25 分钟
+          </button>
+          <button class="button button--ghost" type="button" :disabled="focus.loading.value" @click="startFocus(3000)">
+            开始 50 分钟
+          </button>
+        </div>
+      </template>
+    </section>
 
     <section v-if="signedIn" class="card" aria-labelledby="habits-title">
       <h2 id="habits-title" class="card__title">习惯打卡</h2>

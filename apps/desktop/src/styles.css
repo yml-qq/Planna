@@ -274,3 +274,10 @@ body {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.focus__time {
+  margin: 8px 0;
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}

@@ -27,6 +27,29 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export type FocusState = 'active' | 'paused' | 'completed' | 'abandoned'
+
+export interface FocusSession {
+  id: string
+  taskId: string | null
+  startedAt: string
+  endedAt: string | null
+  plannedSeconds: number
+  actualSeconds: number
+  breakSeconds: number
+  state: FocusState
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FocusUpdate {
+  state: FocusState
+  actualSeconds: number
+  breakSeconds: number
+  endedAt?: string | null
+}
+
 export interface Habit {
   id: string
   title: string
@@ -114,6 +137,15 @@ export interface DesktopBridge {
   listConflicts(): Promise<ConflictIssue[]>
   resolveConflict(mutationId: string, strategy: ConflictStrategy): Promise<boolean>
   exportConflicts(): Promise<string>
+  focusList(baseUrl: string, accessToken: string, limit?: number): Promise<FocusSession[]>
+  focusStart(baseUrl: string, accessToken: string, plannedSeconds: number): Promise<FocusSession>
+  focusUpdate(
+    baseUrl: string,
+    accessToken: string,
+    sessionId: string,
+    expectedVersion: number,
+    update: FocusUpdate
+  ): Promise<FocusSession>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -251,6 +283,73 @@ export class MemoryBridge implements DesktopBridge {
     return updated
   }
 
+  private readonly focusSessions = new Map<string, FocusSession>()
+
+  async focusList(_baseUrl: string, _accessToken: string, limit = 20): Promise<FocusSession[]> {
+    return [...this.focusSessions.values()]
+      .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
+      .slice(0, limit)
+  }
+
+  async focusStart(
+    _baseUrl: string,
+    _accessToken: string,
+    plannedSeconds: number
+  ): Promise<FocusSession> {
+    if ([...this.focusSessions.values()].some((session) => session.state === 'active' || session.state === 'paused')) {
+      throw new Error('409:FOCUS_SESSION_ACTIVE')
+    }
+    if (plannedSeconds < 60 || plannedSeconds > 86400) throw new Error('422:INVALID_FOCUS_SESSION')
+    const now = new Date().toISOString()
+    const session: FocusSession = {
+      id: crypto.randomUUID(),
+      taskId: null,
+      startedAt: now,
+      endedAt: null,
+      plannedSeconds,
+      actualSeconds: 0,
+      breakSeconds: 0,
+      state: 'active',
+      version: 1,
+      createdAt: now,
+      updatedAt: now
+    }
+    this.focusSessions.set(session.id, session)
+    return session
+  }
+
+  async focusUpdate(
+    _baseUrl: string,
+    _accessToken: string,
+    sessionId: string,
+    expectedVersion: number,
+    update: FocusUpdate
+  ): Promise<FocusSession> {
+    const session = this.focusSessions.get(sessionId)
+    if (!session) throw new Error('404:FOCUS_SESSION_NOT_FOUND')
+    if (session.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    if (session.state === 'completed' || session.state === 'abandoned') {
+      throw new Error('409:FOCUS_SESSION_FINISHED')
+    }
+    const allowed: Record<string, FocusState[]> = {
+      active: ['paused', 'completed', 'abandoned'],
+      paused: ['active', 'completed', 'abandoned']
+    }
+    if (!allowed[session.state]?.includes(update.state)) throw new Error('422:INVALID_FOCUS_TRANSITION')
+    const terminal = update.state === 'completed' || update.state === 'abandoned'
+    const updated: FocusSession = {
+      ...session,
+      state: update.state,
+      actualSeconds: update.actualSeconds,
+      breakSeconds: update.breakSeconds,
+      endedAt: terminal ? update.endedAt ?? new Date().toISOString() : null,
+      version: session.version + 1,
+      updatedAt: new Date().toISOString()
+    }
+    this.focusSessions.set(sessionId, updated)
+    return updated
+  }
+
   async exportConflicts(): Promise<string> {
     return JSON.stringify({
       schema_version: 'conflict-ledger-v1',
@@ -380,6 +479,36 @@ function toHabitLog(row: RawHabitLog): HabitLog {
   }
 }
 
+interface RawFocusSession {
+  id: string
+  task_id: string | null
+  started_at: string
+  ended_at: string | null
+  planned_seconds: number
+  actual_seconds: number
+  break_seconds: number
+  state: FocusState
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+function toFocusSession(row: RawFocusSession): FocusSession {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    startedAt: row.started_at,
+    endedAt: row.ended_at,
+    plannedSeconds: row.planned_seconds,
+    actualSeconds: row.actual_seconds,
+    breakSeconds: row.break_seconds,
+    state: row.state,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
+
 /** The Tauri shell exposes the same operations as commands backed by the Rust core. */
 export class TauriBridge implements DesktopBridge {
   constructor(private readonly invoke: Invoke) {}
@@ -497,6 +626,49 @@ export class TauriBridge implements DesktopBridge {
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
     const rows = await this.invoke<RawHabitLog[]>('list_habit_logs', { habitId, from, to })
     return rows.map(toHabitLog)
+  }
+
+  async focusList(baseUrl: string, accessToken: string, limit = 20): Promise<FocusSession[]> {
+    const rows = await this.invoke<RawFocusSession[]>('focus_list', {
+      baseUrl,
+      accessToken,
+      limit
+    })
+    return rows.map(toFocusSession)
+  }
+
+  async focusStart(
+    baseUrl: string,
+    accessToken: string,
+    plannedSeconds: number
+  ): Promise<FocusSession> {
+    const row = await this.invoke<RawFocusSession>('focus_start', {
+      baseUrl,
+      accessToken,
+      taskId: null,
+      plannedSeconds
+    })
+    return toFocusSession(row)
+  }
+
+  async focusUpdate(
+    baseUrl: string,
+    accessToken: string,
+    sessionId: string,
+    expectedVersion: number,
+    update: FocusUpdate
+  ): Promise<FocusSession> {
+    const row = await this.invoke<RawFocusSession>('focus_update', {
+      baseUrl,
+      accessToken,
+      sessionId,
+      expectedVersion,
+      state: update.state,
+      actualSeconds: update.actualSeconds,
+      breakSeconds: update.breakSeconds,
+      endedAt: update.endedAt ?? null
+    })
+    return toFocusSession(row)
   }
 
   async exportConflicts(): Promise<string> {
