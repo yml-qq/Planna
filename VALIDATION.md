@@ -386,3 +386,11 @@
 - 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format`/契约测试 28 项、`cargo fmt/clippy/test` 通过。
 - [Server integration 43160586192](https://github.com/yml-qq/Planna/actions/runs/43160586192) 与 [Desktop core 43160586061](https://github.com/yml-qq/Planna/actions/runs/43160586061) 均 **success**。
 - 未连接生产库、未提交凭据；暂停/连续天数 UI、冲突解决与提醒/本地通知留待 `HAB-01I`。
+
+## HAB-01I 暂停与连续天数 UI 检查（2026-11-12）
+
+- 桥接新增 `updateHabit`（Memory 版本 +1 / Tauri `update_habit`）；习惯 store 刷新时拉取最近 90 天日志并计算 `todayLogs/logs/streaks`，`addDays`/`currentStreak` 纯函数与服务端规则一致；`togglePause` 往返切换并替换列表项，打卡后本地合并日志并重算 streak。
+- UI 习惯行显示“连续 N 天”、暂停状态与“暂停/恢复”按钮；错误文案增加 `HABIT_PAUSE_FAILED`。
+- 前端测试增至 **25 项**（新增跨月/跨年日期、streak 门槛与连续、刷新计算、暂停往返），`pnpm build`（vue-tsc + vite）通过；无服务端/契约/schema 变更。
+- [Server integration 43162105311](https://github.com/yml-qq/Planna/actions/runs/43162105311) 与 [Desktop core 43162105244](https://github.com/yml-qq/Planna/actions/runs/43162105244) 均 **success**。
+- 未连接生产库、未提交凭据；提醒/本地通知、同日日志冲突 UI 与习惯编辑留待 `HAB-01J`。
