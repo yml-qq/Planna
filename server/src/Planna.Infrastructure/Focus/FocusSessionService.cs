@@ -177,6 +177,54 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
         return new(FocusStatus.Updated, view);
     }
 
+    public async Task<FocusResult> StatsAsync(Guid ownerId, DateOnly from, DateOnly to,
+        string timeZone, CancellationToken ct)
+    {
+        if (to < from || to.DayNumber - from.DayNumber > 92)
+            return new(FocusStatus.Invalid, Code: "INVALID_FOCUS_RANGE");
+        TimeZoneInfo zone;
+        try
+        {
+            zone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return new(FocusStatus.Invalid, Code: "INVALID_TIME_ZONE");
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return new(FocusStatus.Invalid, Code: "INVALID_TIME_ZONE");
+        }
+        var startLocal = from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+        var endLocal = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, zone);
+        var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, zone);
+        var rows = await db.Database.GetDbConnection().QueryAsync<FocusDayRow>(new CommandDefinition("""
+            SELECT (started_at AT TIME ZONE @Zone)::date AS "Date",
+                count(*) AS "Total",
+                count(*) FILTER (WHERE state='completed') AS "Completed",
+                count(*) FILTER (WHERE state='abandoned') AS "Abandoned",
+                coalesce(sum(actual_seconds) FILTER (WHERE state IN ('completed','abandoned')),0)
+                    AS "ActualSeconds"
+            FROM focus_sessions
+            WHERE owner_id=@Owner AND started_at>=@Start AND started_at<@End
+            GROUP BY 1 ORDER BY 1
+            """, new { Owner = ownerId, Zone = timeZone, Start = startUtc, End = endUtc },
+            db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+        var days = rows
+            .Select(row => new FocusDayStat(row.Date.ToString("yyyy-MM-dd"), row.Completed,
+                row.ActualSeconds))
+            .ToList();
+        var stats = new FocusStats(from.ToString("yyyy-MM-dd"), to.ToString("yyyy-MM-dd"), timeZone,
+            days.Sum(day => day.CompletedSessions), days.Sum(day => day.CompletedSessions),
+            rows.Sum(row => row.Abandoned), days.Sum(day => day.ActualSeconds), days);
+        var withAbandoned = stats with
+        {
+            TotalSessions = rows.Sum(row => row.Total)
+        };
+        return new(FocusStatus.Ok, Stats: withAbandoned);
+    }
+
     private async Task<FocusRow?> LoadAsync(Guid ownerId, Guid sessionId, bool forUpdate,
         CancellationToken ct) =>
         await db.Database.GetDbConnection().QuerySingleOrDefaultAsync<FocusRow>(new CommandDefinition("""
@@ -232,6 +280,15 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
         command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         addParameters(command.Parameters);
         await command.ExecuteNonQueryAsync(ct);
+    }
+
+    private sealed class FocusDayRow
+    {
+        public DateTime Date { get; set; }
+        public int Total { get; set; }
+        public int Completed { get; set; }
+        public int Abandoned { get; set; }
+        public long ActualSeconds { get; set; }
     }
 
     private sealed class FocusRow

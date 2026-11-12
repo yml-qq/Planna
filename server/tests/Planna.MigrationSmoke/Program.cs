@@ -153,4 +153,5 @@ await HttpHabitSmoke.RunAsync(connection);
 await HttpHabitLogSmoke.RunAsync(connection);
 await HttpHabitPushSmoke.RunAsync(connection);
 await HttpFocusSmoke.RunAsync(connection);
+await HttpFocusStatsSmoke.RunAsync(connection);
 await AccountCleanupSmoke.RunAsync(connection, value);

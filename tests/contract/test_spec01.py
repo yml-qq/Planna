@@ -616,6 +616,19 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(api["components"]["schemas"]["CreateFocusSessionRequest"]["properties"]
                          ["planned_seconds"]["default"], 1500)
 
+        stats = api["paths"]["/focus-sessions/stats"]["get"]
+        self.assertEqual(set(stats["responses"]), {"200", "400", "401", "422"})
+        params = {parameter["name"]: parameter for parameter in stats["parameters"]}
+        self.assertEqual(set(params), {"from", "to", "time_zone"})
+        self.assertTrue(params["from"]["required"])
+        self.assertEqual(params["time_zone"]["schema"], {"type": "string", "default": "Asia/Shanghai"})
+        schema = api["components"]["schemas"]["FocusStats"]
+        self.assertEqual(set(schema["required"]),
+                         {"from", "to", "time_zone", "total_sessions", "completed_sessions",
+                          "abandoned_sessions", "actual_seconds", "days"})
+        self.assertEqual(api["components"]["schemas"]["FocusDayStat"]["required"],
+                         ["date", "completed_sessions", "actual_seconds"])
+
 
 if __name__ == "__main__":
     unittest.main()

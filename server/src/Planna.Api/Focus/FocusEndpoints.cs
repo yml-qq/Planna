@@ -11,6 +11,7 @@ public static class FocusEndpoints
         var group = app.MapGroup("/focus-sessions").WithTags("Focus").RequireAuthorization();
         group.MapGet("/", List).WithName("ListFocusSessions");
         group.MapPost("/", Create).WithName("CreateFocusSession");
+        group.MapGet("/stats", Stats).WithName("GetFocusStats");
         group.MapGet("/{id}", Get).WithName("GetFocusSession");
         group.MapPatch("/{id}", Update).WithName("UpdateFocusSession");
         return app;
@@ -51,6 +52,31 @@ public static class FocusEndpoints
             FocusStatus.AccountDeleted => Error(http, 401, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
+    }
+
+    private static async Task<IResult> Stats(HttpContext http, IFocusSessionService service,
+        CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryDate(http, "from", out var from) || !TryDate(http, "to", out var to))
+            return Error(http, 400, "INVALID_DATE");
+        var timeZone = http.Request.Query["time_zone"].ToString();
+        if (timeZone.Length == 0) timeZone = "Asia/Shanghai";
+        var result = await service.StatsAsync(owner, from, to, timeZone, ct);
+        return result.Status switch
+        {
+            FocusStatus.Ok => TypedResults.Ok(result.Stats),
+            FocusStatus.Invalid => Error(http, 422, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static bool TryDate(HttpContext http, string name, out DateOnly value)
+    {
+        value = default;
+        var raw = http.Request.Query[name].ToString();
+        return DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out value);
     }
 
     private static async Task<IResult> Get(HttpContext http, string id, IFocusSessionService service,

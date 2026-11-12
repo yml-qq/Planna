@@ -69,7 +69,8 @@
 | E10 | FOCUS-01 | 专注会话服务端 API（已交付，见 `84-FOCUS-01.md`） | E04 | interruption tests |
 | E10 | FOCUS-02 | 专注计时 UI 与恢复（已交付，见 `85-FOCUS-02.md`） | FOCUS-01 | interruption tests |
 | E10 | FOCUS-03 | 任务关联、完成时长修正与漂移提示（已交付，见 `86-FOCUS-03.md`） | FOCUS-02 | interruption tests |
-| E10 | FOCUS-04 | 专注统计聚合、休息周期提醒与任务详情联动 | FOCUS-03 | stats tests |
+| E10 | FOCUS-04 | 专注统计聚合 API（已交付，见 `87-FOCUS-04.md`） | FOCUS-03 | stats tests |
+| E10 | FOCUS-05 | 专注统计 UI、休息周期提醒与任务详情联动 | FOCUS-04 | stats tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
 | E11 | PRIV-EXPORT-01 | 云端数据导出（快照/下载/24h，已交付，见 `53-PRIV-EXPORT-01.md`） | SYNC-PULL-01 | 导出测试 |
