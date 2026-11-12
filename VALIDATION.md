@@ -394,3 +394,12 @@
 - 前端测试增至 **25 项**（新增跨月/跨年日期、streak 门槛与连续、刷新计算、暂停往返），`pnpm build`（vue-tsc + vite）通过；无服务端/契约/schema 变更。
 - [Server integration 43162105311](https://github.com/yml-qq/Planna/actions/runs/43162105311) 与 [Desktop core 43162105244](https://github.com/yml-qq/Planna/actions/runs/43162105244) 均 **success**。
 - 未连接生产库、未提交凭据；提醒/本地通知、同日日志冲突 UI 与习惯编辑留待 `HAB-01J`。
+
+## HAB-01J 习惯本地提醒检查（2026-11-12）
+
+- 新增提醒纯函数（`isReminderTime/localTime/dueReminders/runReminders/loadReminders`）：仅启用且时间匹配、未暂停、当日无 done 日志的习惯；按 `habit:date` 去重每天一次；单条通知失败隔离并记账；localStorage 解析逐项校验。
+- 通知适配：浏览器 `MemoryNotifier`；Tauri 动态加载 `@tauri-apps/plugin-notification`（首次发送检查/申请权限）。Tauri 增加 notification 插件依赖与 `notification:default` 能力，shell `cargo check/clippy/fmt` 通过。
+- UI：每个习惯行提供提醒时间与启用复选框，配置持久化 `planna.habitReminders`；登录后每 30 秒以本地日期/时间执行提醒，卸载清理定时器。
+- 前端测试增至 **30 项**（新增 5 项提醒）；`pnpm build` 通过。未在真机验证通知投递（headless 无桌面通知运行时），仅验证编译、能力配置与逻辑。
+- [Server integration 43163714732](https://github.com/yml-qq/Planna/actions/runs/43163714732) 与 [Desktop core 43163714684](https://github.com/yml-qq/Planna/actions/runs/43163714684) 均 **success**。
+- 未连接生产库、未提交凭据；冲突 UI、习惯编辑与免打扰设置留待 `HAB-01K`。
