@@ -92,6 +92,52 @@ pub struct StoredTask {
     pub deleted_at: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct NewHabit {
+    pub id: String,
+    pub title: String,
+    pub schedule_type: String,
+    #[serde(default)]
+    pub weekdays: Option<Vec<i16>>,
+    pub target_quantity: i64,
+    pub unit: String,
+    pub time_zone: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct StoredHabit {
+    pub id: String,
+    pub title: String,
+    pub schedule_type: String,
+    #[serde(default)]
+    pub weekdays: Option<Vec<i16>>,
+    pub target_quantity: i64,
+    pub unit: String,
+    pub time_zone: String,
+    #[serde(default)]
+    pub paused_at: Option<String>,
+    pub version: i64,
+    #[serde(default)]
+    pub updated_at: String,
+    #[serde(default)]
+    pub deleted_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct StoredHabitLog {
+    pub id: String,
+    pub habit_id: String,
+    pub log_date: String,
+    pub quantity: i64,
+    pub status: String,
+    pub version: i64,
+    #[serde(default)]
+    pub updated_at: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutboxEntry {
     pub mutation_id: String,
@@ -180,6 +226,29 @@ impl Store {
                 created_at TEXT NOT NULL,
                 attempts INTEGER NOT NULL DEFAULT 0,
                 last_error TEXT
+            );
+            CREATE TABLE IF NOT EXISTS habits (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 200),
+                schedule_type TEXT NOT NULL CHECK (schedule_type IN ('daily','weekly','weekdays')),
+                weekdays TEXT,
+                target_quantity INTEGER NOT NULL CHECK (target_quantity BETWEEN 1 AND 1000),
+                unit TEXT NOT NULL DEFAULT 'count',
+                time_zone TEXT NOT NULL,
+                paused_at TEXT,
+                version INTEGER NOT NULL CHECK (version >= 1),
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS habit_logs (
+                id TEXT PRIMARY KEY,
+                habit_id TEXT NOT NULL,
+                log_date TEXT NOT NULL,
+                quantity INTEGER NOT NULL CHECK (quantity BETWEEN 0 AND 1000),
+                status TEXT NOT NULL CHECK (status IN ('done','skipped')),
+                version INTEGER NOT NULL CHECK (version >= 1),
+                updated_at TEXT NOT NULL,
+                UNIQUE (habit_id, log_date)
             );
             CREATE TABLE IF NOT EXISTS sync_state (
                 key TEXT PRIMARY KEY,
@@ -420,9 +489,20 @@ impl Store {
         let mut outcome = PullOutcome::default();
         let transaction = self.connection.transaction()?;
         for change in changes {
-            if change.entity_type != "task" {
-                outcome.skipped_stale += 1;
-                continue;
+            match change.entity_type.as_str() {
+                "habit" => {
+                    apply_habit_pull(&transaction, change, &mut outcome)?;
+                    continue;
+                }
+                "habit_log" => {
+                    apply_habit_log_pull(&transaction, change, &mut outcome)?;
+                    continue;
+                }
+                "task" => {}
+                _ => {
+                    outcome.skipped_stale += 1;
+                    continue;
+                }
             }
             let local: Option<(i64,)> = transaction
                 .query_row(
@@ -489,6 +569,200 @@ impl Store {
         }
         transaction.commit()?;
         Ok(outcome)
+    }
+
+    /// Creates a habit locally and queues its push mutation in the same transaction.
+    pub fn create_habit(
+        &mut self,
+        habit: &NewHabit,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        if habit.id.is_empty() || habit.title.trim().is_empty() || habit.title.chars().count() > 200
+        {
+            return Err(StoreError::Validation("invalid habit"));
+        }
+        if !matches!(
+            habit.schedule_type.as_str(),
+            "daily" | "weekly" | "weekdays"
+        ) || habit.target_quantity < 1
+            || habit.target_quantity > 1000
+            || habit.unit.trim().is_empty()
+            || habit.unit.chars().count() > 20
+            || habit.time_zone.is_empty()
+        {
+            return Err(StoreError::Validation("invalid habit"));
+        }
+        if habit.schedule_type == "weekly"
+            && habit
+                .weekdays
+                .as_ref()
+                .is_none_or(|days| days.is_empty() || days.len() > 7)
+        {
+            return Err(StoreError::Validation("weekly habits need weekdays"));
+        }
+        if mutation_id.is_empty() || now.is_empty() {
+            return Err(StoreError::Validation("mutation_id and now are required"));
+        }
+        if mutation_exists(&self.connection, mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        let weekdays = habit.weekdays.as_ref().map(|days| {
+            let mut sorted = days.clone();
+            sorted.sort_unstable();
+            sorted.dedup();
+            serde_json::to_string(&sorted).unwrap_or_else(|_| "[]".to_string())
+        });
+        transaction.execute(
+            "INSERT INTO habits(id, title, schedule_type, weekdays, target_quantity, unit,
+                time_zone, version, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8)",
+            params![
+                habit.id,
+                habit.title.trim(),
+                habit.schedule_type,
+                weekdays,
+                habit.target_quantity,
+                habit.unit.trim(),
+                habit.time_zone,
+                now
+            ],
+        )?;
+        let payload =
+            serde_json::to_string(habit).map_err(|_| StoreError::Validation("habit payload"))?;
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "habit",
+                entity_id: &habit.id,
+                operation: "upsert",
+                base_version: 0,
+                payload: &payload,
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
+    }
+
+    pub fn habits(&self) -> StoreResult<Vec<StoredHabit>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, title, schedule_type, weekdays, target_quantity, unit, time_zone,
+                paused_at, version, updated_at, deleted_at
+             FROM habits WHERE deleted_at IS NULL ORDER BY title, id",
+        )?;
+        let rows = statement.query_map([], map_habit)?;
+        let mut habits = Vec::new();
+        for row in rows {
+            habits.push(row?);
+        }
+        Ok(habits)
+    }
+
+    /// Upserts the single log for (habit, date) and queues its push mutation; same-date edits
+    /// reuse the local row and base version.
+    pub fn upsert_habit_log(
+        &mut self,
+        habit_id: &str,
+        log_date: &str,
+        quantity: i64,
+        status: &str,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        let date_ok = log_date.len() == 10
+            && log_date.as_bytes()[4] == b'-'
+            && log_date.as_bytes()[7] == b'-';
+        if habit_id.is_empty()
+            || !date_ok
+            || !(0..=1000).contains(&quantity)
+            || !matches!(status, "done" | "skipped")
+            || mutation_id.is_empty()
+            || now.is_empty()
+        {
+            return Err(StoreError::Validation("invalid habit log"));
+        }
+        if mutation_exists(&self.connection, mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        let habit = transaction
+            .query_row(
+                "SELECT id FROM habits WHERE id = ?1 AND deleted_at IS NULL",
+                params![habit_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or(StoreError::Validation("habit not found"))?;
+        debug_assert_eq!(habit, habit_id);
+        let existing: Option<(String, i64)> = transaction
+            .query_row(
+                "SELECT id, version FROM habit_logs WHERE habit_id = ?1 AND log_date = ?2",
+                params![habit_id, log_date],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        let (log_id, base_version) = match existing {
+            Some((id, version)) => {
+                transaction.execute(
+                    "UPDATE habit_logs SET quantity = ?2, status = ?3, version = ?4, updated_at = ?5
+                     WHERE id = ?1",
+                    params![id, quantity, status, version + 1, now],
+                )?;
+                (id, version)
+            }
+            None => {
+                let id = uuid::Uuid::new_v4().to_string();
+                transaction.execute(
+                    "INSERT INTO habit_logs(id, habit_id, log_date, quantity, status, version, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6)",
+                    params![id, habit_id, log_date, quantity, status, now],
+                )?;
+                (id, 0)
+            }
+        };
+        let payload = serde_json::json!({
+            "habit_id": habit_id,
+            "log_date": log_date,
+            "quantity": quantity,
+            "status": status
+        })
+        .to_string();
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "habit_log",
+                entity_id: &log_id,
+                operation: "upsert",
+                base_version,
+                payload: &payload,
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
+    }
+
+    pub fn habit_logs(
+        &self,
+        habit_id: &str,
+        from: &str,
+        to: &str,
+    ) -> StoreResult<Vec<StoredHabitLog>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, habit_id, log_date, quantity, status, version, updated_at
+             FROM habit_logs WHERE habit_id = ?1 AND log_date BETWEEN ?2 AND ?3
+             ORDER BY log_date, id",
+        )?;
+        let rows = statement.query_map(params![habit_id, from, to], map_habit_log)?;
+        let mut logs = Vec::new();
+        for row in rows {
+            logs.push(row?);
+        }
+        Ok(logs)
     }
 
     pub fn set_cursor_value(&self, value: &str) -> StoreResult<()> {
@@ -582,6 +856,159 @@ fn load_task(transaction: &Transaction<'_>, task_id: &str) -> StoreResult<Option
         )
         .optional()
         .map_err(StoreError::from)
+}
+
+fn apply_habit_pull(
+    transaction: &rusqlite::Transaction<'_>,
+    change: &Change,
+    outcome: &mut PullOutcome,
+) -> StoreResult<()> {
+    let local: Option<(i64,)> = transaction
+        .query_row(
+            "SELECT version FROM habits WHERE id = ?1",
+            params![change.entity_id],
+            |row| Ok((row.get(0)?,)),
+        )
+        .optional()?;
+    if let Some((version,)) = local
+        && version >= change.entity_version
+    {
+        outcome.skipped_stale += 1;
+        return Ok(());
+    }
+    let payload: serde_json::Value = serde_json::from_str(&change.payload)
+        .map_err(|_| StoreError::Validation("pull payload is not JSON"))?;
+    if change.operation == "delete" {
+        let updated_at = payload
+            .get("updated_at")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default();
+        transaction.execute(
+            "UPDATE habits SET deleted_at = COALESCE(?2, deleted_at), version = ?3 WHERE id = ?1",
+            params![change.entity_id, updated_at, change.entity_version],
+        )?;
+        outcome.applied += 1;
+        return Ok(());
+    }
+    let stored: StoredHabit = serde_json::from_value(payload)
+        .map_err(|_| StoreError::Validation("pull payload is not a habit"))?;
+    let weekdays = stored
+        .weekdays
+        .as_ref()
+        .map(|days| serde_json::to_string(days).unwrap_or_else(|_| "[]".to_string()));
+    transaction.execute(
+        "INSERT INTO habits(id, title, schedule_type, weekdays, target_quantity, unit,
+            time_zone, paused_at, version, updated_at, deleted_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+         ON CONFLICT(id) DO UPDATE SET title = excluded.title,
+            schedule_type = excluded.schedule_type, weekdays = excluded.weekdays,
+            target_quantity = excluded.target_quantity, unit = excluded.unit,
+            time_zone = excluded.time_zone, paused_at = excluded.paused_at,
+            version = excluded.version, updated_at = excluded.updated_at,
+            deleted_at = excluded.deleted_at",
+        params![
+            stored.id,
+            stored.title,
+            stored.schedule_type,
+            weekdays,
+            stored.target_quantity,
+            stored.unit,
+            stored.time_zone,
+            stored.paused_at,
+            change.entity_version,
+            stored.updated_at,
+            stored.deleted_at
+        ],
+    )?;
+    outcome.applied += 1;
+    Ok(())
+}
+
+fn apply_habit_log_pull(
+    transaction: &rusqlite::Transaction<'_>,
+    change: &Change,
+    outcome: &mut PullOutcome,
+) -> StoreResult<()> {
+    if change.operation != "upsert" {
+        outcome.skipped_stale += 1;
+        return Ok(());
+    }
+    let local: Option<(i64,)> = transaction
+        .query_row(
+            "SELECT version FROM habit_logs WHERE id = ?1",
+            params![change.entity_id],
+            |row| Ok((row.get(0)?,)),
+        )
+        .optional()?;
+    if let Some((version,)) = local
+        && version >= change.entity_version
+    {
+        outcome.skipped_stale += 1;
+        return Ok(());
+    }
+    let payload: serde_json::Value = serde_json::from_str(&change.payload)
+        .map_err(|_| StoreError::Validation("pull payload is not JSON"))?;
+    let stored: StoredHabitLog = serde_json::from_value(payload)
+        .map_err(|_| StoreError::Validation("pull payload is not a habit log"))?;
+    transaction.execute(
+        "INSERT INTO habit_logs(id, habit_id, log_date, quantity, status, version, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(id) DO UPDATE SET habit_id = excluded.habit_id,
+            log_date = excluded.log_date, quantity = excluded.quantity,
+            status = excluded.status, version = excluded.version,
+            updated_at = excluded.updated_at",
+        params![
+            stored.id,
+            stored.habit_id,
+            stored.log_date,
+            stored.quantity,
+            stored.status,
+            change.entity_version,
+            stored.updated_at
+        ],
+    )?;
+    outcome.applied += 1;
+    Ok(())
+}
+
+fn mutation_exists(connection: &Connection, mutation_id: &str) -> StoreResult<bool> {
+    Ok(connection
+        .query_row(
+            "SELECT 1 FROM outbox WHERE mutation_id = ?1",
+            params![mutation_id],
+            |_| Ok(()),
+        )
+        .optional()?
+        .is_some())
+}
+
+fn map_habit(row: &rusqlite::Row<'_>) -> rusqlite::Result<StoredHabit> {
+    let weekdays: Option<String> = row.get(3)?;
+    Ok(StoredHabit {
+        id: row.get(0)?,
+        title: row.get(1)?,
+        schedule_type: row.get(2)?,
+        weekdays: weekdays.and_then(|value| serde_json::from_str(&value).ok()),
+        target_quantity: row.get(4)?,
+        unit: row.get(5)?,
+        time_zone: row.get(6)?,
+        paused_at: row.get(7)?,
+        version: row.get(8)?,
+        updated_at: row.get(9)?,
+        deleted_at: row.get(10)?,
+    })
+}
+
+fn map_habit_log(row: &rusqlite::Row<'_>) -> rusqlite::Result<StoredHabitLog> {
+    Ok(StoredHabitLog {
+        id: row.get(0)?,
+        habit_id: row.get(1)?,
+        log_date: row.get(2)?,
+        quantity: row.get(3)?,
+        status: row.get(4)?,
+        version: row.get(5)?,
+        updated_at: row.get(6)?,
+    })
 }
 
 fn map_task(row: &rusqlite::Row<'_>) -> rusqlite::Result<StoredTask> {

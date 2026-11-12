@@ -8,7 +8,8 @@ pub mod store;
 pub mod sync;
 
 pub use store::{
-    Change, NewTask, OutboxEntry, PullOutcome, Store, StoreError, StoredTask, TaskPatch,
+    Change, NewHabit, NewTask, OutboxEntry, PullOutcome, Store, StoreError, StoredHabit,
+    StoredHabitLog, StoredTask, TaskPatch,
 };
 pub use sync::{
     PullChange, PullResponse, PushMutation, PushRequest, PushResponse, PushResult, SyncOutcome,

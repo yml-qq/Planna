@@ -177,7 +177,7 @@ pub fn sync_once(
         let changes: Vec<Change> = page
             .changes
             .iter()
-            .filter(|change| change.entity_type == "task")
+            .filter(|change| matches!(change.entity_type.as_str(), "task" | "habit" | "habit_log"))
             .map(|change| Change {
                 entity_type: change.entity_type.clone(),
                 entity_id: change.entity_id.clone(),
