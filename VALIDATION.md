@@ -422,3 +422,11 @@
 - 前端 35 项测试与 `pnpm build`、shell `cargo check/clippy/fmt`、core 31 项测试均通过；服务端无变更。
 - [Server integration 43166817174](https://github.com/yml-qq/Planna/actions/runs/43166817174) 与 [Desktop core 43166817100](https://github.com/yml-qq/Planna/actions/runs/43166817100) 均 **success**。
 - 未连接生产库、未提交凭据；weekly 编辑、覆盖/重试与通知真机验证留待 `HAB-01M`。
+
+## HAB-01M weekly 编辑与冲突收敛检查（2026-11-12）
+
+- weekly 编辑：`HabitPatchLocal` 增加 `schedule_type/weekdays`，core 校验 daily/weekly/weekdays、weekly 1..7 去重排序、非 weekly 清空 weekdays；Tauri `update_habit` 接受 `scheduleType/weekdays`；UI 编辑表单增加日程选择与星期复选框、列表显示日程摘要。
+- 冲突收敛：`PushResult` 增加可选 `server_entity`，`SyncOutcome` 增加 `resolved_conflicts`；带服务器实体的 conflict 通过 `force_apply_snapshot`（task/habit/habit_log，忽略本地版本）写入服务器状态并移除 mutation，未带实体仍进入待处理列表。
+- 测试：core 新增 2 项（server-wins、weekly→daily 清空），合计 **33 项**；前端新增 1 项 weekly 编辑，合计 **36 项**；`cargo clippy/fmt`（core/shell）与 `pnpm build` 通过。
+- [Server integration 43168587409](https://github.com/yml-qq/Planna/actions/runs/43168587409) 与 [Desktop core 43168587315](https://github.com/yml-qq/Planna/actions/runs/43168587315) 均 **success**；服务端无变更。
+- 未连接生产库、未提交凭据；显式三态处置、冲突台账与通知真机验证留待 `HAB-01N`；自动 server-wins 会丢弃本地未推送编辑（已在 `80-HAB-01M.md` 说明）。
