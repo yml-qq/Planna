@@ -1,6 +1,6 @@
 # 85｜FOCUS-02：桌面专注计时与恢复
 
-状态：代码已实现；本地 `pnpm test`（44 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-02 小节。空闲漂移修正与任务关联 UI 属 `FOCUS-03`。
+状态：代码已实现；本地 `pnpm test`（44 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 43177456786](https://github.com/yml-qq/Planna/actions/runs/43177456786) 与 [Desktop core 43177456889](https://github.com/yml-qq/Planna/actions/runs/43177456889) 均 **success**。空闲漂移修正与任务关联 UI 属 `FOCUS-03`。
 
 ## 范围与验收
 

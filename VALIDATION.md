@@ -466,3 +466,12 @@
 - 本地：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format`、契约 29 项通过。
 - [Server integration 43175516165](https://github.com/yml-qq/Planna/actions/runs/43175516165) 与 [Desktop core 43175516258](https://github.com/yml-qq/Planna/actions/runs/43175516258) 均 **success**。
 - 未连接生产库、未提交凭据；专注尚未进入 `/sync` 变更流，客户端计时 UI/断电恢复留待 `FOCUS-02`。
+
+## FOCUS-02 桌面专注计时检查（2026-11-12）
+
+- Tauri 新增 `focus_list/focus_start/focus_update`（bearer、`Idempotency-Key`、`If-Match: "vN"`，错误映射 `HTTP状态:错误码`）；桥接新增 `focusList/focusStart/focusUpdate`（Memory/Tauri）。
+- focus store：`formatDuration/elapsedSeconds/loadSnapshot`；start/pause/resume/complete/abandon 以 actual 累计提交，完成写 ended_at；本地快照 `planna.focus` 支持恢复（id+version 匹配沿用，否则以服务端 actual 为基线）；每秒 tick；UI 专注卡片（25/50 分钟、暂停/继续/完成），登录与恢复会话后自动 recover。
+- 测试：前端新增 7 项专注测试（格式、elapsed、快照解析、完整状态流转、恢复、回退、冲突/未登录），合计 **44 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- 语义：服务端 actual 只在状态迁移提交，崩溃后 active 显示可能低于真实经过时间；恢复以服务端为准（修正 UI 留 `FOCUS-03`）；专注不进入 offbox/离线队列。
+- [Server integration 43177456786](https://github.com/yml-qq/Planna/actions/runs/43177456786) 与 [Desktop core 43177456889](https://github.com/yml-qq/Planna/actions/runs/43177456889) 均 **success**。
+- 未连接生产库、未提交凭据；空闲漂移校正、任务联动与专注统计留待 `FOCUS-03`。
