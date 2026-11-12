@@ -369,3 +369,11 @@
 - 本地：`cargo fmt --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test` 全部通过。
 - [Server integration 43157421165](https://github.com/yml-qq/Planna/actions/runs/43157421165) 与 [Desktop core 43157421097](https://github.com/yml-qq/Planna/actions/runs/43157421097) 均 **success**；服务端无变更。
 - 未连接生产库、未提交凭据；Tauri 习惯命令、Vue 打卡 UI 与提醒留待 `HAB-01G`。
+
+## HAB-01G 桌面打卡面板检查（2026-11-12）
+
+- Tauri 新增 `list_habits/create_habit/upsert_habit_log/list_habit_logs` 命令（DTO snake_case，生成 mutation id，本地行与 outbox 同事务）；前端桥接新增 habit 类型与四个方法（Memory 与 Tauri 两种实现）。
+- 新增 `habits` store：刷新习惯 + 仅当日日志、创建（标题 1..200、目标 1..1000、默认单位、daily）、按目标数量打卡且同日版本递增、`localDate()` 本地日历日期与错误映射；`App.vue` 登录后新增“习惯打卡”卡片（列表、今日状态/打卡按钮、新增表单），登出清空状态。
+- 前端测试增至 **21 项**（新增 6 项习惯）；`pnpm build`（vue-tsc + vite）通过；shell `cargo fmt/clippy/check` 通过；服务端无变更。
+- [Server integration 43158924568](https://github.com/yml-qq/Planna/actions/runs/43158924568) 与 [Desktop core 43158924686](https://github.com/yml-qq/Planna/actions/runs/43158924686)（Windows Rust core / Windows Tauri shell / Desktop web UI）均 **success**。
+- 未连接生产库、未提交凭据；提醒/本地通知、习惯暂停与冲突 UI 留待 `HAB-01H`。
