@@ -430,3 +430,11 @@
 - 测试：core 新增 2 项（server-wins、weekly→daily 清空），合计 **33 项**；前端新增 1 项 weekly 编辑，合计 **36 项**；`cargo clippy/fmt`（core/shell）与 `pnpm build` 通过。
 - [Server integration 43168587409](https://github.com/yml-qq/Planna/actions/runs/43168587409) 与 [Desktop core 43168587315](https://github.com/yml-qq/Planna/actions/runs/43168587315) 均 **success**；服务端无变更。
 - 未连接生产库、未提交凭据；显式三态处置、冲突台账与通知真机验证留待 `HAB-01N`；自动 server-wins 会丢弃本地未推送编辑（已在 `80-HAB-01M.md` 说明）。
+
+## HAB-01N 冲突三态处置检查（2026-11-12）
+
+- core 新增 `sync_conflicts` 台账（mutation/实体/服务器实体/版本/时间）与三种处置：`keep_server`（写服务器快照、删 mutation 与台账）、`retry`（清零 attempts/last_error、保留版本）、`overwrite`（base_version 重设为服务器版本、清零失败状态）；同步引擎在带 `server_entity` 的 conflict 时改为记录台账并保留 outbox（撤销 HAB-01M 的自动覆盖）。
+- Tauri 新增 `list_conflicts`/`resolve_conflict(strategy)`；桥接与 UI 增加冲突列表与“以服务端为准/重试/覆盖”三个按钮，处置后刷新冲突、outbox、任务与习惯。
+- 测试：core 新增冲突解析测试，合计 **34 项**；同步测试验证“记录台账 → keep_server 收敛”；前端 36 项与 `pnpm build` 通过；core/shell `cargo clippy/fmt` 通过；服务端无变更。
+- [Server integration 43170244438](https://github.com/yml-qq/Planna/actions/runs/43170244438) 与 [Desktop core 43170244516](https://github.com/yml-qq/Planna/actions/runs/43170244516) 均 **success**。
+- 未连接生产库、未提交凭据；通知真机验证、跨时区展示与台账审计留待 `HAB-01O`。台账本地保存、不上传，清库会丢失台账但保留 outbox。
