@@ -111,7 +111,7 @@
 
 `SEC-01A` 服务端安全基线：所有响应附加 `X-Content-Type-Options/X-Frame-Options/Referrer-Policy` 与默认 `Cache-Control: no-store`；未处理异常返回 500 `INTERNAL_ERROR`（无堆栈）；`Content-Length` > 1 MiB 返回 `413 PAYLOAD_TOO_LARGE`；`/ai/*` 按 owner 固定窗口限流（默认 60 次/分钟，`AI_RATE_LIMIT_PER_MINUTE` 可配置），超限 `429 RATE_LIMITED` + `Retry-After`，各 AI 端点契约补充 429。详见 `59-SEC-01A.md`。
 
-习惯（V1.1 模块）契约：`GET/POST /habits`、`GET/PATCH/DELETE /habits/{id}`（schedule 校验、版控、幂等、`If-Match` 软删）；`PUT /habits/{id}/logs/{date}`（同日唯一 upsert，显式补签）与 `GET /habits/{id}/logs`（必填日期窗口 ≤366 天）；`GET /habits/{id}/streak?through=YYYY-MM-DD` 按“done 且达到目标数量”的连续天数返回 `current_streak/longest_streak`（跳过/低量断点、无节假日例外）。云端导出自 `account-export-v2` 起包含 `habits` 与 `habit_logs`。习惯/日志尚未进入 push 同步（`HAB-01E`）。详见 `68-HAB-01A.md`、`69-HAB-01B.md`、`70-HAB-01C.md`、`71-HAB-01D.md`。
+习惯（V1.1 模块）契约：`GET/POST /habits`、`GET/PATCH/DELETE /habits/{id}`（schedule 校验、版控、幂等、`If-Match` 软删）；`PUT /habits/{id}/logs/{date}`（同日唯一 upsert，显式补签）与 `GET /habits/{id}/logs`（必填日期窗口 ≤366 天）；`GET /habits/{id}/streak?through=YYYY-MM-DD` 按“done 且达到目标数量”的连续天数返回 `current_streak/longest_streak`（跳过/低量断点、无节假日例外）。云端导出自 `account-export-v2` 起包含 `habits` 与 `habit_logs`。`/sync/push` 已支持 `habit`、`habit_log`（版本校验、软删墓碑、同日日志冲突），客户端打卡与提醒待 `HAB-01F`。详见 `68-HAB-01A.md`、`69-HAB-01B.md`、`70-HAB-01C.md`、`71-HAB-01D.md`、`72-HAB-01E.md`。
 
 ## 3. Task 示例
 

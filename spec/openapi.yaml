@@ -1702,7 +1702,7 @@ components:
       required: [mutation_id, entity_type, entity_id, op, base_version, payload]
       properties:
         mutation_id: {type: string, format: uuid}
-        entity_type: {type: string, enum: [task, list, tag, step, reminder, time_block]}
+        entity_type: {type: string, enum: [task, list, tag, step, reminder, time_block, habit, habit_log]}
         entity_id: {type: string, format: uuid}
         op: {type: string, enum: [upsert, delete]}
         base_version: {type: integer, minimum: 0}

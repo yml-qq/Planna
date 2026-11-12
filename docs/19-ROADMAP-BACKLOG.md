@@ -53,7 +53,8 @@
 | E10 | HAB-01B | 打卡日志：同日唯一、补签与窗口查询（已交付，见 `69-HAB-01B.md`） | HAB-01A | repeat tests |
 | E10 | HAB-01C | 连续天数规则与 streak 查询（已交付，见 `70-HAB-01C.md`） | HAB-01B | repeat tests |
 | E10 | HAB-01D | 云端导出 v2：习惯与打卡日志（已交付，见 `71-HAB-01D.md`） | HAB-01C | export tests |
-| E10 | HAB-01E | 习惯/日志 push、客户端打卡与提醒 | HAB-01D | repeat tests |
+| E10 | HAB-01E | 习惯/日志的同步 push（已交付，见 `72-HAB-01E.md`） | HAB-01D | replay tests |
+| E10 | HAB-01F | 客户端打卡 UI、提醒与离线习惯 outbox | HAB-01E | repeat tests |
 | E10 | FOCUS-01 | 专注计时 | E04 | interruption tests |
 | E10 | GOAL-01 | 目标/里程碑 | E04 | progress tests |
 | E10 | NOTE-01 | 轻笔记 | E04 | search/privacy |
