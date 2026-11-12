@@ -548,6 +548,7 @@ fn sign_out_local() -> Result<(), String> {
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let directory = app
                 .path()

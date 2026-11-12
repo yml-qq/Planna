@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge } from './api'
 import { createSessionStore } from './session'
-import { createHabitStore } from './habits'
+import { createHabitStore, localDate } from './habits'
+import { createNotifier } from './notifier'
+import {
+  isReminderTime,
+  loadReminders,
+  localTime,
+  runReminders,
+  type HabitReminder
+} from './reminders'
 import { createTaskStore } from './tasks'
 
 function readBaseUrl(): string {
@@ -25,6 +33,22 @@ function readDeviceId(): string {
   }
 }
 
+function readStorage(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStorage(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Storage may be unavailable; reminders stay in memory.
+  }
+}
+
 const bridge = createBridge()
 const baseUrl = ref(readBaseUrl())
 const deviceId = ref(readDeviceId())
@@ -36,6 +60,11 @@ const tasks = createTaskStore(bridge)
 const habits = createHabitStore(bridge, {
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
 })
+
+const reminders = ref<HabitReminder[]>(loadReminders(readStorage('planna.habitReminders')))
+const sentReminders = new Set<string>()
+const notifierPromise = createNotifier()
+let reminderTimer: ReturnType<typeof setInterval> | null = null
 
 const email = ref('')
 const code = ref('')
@@ -134,11 +163,81 @@ async function signOut(): Promise<void> {
   habits.todayLogs.value = {}
 }
 
+function reminderFor(habitId: string): HabitReminder {
+  return reminders.value.find((item) => item.habitId === habitId) ?? {
+    habitId,
+    time: '09:00',
+    enabled: false
+  }
+}
+
+function reminderTime(habitId: string): string {
+  return reminderFor(habitId).time
+}
+
+function upsertReminder(habitId: string, patch: Partial<HabitReminder>): void {
+  const current = reminderFor(habitId)
+  const next: HabitReminder = { ...current, ...patch, habitId }
+  reminders.value = [
+    ...reminders.value.filter((item) => item.habitId !== habitId),
+    next
+  ]
+}
+
+function setReminderTime(habitId: string, event: Event): void {
+  const value = (event.target as HTMLInputElement).value
+  if (!isReminderTime(value)) return
+  upsertReminder(habitId, { time: value })
+}
+
+function setReminderEnabled(habitId: string, event: Event): void {
+  upsertReminder(habitId, { enabled: (event.target as HTMLInputElement).checked })
+}
+
+async function tickReminders(): Promise<void> {
+  if (!signedIn.value || habits.habits.value.length === 0) return
+  const notifier = await notifierPromise
+  await runReminders(
+    notifier,
+    habits.habits.value,
+    habits.todayLogs.value,
+    reminders.value,
+    localDate(),
+    localTime(),
+    sentReminders
+  )
+}
+
+watch(
+  () => habits.habits.value,
+  (list) => {
+    for (const habit of list) {
+      if (!reminders.value.some((item) => item.habitId === habit.id)) {
+        reminders.value = [...reminders.value, { habitId: habit.id, time: '09:00', enabled: false }]
+      }
+    }
+  },
+  { deep: false }
+)
+
+watch(
+  reminders,
+  (value) => writeStorage('planna.habitReminders', JSON.stringify(value)),
+  { deep: true }
+)
+
+onUnmounted(() => {
+  if (reminderTimer) clearInterval(reminderTimer)
+})
+
 onMounted(async () => {
   if (await session.restore()) {
     await tasks.refresh()
     await habits.refresh()
   }
+  reminderTimer = setInterval(() => {
+    void tickReminders()
+  }, 30_000)
 })
 </script>
 
@@ -232,6 +331,22 @@ onMounted(async () => {
           >
             打卡
           </button>
+          <label class="habits__reminder">
+            <input
+              type="time"
+              class="input input--time"
+              :value="reminderTime(habit.id)"
+              aria-label="提醒时间"
+              @change="setReminderTime(habit.id, $event)"
+            />
+            <input
+              type="checkbox"
+              :checked="reminderFor(habit.id).enabled"
+              aria-label="启用提醒"
+              @change="setReminderEnabled(habit.id, $event)"
+            />
+            提醒
+          </label>
           <button
             class="button button--ghost"
             type="button"
