@@ -75,6 +75,8 @@ const editHabitWeekdays = ref<number[]>([])
 const outbox = ref({ pending: 0, failed: 0 })
 const issues = ref<OutboxIssue[]>([])
 const conflicts = ref<ConflictIssue[]>([])
+const ledgerText = ref('')
+const ledgerStatus = ref('')
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
@@ -271,6 +273,21 @@ async function refreshOutbox(): Promise<void> {
   }
 }
 
+async function exportLedger(): Promise<void> {
+  ledgerStatus.value = ''
+  try {
+    ledgerText.value = await bridge.exportConflicts()
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(ledgerText.value)
+      ledgerStatus.value = '已复制到剪贴板'
+    } else {
+      ledgerStatus.value = '请手动复制下方内容'
+    }
+  } catch {
+    ledgerStatus.value = '导出失败，请重试'
+  }
+}
+
 async function resolveConflictAction(mutationId: string, strategy: ConflictStrategy): Promise<void> {
   await bridge.resolveConflict(mutationId, strategy)
   await refreshOutbox()
@@ -429,6 +446,11 @@ onMounted(async () => {
       <p v-if="outbox.failed > 0" class="status status--error" role="alert">
         同步冲突：{{ outbox.failed }} 条变更未上传，请稍后重试
       </p>
+      <div v-if="conflicts.length > 0" class="issues__header">
+        <button class="button button--ghost" type="button" @click="exportLedger">导出冲突台账</button>
+        <span v-if="ledgerStatus" class="status">{{ ledgerStatus }}</span>
+      </div>
+      <pre v-if="ledgerText" class="ledger">{{ ledgerText }}</pre>
       <ul v-if="conflicts.length > 0" class="issues" aria-label="版本冲突">
         <li v-for="conflict in conflicts" :key="conflict.mutationId" class="issues__item">
           <span class="issues__text">

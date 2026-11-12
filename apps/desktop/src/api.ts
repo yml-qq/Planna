@@ -113,6 +113,7 @@ export interface DesktopBridge {
   discardMutation(mutationId: string): Promise<boolean>
   listConflicts(): Promise<ConflictIssue[]>
   resolveConflict(mutationId: string, strategy: ConflictStrategy): Promise<boolean>
+  exportConflicts(): Promise<string>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -248,6 +249,14 @@ export class MemoryBridge implements DesktopBridge {
     if (updated.title.length === 0 || updated.title.length > 200) throw new Error('INVALID_HABIT')
     this.habits.set(habitId, updated)
     return updated
+  }
+
+  async exportConflicts(): Promise<string> {
+    return JSON.stringify({
+      schema_version: 'conflict-ledger-v1',
+      exported_at: new Date().toISOString(),
+      conflicts: []
+    })
   }
 
   async listConflicts(): Promise<ConflictIssue[]> {
@@ -488,6 +497,10 @@ export class TauriBridge implements DesktopBridge {
   async listHabitLogs(habitId: string, from: string, to: string): Promise<HabitLog[]> {
     const rows = await this.invoke<RawHabitLog[]>('list_habit_logs', { habitId, from, to })
     return rows.map(toHabitLog)
+  }
+
+  async exportConflicts(): Promise<string> {
+    return this.invoke<string>('export_conflicts')
   }
 
   async listConflicts(): Promise<ConflictIssue[]> {

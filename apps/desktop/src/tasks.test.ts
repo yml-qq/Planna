@@ -100,7 +100,8 @@ describe('task store', () => {
       outboxIssues: async () => [],
       discardMutation: async () => false,
       listConflicts: async () => [],
-      resolveConflict: async () => false
+      resolveConflict: async () => false,
+      exportConflicts: async () => '{"schema_version":"conflict-ledger-v1","conflicts":[]}' 
     }
     const store = createTaskStore(failing, 'inbox')
     await store.refresh()

@@ -149,7 +149,8 @@ describe('habit store', () => {
       outboxIssues: async () => [],
       discardMutation: async () => false,
       listConflicts: async () => [],
-      resolveConflict: async () => false
+      resolveConflict: async () => false,
+      exportConflicts: async () => '{"schema_version":"conflict-ledger-v1","conflicts":[]}' 
     }
     const store = createHabitStore(failing, storeOptions())
     await store.refresh()
@@ -301,5 +302,14 @@ describe('weekly habit editing', () => {
       })
     ).toBe(true)
     expect(store.habits.value[0]?.weekdays).toBeNull()
+  })
+})
+
+describe('conflict ledger export', () => {
+  it('exports a versioned empty ledger from the memory bridge', async () => {
+    const bridge = new MemoryBridge()
+    const parsed = JSON.parse(await bridge.exportConflicts())
+    expect(parsed.schema_version).toBe('conflict-ledger-v1')
+    expect(parsed.conflicts).toEqual([])
   })
 })

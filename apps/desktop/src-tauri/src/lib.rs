@@ -406,6 +406,32 @@ fn list_conflicts(state: State<'_, AppState>) -> Result<Vec<ConflictDto>, String
 }
 
 #[tauri::command]
+fn export_conflicts(state: State<'_, AppState>) -> Result<String, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    let conflicts = store.conflicts().map_err(|error| error.to_string())?;
+    let rows: Vec<serde_json::Value> = conflicts
+        .into_iter()
+        .map(|entry| {
+            serde_json::json!({
+                "mutation_id": entry.mutation_id,
+                "entity_type": entry.entity_type,
+                "entity_id": entry.entity_id,
+                "server_version": entry.server_version,
+                "server_entity": serde_json::from_str::<serde_json::Value>(&entry.server_entity)
+                    .unwrap_or(serde_json::Value::Null),
+                "created_at": entry.created_at
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&serde_json::json!({
+        "schema_version": "conflict-ledger-v1",
+        "exported_at": now(),
+        "conflicts": rows
+    }))
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn resolve_conflict(
     state: State<'_, AppState>,
     mutation_id: String,
@@ -699,6 +725,7 @@ pub fn run() {
             outbox_issues,
             discard_mutation,
             list_conflicts,
+            export_conflicts,
             resolve_conflict,
             run_sync,
             request_login_code,
