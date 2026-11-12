@@ -376,6 +376,56 @@ struct OutboxIssueDto {
     last_error: Option<String>,
 }
 
+#[derive(Serialize)]
+struct ConflictDto {
+    mutation_id: String,
+    entity_type: String,
+    entity_id: String,
+    server_version: i64,
+    created_at: String,
+}
+
+#[tauri::command]
+fn list_conflicts(state: State<'_, AppState>) -> Result<Vec<ConflictDto>, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .conflicts()
+        .map(|conflicts| {
+            conflicts
+                .into_iter()
+                .map(|entry| ConflictDto {
+                    mutation_id: entry.mutation_id,
+                    entity_type: entry.entity_type,
+                    entity_id: entry.entity_id,
+                    server_version: entry.server_version,
+                    created_at: entry.created_at,
+                })
+                .collect()
+        })
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn resolve_conflict(
+    state: State<'_, AppState>,
+    mutation_id: String,
+    strategy: String,
+) -> Result<bool, String> {
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    match strategy.as_str() {
+        "server" => store
+            .resolve_conflict_keep_server(&mutation_id)
+            .map_err(|error| error.to_string()),
+        "retry" => store
+            .resolve_conflict_retry(&mutation_id)
+            .map_err(|error| error.to_string()),
+        "overwrite" => store
+            .resolve_conflict_overwrite(&mutation_id)
+            .map_err(|error| error.to_string()),
+        _ => Err("UNKNOWN_STRATEGY".to_string()),
+    }
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -648,6 +698,8 @@ pub fn run() {
             outbox_status,
             outbox_issues,
             discard_mutation,
+            list_conflicts,
+            resolve_conflict,
             run_sync,
             request_login_code,
             login_with_code,

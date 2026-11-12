@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { createBridge, type OutboxIssue } from './api'
+import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
 import { createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
@@ -75,6 +75,7 @@ const editHabitSchedule = ref<'daily' | 'weekly' | 'weekdays'>('daily')
 const editHabitWeekdays = ref<number[]>([])
 const outbox = ref({ pending: 0, failed: 0 })
 const issues = ref<OutboxIssue[]>([])
+const conflicts = ref<ConflictIssue[]>([])
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
@@ -264,6 +265,18 @@ async function refreshOutbox(): Promise<void> {
   } catch {
     issues.value = []
   }
+  try {
+    conflicts.value = await bridge.listConflicts()
+  } catch {
+    conflicts.value = []
+  }
+}
+
+async function resolveConflictAction(mutationId: string, strategy: ConflictStrategy): Promise<void> {
+  await bridge.resolveConflict(mutationId, strategy)
+  await refreshOutbox()
+  await tasks.refresh()
+  await habits.refresh()
 }
 
 async function discardIssue(mutationId: string): Promise<void> {
@@ -415,6 +428,24 @@ onMounted(async () => {
       <p v-if="outbox.failed > 0" class="status status--error" role="alert">
         同步冲突：{{ outbox.failed }} 条变更未上传，请稍后重试
       </p>
+      <ul v-if="conflicts.length > 0" class="issues" aria-label="版本冲突">
+        <li v-for="conflict in conflicts" :key="conflict.mutationId" class="issues__item">
+          <span class="issues__text">
+            {{ conflict.entityType }} 版本冲突（服务器 v{{ conflict.serverVersion }}）
+          </span>
+          <span class="issues__actions">
+            <button class="button button--ghost" type="button" @click="resolveConflictAction(conflict.mutationId, 'server')">
+              以服务端为准
+            </button>
+            <button class="button button--ghost" type="button" @click="resolveConflictAction(conflict.mutationId, 'retry')">
+              重试
+            </button>
+            <button class="button button--ghost" type="button" @click="resolveConflictAction(conflict.mutationId, 'overwrite')">
+              覆盖
+            </button>
+          </span>
+        </li>
+      </ul>
       <ul v-if="issues.length > 0" class="issues" aria-label="待处理同步冲突">
         <li v-for="issue in issues" :key="issue.mutationId" class="issues__item">
           <span class="issues__text">

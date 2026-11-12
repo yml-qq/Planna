@@ -95,7 +95,6 @@ pub struct SyncOutcome {
     pub rejected: usize,
     pub pulled: usize,
     pub skipped_stale: usize,
-    pub resolved_conflicts: usize,
     pub cursor: Option<String>,
 }
 
@@ -151,29 +150,25 @@ pub fn sync_once(
                     outcome.duplicates += 1;
                 }
                 "conflict" => {
-                    let target = pending_by_id.get(&result.mutation_id);
-                    let applied = match (&result.server_entity, target) {
-                        (Some(entity), Some((entity_type, entity_id))) => store
-                            .force_apply_snapshot(
+                    if let (Some(entity), Some((entity_type, entity_id))) = (
+                        &result.server_entity,
+                        pending_by_id.get(&result.mutation_id),
+                    ) {
+                        store
+                            .record_conflict(
+                                &result.mutation_id,
                                 entity_type,
                                 entity_id,
                                 &entity.to_string(),
                                 result.entity_version.unwrap_or(1),
+                                &now_string(),
                             )
-                            .is_ok(),
-                        _ => false,
-                    };
-                    if applied {
-                        store
-                            .remove_mutation(&result.mutation_id)
                             .map_err(|error| TransportError::Fatal(error.to_string()))?;
-                        outcome.resolved_conflicts += 1;
-                    } else {
-                        store
-                            .record_failure(&result.mutation_id, "VERSION_CONFLICT")
-                            .map_err(|error| TransportError::Fatal(error.to_string()))?;
-                        outcome.conflicts.push(result.mutation_id.clone());
                     }
+                    store
+                        .record_failure(&result.mutation_id, "VERSION_CONFLICT")
+                        .map_err(|error| TransportError::Fatal(error.to_string()))?;
+                    outcome.conflicts.push(result.mutation_id.clone());
                 }
                 "rejected" => {
                     store
@@ -257,4 +252,13 @@ pub fn sync_with_retry(
             Err(other) => return Err(other),
         }
     }
+}
+
+fn now_string() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis())
+        .unwrap_or(0);
+    format!("{millis}")
 }

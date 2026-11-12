@@ -149,6 +149,16 @@ pub struct HabitPatchLocal {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConflictEntry {
+    pub mutation_id: String,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub server_entity: String,
+    pub server_version: i64,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutboxEntry {
     pub mutation_id: String,
     pub entity_type: String,
@@ -260,6 +270,14 @@ impl Store {
                 version INTEGER NOT NULL CHECK (version >= 1),
                 updated_at TEXT NOT NULL,
                 UNIQUE (habit_id, log_date)
+            );
+            CREATE TABLE IF NOT EXISTS sync_conflicts (
+                mutation_id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                server_entity TEXT NOT NULL,
+                server_version INTEGER NOT NULL,
+                created_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS sync_state (
                 key TEXT PRIMARY KEY,
@@ -945,6 +963,119 @@ impl Store {
             logs.push(row?);
         }
         Ok(logs)
+    }
+
+    /// Records a conflict together with the server entity so the user can resolve it later.
+    pub fn record_conflict(
+        &mut self,
+        mutation_id: &str,
+        entity_type: &str,
+        entity_id: &str,
+        server_entity: &str,
+        server_version: i64,
+        now: &str,
+    ) -> StoreResult<()> {
+        self.connection.execute(
+            "INSERT INTO sync_conflicts(mutation_id, entity_type, entity_id, server_entity,
+                server_version, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(mutation_id) DO UPDATE SET entity_type=excluded.entity_type,
+                entity_id=excluded.entity_id, server_entity=excluded.server_entity,
+                server_version=excluded.server_version, created_at=excluded.created_at",
+            params![
+                mutation_id,
+                entity_type,
+                entity_id,
+                server_entity,
+                server_version,
+                now
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn conflicts(&self) -> StoreResult<Vec<ConflictEntry>> {
+        let mut statement = self.connection.prepare(
+            "SELECT mutation_id, entity_type, entity_id, server_entity, server_version, created_at
+             FROM sync_conflicts ORDER BY created_at, mutation_id",
+        )?;
+        let rows = statement.query_map([], |row| {
+            Ok(ConflictEntry {
+                mutation_id: row.get(0)?,
+                entity_type: row.get(1)?,
+                entity_id: row.get(2)?,
+                server_entity: row.get(3)?,
+                server_version: row.get(4)?,
+                created_at: row.get(5)?,
+            })
+        })?;
+        let mut conflicts = Vec::new();
+        for row in rows {
+            conflicts.push(row?);
+        }
+        Ok(conflicts)
+    }
+
+    /// Keeps the server state, drops the local mutation and its conflict record.
+    pub fn resolve_conflict_keep_server(&mut self, mutation_id: &str) -> StoreResult<bool> {
+        let conflict = self
+            .conflicts()?
+            .into_iter()
+            .find(|entry| entry.mutation_id == mutation_id);
+        let Some(conflict) = conflict else {
+            return Ok(false);
+        };
+        self.force_apply_snapshot(
+            &conflict.entity_type,
+            &conflict.entity_id,
+            &conflict.server_entity,
+            conflict.server_version,
+        )?;
+        self.remove_mutation(mutation_id)?;
+        self.remove_conflict(mutation_id)?;
+        Ok(true)
+    }
+
+    /// Retries the same mutation against the server on the next sync.
+    pub fn resolve_conflict_retry(&self, mutation_id: &str) -> StoreResult<bool> {
+        let changed = self.connection.execute(
+            "UPDATE outbox SET attempts = 0, last_error = NULL WHERE mutation_id = ?1",
+            params![mutation_id],
+        )?;
+        if changed == 0 {
+            return Ok(false);
+        }
+        self.remove_conflict(mutation_id)?;
+        Ok(true)
+    }
+
+    /// Rebases the mutation on the server version, overwriting it on the next sync.
+    pub fn resolve_conflict_overwrite(&self, mutation_id: &str) -> StoreResult<bool> {
+        let conflict = self
+            .conflicts()?
+            .into_iter()
+            .find(|entry| entry.mutation_id == mutation_id);
+        let Some(conflict) = conflict else {
+            return Ok(false);
+        };
+        let changed = self.connection.execute(
+            "UPDATE outbox SET base_version = ?2, attempts = 0, last_error = NULL
+             WHERE mutation_id = ?1",
+            params![mutation_id, conflict.server_version],
+        )?;
+        if changed == 0 {
+            return Ok(false);
+        }
+        self.remove_conflict(mutation_id)?;
+        Ok(true)
+    }
+
+    fn remove_conflict(&self, mutation_id: &str) -> StoreResult<()> {
+        self.connection.execute(
+            "DELETE FROM sync_conflicts WHERE mutation_id = ?1",
+            params![mutation_id],
+        )?;
+        Ok(())
     }
 
     /// Forces a server snapshot into the local store (conflict resolution "server wins"),

@@ -147,7 +147,9 @@ describe('habit store', () => {
       },
       outboxStatus: async () => ({ pending: 0, failed: 0 }),
       outboxIssues: async () => [],
-      discardMutation: async () => false
+      discardMutation: async () => false,
+      listConflicts: async () => [],
+      resolveConflict: async () => false
     }
     const store = createHabitStore(failing, storeOptions())
     await store.refresh()

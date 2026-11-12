@@ -464,3 +464,46 @@ fn update_habit_changes_schedule_to_weekly_and_clears_weekdays_when_daily() {
     );
     assert!(store.habits().expect("habits")[0].weekdays.is_none());
 }
+
+#[test]
+fn conflict_resolution_retry_and_overwrite_reset_outbox_state() {
+    let mut store = store_with_habit();
+    store
+        .record_failure("mutation-1", "VERSION_CONFLICT")
+        .expect("failure");
+    store
+        .record_conflict(
+            "mutation-1",
+            "habit",
+            "habit-1",
+            "{\"id\":\"habit-1\"}",
+            5,
+            "2026-11-12T00:00:00Z",
+        )
+        .expect("conflict");
+    assert!(store.resolve_conflict_retry("mutation-1").expect("retry"));
+    let entry = &store.pending_mutations(10).expect("pending")[0];
+    assert_eq!(entry.attempts, 0);
+    assert!(entry.last_error.is_none());
+    assert!(store.conflicts().expect("conflicts").is_empty());
+
+    store
+        .record_conflict(
+            "mutation-1",
+            "habit",
+            "habit-1",
+            "{\"id\":\"habit-1\"}",
+            5,
+            "2026-11-12T00:00:00Z",
+        )
+        .expect("conflict");
+    assert!(
+        store
+            .resolve_conflict_overwrite("mutation-1")
+            .expect("overwrite")
+    );
+    let entry = &store.pending_mutations(10).expect("pending")[0];
+    assert_eq!(entry.base_version, 5);
+    assert!(store.conflicts().expect("conflicts").is_empty());
+    assert!(!store.resolve_conflict_retry("missing").expect("missing"));
+}

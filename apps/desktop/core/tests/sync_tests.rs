@@ -357,7 +357,7 @@ fn repeated_cursor_expiry_is_reported() {
 }
 
 #[test]
-fn conflict_with_server_entity_applies_server_state_and_clears_outbox() {
+fn conflict_with_server_entity_records_resolution_entry() {
     let mut store = store_with_task();
     let mut transport = FakeTransport::new(
         vec![PushResult {
@@ -384,9 +384,18 @@ fn conflict_with_server_entity_applies_server_state_and_clears_outbox() {
         vec![],
     );
     let outcome = sync_once(&mut store, &mut transport, "device-1", 1).expect("sync");
-    assert_eq!(outcome.resolved_conflicts, 1);
-    assert!(outcome.conflicts.is_empty());
+    assert_eq!(outcome.conflicts, vec!["mutation-1".to_string()]);
+    assert_eq!(store.pending_mutations(10).expect("pending").len(), 1);
+    let conflicts = store.conflicts().expect("conflicts");
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(conflicts[0].server_version, 2);
+    assert!(
+        store
+            .resolve_conflict_keep_server("mutation-1")
+            .expect("resolve")
+    );
     assert!(store.pending_mutations(10).expect("pending").is_empty());
+    assert!(store.conflicts().expect("conflicts").is_empty());
     let tasks = store.tasks_for_list("list-inbox").expect("tasks");
     assert_eq!(tasks[0].title, "From server");
     assert_eq!(tasks[0].version, 2);
