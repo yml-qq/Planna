@@ -332,3 +332,12 @@
 - 迭代修复：冒烟窗口宽度误写为 2 个月（预期 422 却合法），改为超过 366 天后通过。
 - [Server integration 43119204817](https://github.com/yml-qq/Planna/actions/runs/43119204817)（迁移重放 + Habit/HabitLog 冒烟 + 清理冒烟）与 [Desktop core 43119204667](https://github.com/yml-qq/Planna/actions/runs/43119204667) 均 **success**。
 - 未连接生产库、未提交凭据；连续天数规则、习惯同步/导出 schema v2 与客户端打卡 UI 留待 `HAB-01C`。
+
+## HAB-01C 连续天数检查（2026-11-12）
+
+- 定义并实现 streak 规则（补齐 F06 未定部分）：以显式 `through` 本地日期为最后一天，只统计 `log_date <= through`；达标 = `done && quantity >= target_quantity`，`skipped` 与低量 `done` 均为断点；`current_streak` 从 through 向前连续达标数，`longest_streak` 为截至 through 的最长连续段；暂停/节假日无例外。
+- 新增只读端点 `GET /habits/{id}/streak?through=YYYY-MM-DD`（缺/非法日期 400、跨 owner/已删习惯 404、未登录 401），返回 `HabitStreak`；无 schema 变更、无迁移、不写幂等记录。契约测试保持 **28 项**并通过。
+- 冒烟扩展：8 天日志构造两段连续（01-02、05-08）与断点（03 低量、04 跳过）；through=11-08 → 4/4、through=11-03 → 0/2、through=11-05 → 1/2；缺参数/非法日期 400、随机习惯 404、删除账号后 401。
+- 迭代修复：streak 的跨 owner 断言在删除外账号后执行，改为断言 `ACCOUNT_DELETED`。
+- [Server integration 43122545563](https://github.com/yml-qq/Planna/actions/runs/43122545563) 与 [Desktop core 43122545668](https://github.com/yml-qq/Planna/actions/runs/43122545668) 均 **success**。
+- 未连接生产库、未提交凭据；习惯同步/导出与客户端打卡留待 `HAB-01D`。
