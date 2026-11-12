@@ -1,6 +1,6 @@
 # 86｜FOCUS-03：任务关联、完成时长修正与后台漂移提示
 
-状态：代码已实现；本地 `pnpm test`（47 项）与 `pnpm build` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-03 小节。专注统计与服务端聚合属 `FOCUS-04`。
+状态：代码已实现；本地 `pnpm test`（47 项）与 `pnpm build` 通过；[Server integration 43179275115](https://github.com/yml-qq/Planna/actions/runs/43179275115) 与 [Desktop core 43179275125](https://github.com/yml-qq/Planna/actions/runs/43179275125) 均 **success**。专注统计与服务端聚合属 `FOCUS-04`。
 
 ## 范围与验收
 

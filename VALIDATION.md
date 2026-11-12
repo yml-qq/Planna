@@ -475,3 +475,12 @@
 - 语义：服务端 actual 只在状态迁移提交，崩溃后 active 显示可能低于真实经过时间；恢复以服务端为准（修正 UI 留 `FOCUS-03`）；专注不进入 offbox/离线队列。
 - [Server integration 43177456786](https://github.com/yml-qq/Planna/actions/runs/43177456786) 与 [Desktop core 43177456889](https://github.com/yml-qq/Planna/actions/runs/43177456889) 均 **success**。
 - 未连接生产库、未提交凭据；空闲漂移校正、任务联动与专注统计留待 `FOCUS-03`。
+
+## FOCUS-03 任务关联/时长修正检查（2026-11-12）
+
+- `focusStart/start` 支持可选 `taskId` 并透传 `focus_start.task_id`（服务端已有归属校验）；UI 开始前可选关联本清单任务。
+- `complete(actualSeconds?)` 支持显式完成时长（0..86400，UI 以分钟输入），非法值报 `INVALID_FOCUS_ACTUAL` 且不结束会话；未提供时使用当前计时。
+- `tick()` 检测相邻 tick 间隔 >60s 的后台漂移并记录 `driftSeconds`，UI 提示可在完成前修正；漂移只提示、不自动扣减。
+- 前端新增 3 项测试（任务关联+2400s 完成、120s 漂移保持、非法完成值回滚），合计 **47 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 43179275115](https://github.com/yml-qq/Planna/actions/runs/43179275115) 与 [Desktop core 43179275125](https://github.com/yml-qq/Planna/actions/runs/43179275125) 均 **success**。
+- 未连接生产库、未提交凭据；专注统计聚合、休息周期提醒与任务详情联动留待 `FOCUS-04`。
