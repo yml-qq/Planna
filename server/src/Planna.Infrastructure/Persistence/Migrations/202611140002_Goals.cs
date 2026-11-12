@@ -26,6 +26,7 @@ public sealed class Goals : Migration
         }, constraints: table =>
         {
             table.PrimaryKey("pk_goals", x => x.id);
+            table.UniqueConstraint("ak_goals_owner_id", x => new { x.owner_id, x.id });
             table.ForeignKey("fk_goals_users", x => x.owner_id, "users", "id",
                 onDelete: ReferentialAction.Cascade);
             table.CheckConstraint("ck_goals_title", "length(btrim(title)) BETWEEN 1 AND 200");
