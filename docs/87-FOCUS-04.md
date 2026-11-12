@@ -1,6 +1,6 @@
 # 87｜FOCUS-04：专注统计聚合 API
 
-状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 29 项通过，PostgreSQL 18 CI 见 `VALIDATION.md` 的 FOCUS-04 小节。统计 UI 与休息提醒属 `FOCUS-05`。
+状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 29 项通过；[Server integration 43183482907](https://github.com/yml-qq/Planna/actions/runs/43183482907) 与 [Desktop core 43183482934](https://github.com/yml-qq/Planna/actions/runs/43183482934) 均 **success**（首次 CI 失败为冒烟 foreign session 未落库，已修复）。统计 UI 与休息提醒属 `FOCUS-05`。
 
 ## 范围与验收
 

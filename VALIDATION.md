@@ -484,3 +484,12 @@
 - 前端新增 3 项测试（任务关联+2400s 完成、120s 漂移保持、非法完成值回滚），合计 **47 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 43179275115](https://github.com/yml-qq/Planna/actions/runs/43179275115) 与 [Desktop core 43179275125](https://github.com/yml-qq/Planna/actions/runs/43179275125) 均 **success**。
 - 未连接生产库、未提交凭据；专注统计聚合、休息周期提醒与任务详情联动留待 `FOCUS-04`。
+
+## FOCUS-04 专注统计 API 检查（2026-11-12）
+
+- `GET /focus-sessions/stats?from&to&time_zone`：闭区间、≤92 天（422 `INVALID_FOCUS_RANGE`）、非法 IANA 时区 422、缺 date 400；按 `started_at AT TIME ZONE` 本地日聚合；`total_sessions` 含未结束会话，`actual_seconds` 只累计 completed/abandoned；owner 隔离。
+- OpenAPI 新增路径与 `FocusStats/FocusDayStat`，契约测试在同一 FOCUS 用例追加断言（29 项保持通过）。
+- 冒烟 `HttpFocusStatsSmoke`：确定性插入 UTC 10:00/23:30、次日 01:00 的 completed/abandoned 行，断言 UTC 分组（2/900、1/120）、`Asia/Shanghai` 分组（1/600、1/420）、总计、跨 owner 隔离、反向区间/93 天/非法时区/缺 from。
+- 首次 Server CI 失败（[43181418917](https://github.com/yml-qq/Planna/actions/runs/43181418917)）：冒烟为 foreign owner 签发 token 时使用了未落库的随机 session id，导致 401；修正为复用已插入的 `foreign_session`（提交 `a6182d8`）。
+- 修复后 [Server integration 43183482907](https://github.com/yml-qq/Planna/actions/runs/43183482907) 与 [Desktop core 43183482934](https://github.com/yml-qq/Planna/actions/runs/43183482934) 均 **success**；本地 build/format/契约 29 项通过。
+- 未连接生产库、未提交凭据；统计 UI、休息提醒与任务联动留待 `FOCUS-05`。
