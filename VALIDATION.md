@@ -351,3 +351,12 @@
 - 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format` 通过、契约测试 28/28、OpenAPI 校验 OK。
 - [Server integration 43154224559](https://github.com/yml-qq/Planna/actions/runs/43154224559) 与 [Desktop core 43154224514](https://github.com/yml-qq/Planna/actions/runs/43154224514) 均 **success**。
 - 未连接生产库、未提交凭据；习惯/日志的 push 同步、客户端打卡与提醒留待 `HAB-01E`。
+
+## HAB-01E 习惯同步 push 检查（2026-11-12）
+
+- `/sync/push` 新增 `habit`（创建/部分合并更新/软删墓碑，版本校验与 conflict 服务器实体）与 `habit_log`（同日唯一创建、同日冲突 retryable、按版本更新、不支持删除、删除习惯后拒绝）；跨 owner 一律 rejected；每个接受/冲突写入推进一次 revision 并写 `sync_changes`（新实体类型），幂等重放返回 duplicate。
+- `SyncMutation.entity_type` 枚举加入 `habit`/`habit_log`；契约测试增加枚举断言，保持 **28 项**通过。无 schema 变更、无迁移。
+- 新增 `HttpHabitPushSmoke`：创建/重放/pull 可见、更新与陈旧冲突、日志创建/同日冲突/更新、删除与删除后拒绝、非法实体/缺字段/weekly 缺 weekdays/非法日期、跨 owner，并核对 revision=5、`sync_changes` 按实体计数（habit 3、habit_log 2）、幂等记录 5。
+- 本地验证：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format` 通过、契约测试 28/28、OpenAPI 校验 OK。
+- [Server integration 43155930310](https://github.com/yml-qq/Planna/actions/runs/43155930310) 与 [Desktop core 43155930298](https://github.com/yml-qq/Planna/actions/runs/43155930298) 均 **success**。
+- 未连接生产库、未提交凭据；客户端打卡 UI、提醒与离线习惯 outbox 留待 `HAB-01F`。
