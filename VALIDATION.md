@@ -456,3 +456,13 @@
 - **通知真机投递未验证**：当前环境无桌面通知运行时，仅验证插件编译、能力配置、调度/免打扰/去重逻辑。
 - [Server integration 43173459806](https://github.com/yml-qq/Planna/actions/runs/43173459806) 与 [Desktop core 43173459876](https://github.com/yml-qq/Planna/actions/runs/43173459876) 均 **success**。
 - 未连接生产库、未提交凭据；人工 QA（通知投递、签名安装包、streak 抽查、台账字段评审）留待 `HAB-01Q`。
+
+## FOCUS-01 专注会话 API 检查（2026-11-12）
+
+- 迁移 `202611140001_FocusSessions`：`focus_sessions` 表（state/version/planned/actual/break、ended_at 约束、任务外键、`ux_focus_sessions_open` 部分唯一索引保证单 owner 一个未结束会话）。
+- 契约：`GET/POST /focus-sessions`、`GET/PATCH /focus-sessions/{id}`，含 `Idempotency-Key`、`If-Match: "vN"`、状态机（active↔paused、→completed/abandoned）、终态拒绝、owner 隔离、任务归属校验；OpenAPI 新增路径与四个 schema，契约测试 **29 项**通过。
+- 实现：`FocusSessionService` 使用 `client_mutations` 幂等 + owner 级 advisory lock，所有写事务化；`actual_seconds` 由客户端提供，服务端不从墙钟推断。
+- 冒烟 `HttpFocusSmoke`：创建/重放/同 key 复用/开放会话冲突/列表/GET/跨 owner 404/暂停→恢复→完成/陈旧版本/终态拒绝/完成后可新建/非法 planned/任务/状态/limit/缺失 If-Match。
+- 本地：`dotnet build --warnaserror` 0 警告 0 错误、`dotnet format`、契约 29 项通过。
+- [Server integration 43175516165](https://github.com/yml-qq/Planna/actions/runs/43175516165) 与 [Desktop core 43175516258](https://github.com/yml-qq/Planna/actions/runs/43175516258) 均 **success**。
+- 未连接生产库、未提交凭据；专注尚未进入 `/sync` 变更流，客户端计时 UI/断电恢复留待 `FOCUS-02`。

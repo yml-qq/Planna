@@ -1,6 +1,6 @@
 # 84｜FOCUS-01：专注会话服务端 API
 
-状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 **29 项**通过，PostgreSQL 18 CI 见 `VALIDATION.md` 的 FOCUS-01 小节。客户端计时 UI 与离线恢复属 `FOCUS-02`。
+状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 **29 项**通过；[Server integration 43175516165](https://github.com/yml-qq/Planna/actions/runs/43175516165) 与 [Desktop core 43175516258](https://github.com/yml-qq/Planna/actions/runs/43175516258) 均 **success**（含迁移与冒烟）。客户端计时 UI 与离线恢复属 `FOCUS-02`。
 
 ## 范围与验收
 
