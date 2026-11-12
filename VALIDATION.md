@@ -438,3 +438,12 @@
 - 测试：core 新增冲突解析测试，合计 **34 项**；同步测试验证“记录台账 → keep_server 收敛”；前端 36 项与 `pnpm build` 通过；core/shell `cargo clippy/fmt` 通过；服务端无变更。
 - [Server integration 43170244438](https://github.com/yml-qq/Planna/actions/runs/43170244438) 与 [Desktop core 43170244516](https://github.com/yml-qq/Planna/actions/runs/43170244516) 均 **success**。
 - 未连接生产库、未提交凭据；通知真机验证、跨时区展示与台账审计留待 `HAB-01O`。台账本地保存、不上传，清库会丢失台账但保留 outbox。
+
+## HAB-01O 跨时区检查（2026-11-12）
+
+- 新增 `dateInTimeZone/timeInTimeZone`（`Intl.DateTimeFormat`，非法时区回退本地）；习惯刷新/打卡/编辑后的 streak 均按习惯 `time_zone` 计算“今日”和 90 天窗口；UI 显示习惯时区。
+- 提醒改为按习惯时区比较提醒时间与今日日期，去重键为 `habit:习惯时区日期`；免打扰仍按设备本地时间窗口。
+- core 新增 `prune_conflicts`（删除无 outbox mutation 的台账行），`sync_once` 每次同步前执行；新增 prune 测试（core 合计 **35 项**）。
+- 前端提醒测试改为固定 UTC 时区 + 动态本地时间，**36 项**与 `pnpm build` 通过；core/shell `cargo clippy/fmt` 通过；服务端无变更。
+- [Server integration 43171888623](https://github.com/yml-qq/Planna/actions/runs/43171888623) 与 [Desktop core 43171888640](https://github.com/yml-qq/Planna/actions/runs/43171888640) 均 **success**。
+- 未连接生产库、未提交凭据；通知真机验证、台账导出与服务端 streak 一致性抽查留待 `HAB-01P`。
