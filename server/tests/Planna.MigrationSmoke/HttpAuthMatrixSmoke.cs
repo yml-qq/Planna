@@ -37,7 +37,7 @@ internal static class HttpAuthMatrixSmoke
             (HttpMethod.Get, "/tasks", null),
             (HttpMethod.Get, "/lists", null),
             (HttpMethod.Get, "/tags", null),
-            (HttpMethod.Get, "/steps/" + id, null),
+            (HttpMethod.Get, "/tasks/" + id + "/steps", null),
             (HttpMethod.Get, "/sync/pull", null),
             (HttpMethod.Get, "/habits", null),
             (HttpMethod.Get, "/focus-sessions", null),
