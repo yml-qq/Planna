@@ -511,3 +511,11 @@
 - **Desktop CI 时间炸弹修复**：夜间/跨日运行暴露 `habits.test.ts` 依赖真实“今日”，习惯 store 已改为按习惯时区取今日；测试改为注入固定时钟（`HabitStoreOptions.now`）。修复后前端 47 项本地通过。
 - 首次 Desktop CI 失败（[44726400987](https://github.com/yml-qq/Planna/actions/runs/44726400987)），修复提交 `acacaf0` 后 [Desktop core 44728339256](https://github.com/yml-qq/Planna/actions/runs/44728339256) 与 [Server integration 44728339335](https://github.com/yml-qq/Planna/actions/runs/44728339335) 均 **success**；本地 build/format/契约 31 项通过。
 - 未连接生产库、未提交凭据；法定工作日数据服务与 occurrence 编辑范围留待 `TIME-01F`，远程推送投递留待 `REM-02`。
+
+## GOAL-02 目标 UI 检查（2026-11-20）
+
+- Tauri 新增 `goal_list/goal_create/goal_update/goal_add_milestone/goal_update_milestone`（复用 HTTP 客户端、`Idempotency-Key`、`HTTP状态:错误码`）；桥接新增 Goal/Milestone 类型与五个方法（Memory 版本/progress 重算 + Tauri 命令）。
+- goal store：刷新、创建（标题 1..200）、状态更新（版本校验）、添加里程碑、勾选里程碑后按服务端刷新；UI 新增“目标”卡片（创建表单、进度条、里程碑勾选/新增、完成/归档），登录与恢复会话后刷新。
+- 前端新增 5 项目标测试，合计 **52 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44730403454](https://github.com/yml-qq/Planna/actions/runs/44730403454) 与 [Desktop core 44730403198](https://github.com/yml-qq/Planna/actions/runs/44730403198) 均 **success**。
+- 未连接生产库、未提交凭据；AI 目标拆解、目标编辑与里程碑排序留待 `GOAL-03`。
