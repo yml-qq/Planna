@@ -27,6 +27,53 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export type GoalState = 'active' | 'completed' | 'archived'
+
+export interface Milestone {
+  id: string
+  goalId: string
+  title: string
+  dueDate: string | null
+  completed: boolean
+  position: number
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GoalProgress {
+  completedMilestones: number
+  totalMilestones: number
+  percent: number
+}
+
+export interface Goal {
+  id: string
+  title: string
+  description: string
+  targetDate: string | null
+  status: GoalState
+  version: number
+  createdAt: string
+  updatedAt: string
+  progress: GoalProgress
+  milestones: Milestone[]
+}
+
+export interface GoalPatch {
+  title?: string
+  description?: string
+  targetDate?: string | null
+  status?: GoalState
+}
+
+export interface MilestonePatch {
+  title?: string
+  dueDate?: string | null
+  completed?: boolean
+  position?: number
+}
+
 export type FocusState = 'active' | 'paused' | 'completed' | 'abandoned'
 
 export interface FocusSession {
@@ -146,6 +193,33 @@ export interface DesktopBridge {
     expectedVersion: number,
     update: FocusUpdate
   ): Promise<FocusSession>
+  goalList(baseUrl: string, accessToken: string): Promise<Goal[]>
+  goalCreate(
+    baseUrl: string,
+    accessToken: string,
+    input: { title: string; description?: string; targetDate?: string | null }
+  ): Promise<Goal>
+  goalUpdate(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    patch: GoalPatch
+  ): Promise<Goal>
+  goalAddMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    input: { title: string; dueDate?: string | null }
+  ): Promise<Milestone>
+  goalUpdateMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number,
+    patch: MilestonePatch
+  ): Promise<Milestone>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -351,6 +425,121 @@ export class MemoryBridge implements DesktopBridge {
     return updated
   }
 
+  private readonly goals = new Map<string, Goal>()
+
+  private static refreshProgress(goal: Goal): void {
+    const completed = goal.milestones.filter((milestone) => milestone.completed).length
+    const total = goal.milestones.length
+    goal.progress = {
+      completedMilestones: completed,
+      totalMilestones: total,
+      percent: total === 0 ? 0 : Math.floor((completed * 100) / total)
+    }
+  }
+
+  async goalList(_baseUrl: string, _accessToken: string): Promise<Goal[]> {
+    return [...this.goals.values()]
+  }
+
+  async goalCreate(
+    _baseUrl: string,
+    _accessToken: string,
+    input: { title: string; description?: string; targetDate?: string | null }
+  ): Promise<Goal> {
+    const title = input.title.trim()
+    if (title.length === 0 || title.length > 200) throw new Error('422:INVALID_GOAL')
+    const now = new Date().toISOString()
+    const goal: Goal = {
+      id: crypto.randomUUID(),
+      title,
+      description: input.description ?? '',
+      targetDate: input.targetDate ?? null,
+      status: 'active',
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      progress: { completedMilestones: 0, totalMilestones: 0, percent: 0 },
+      milestones: []
+    }
+    this.goals.set(goal.id, goal)
+    return goal
+  }
+
+  async goalUpdate(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    patch: GoalPatch
+  ): Promise<Goal> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    if (goal.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    if (patch.title !== undefined && (patch.title.trim().length === 0 || patch.title.length > 200)) {
+      throw new Error('422:INVALID_GOAL')
+    }
+    goal.title = patch.title?.trim() ?? goal.title
+    goal.description = patch.description ?? goal.description
+    goal.targetDate = patch.targetDate === undefined ? goal.targetDate : patch.targetDate
+    goal.status = patch.status ?? goal.status
+    goal.version += 1
+    goal.updatedAt = new Date().toISOString()
+    return goal
+  }
+
+  async goalAddMilestone(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    input: { title: string; dueDate?: string | null }
+  ): Promise<Milestone> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    const title = input.title.trim()
+    if (title.length === 0 || title.length > 200) throw new Error('422:INVALID_GOAL')
+    const now = new Date().toISOString()
+    const milestone: Milestone = {
+      id: crypto.randomUUID(),
+      goalId,
+      title,
+      dueDate: input.dueDate ?? null,
+      completed: false,
+      position: goal.milestones.length + 1,
+      version: 1,
+      createdAt: now,
+      updatedAt: now
+    }
+    goal.milestones.push(milestone)
+    MemoryBridge.refreshProgress(goal)
+    return milestone
+  }
+
+  async goalUpdateMilestone(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number,
+    patch: MilestonePatch
+  ): Promise<Milestone> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    const milestone = goal.milestones.find((candidate) => candidate.id === milestoneId)
+    if (!milestone) throw new Error('404:MILESTONE_NOT_FOUND')
+    if (milestone.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    if (patch.title !== undefined && (patch.title.trim().length === 0 || patch.title.length > 200)) {
+      throw new Error('422:INVALID_GOAL')
+    }
+    milestone.title = patch.title?.trim() ?? milestone.title
+    milestone.dueDate = patch.dueDate === undefined ? milestone.dueDate : patch.dueDate
+    milestone.completed = patch.completed ?? milestone.completed
+    milestone.position = patch.position ?? milestone.position
+    milestone.version += 1
+    milestone.updatedAt = new Date().toISOString()
+    MemoryBridge.refreshProgress(goal)
+    return milestone
+  }
+
   async exportConflicts(): Promise<string> {
     return JSON.stringify({
       schema_version: 'conflict-ledger-v1',
@@ -477,6 +666,64 @@ function toHabitLog(row: RawHabitLog): HabitLog {
     status: row.status,
     version: row.version,
     updatedAt: row.updated_at
+  }
+}
+
+interface RawMilestone {
+  id: string
+  goal_id: string
+  title: string
+  due_date: string | null
+  completed: boolean
+  position: number
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+interface RawGoal {
+  id: string
+  title: string
+  description: string
+  target_date: string | null
+  status: GoalState
+  version: number
+  created_at: string
+  updated_at: string
+  progress: { completed_milestones: number; total_milestones: number; percent: number }
+  milestones: RawMilestone[]
+}
+
+function toMilestone(row: RawMilestone): Milestone {
+  return {
+    id: row.id,
+    goalId: row.goal_id,
+    title: row.title,
+    dueDate: row.due_date,
+    completed: row.completed,
+    position: row.position,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
+
+function toGoal(row: RawGoal): Goal {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    targetDate: row.target_date,
+    status: row.status,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    progress: {
+      completedMilestones: row.progress.completed_milestones,
+      totalMilestones: row.progress.total_milestones,
+      percent: row.progress.percent
+    },
+    milestones: row.milestones.map(toMilestone)
   }
 }
 
@@ -671,6 +918,88 @@ export class TauriBridge implements DesktopBridge {
       endedAt: update.endedAt ?? null
     })
     return toFocusSession(row)
+  }
+
+  async goalList(baseUrl: string, accessToken: string): Promise<Goal[]> {
+    const rows = await this.invoke<RawGoal[]>('goal_list', { baseUrl, accessToken })
+    return rows.map(toGoal)
+  }
+
+  async goalCreate(
+    baseUrl: string,
+    accessToken: string,
+    input: { title: string; description?: string; targetDate?: string | null }
+  ): Promise<Goal> {
+    const row = await this.invoke<RawGoal>('goal_create', {
+      baseUrl,
+      accessToken,
+      title: input.title,
+      description: input.description ?? '',
+      targetDate: input.targetDate ?? null
+    })
+    return toGoal(row)
+  }
+
+  async goalUpdate(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    patch: GoalPatch
+  ): Promise<Goal> {
+    const row = await this.invoke<RawGoal>('goal_update', {
+      baseUrl,
+      accessToken,
+      goalId,
+      expectedVersion,
+      patch: {
+        title: patch.title ?? null,
+        description: patch.description ?? null,
+        target_date: patch.targetDate ?? null,
+        status: patch.status ?? null
+      }
+    })
+    return toGoal(row)
+  }
+
+  async goalAddMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    input: { title: string; dueDate?: string | null }
+  ): Promise<Milestone> {
+    const row = await this.invoke<RawMilestone>('goal_add_milestone', {
+      baseUrl,
+      accessToken,
+      goalId,
+      title: input.title,
+      dueDate: input.dueDate ?? null
+    })
+    return toMilestone(row)
+  }
+
+  async goalUpdateMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number,
+    patch: MilestonePatch
+  ): Promise<Milestone> {
+    const row = await this.invoke<RawMilestone>('goal_update_milestone', {
+      baseUrl,
+      accessToken,
+      goalId,
+      milestoneId,
+      expectedVersion,
+      patch: {
+        title: patch.title ?? null,
+        due_date: patch.dueDate ?? null,
+        completed: patch.completed ?? null,
+        position: patch.position ?? null
+      }
+    })
+    return toMilestone(row)
   }
 
   async exportConflicts(): Promise<string> {

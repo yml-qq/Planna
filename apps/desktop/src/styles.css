@@ -281,3 +281,62 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: 2px;
 }
+
+.goals {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.goals__item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+
+.goals__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.goals__title {
+  font-size: 15px;
+}
+
+.goals__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.goals__progress {
+  height: 6px;
+  margin: 8px 0;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.goals__bar {
+  height: 100%;
+  background: var(--accent);
+}
+
+.goals__milestones {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.goals__milestone label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
+import { createGoalStore } from './goals'
 import { createHabitStore } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -64,6 +65,13 @@ const habits = createHabitStore(bridge, {
 })
 const focusTaskId = ref('')
 const focusMinutes = ref('')
+const goals = createGoalStore(bridge, {
+  baseUrl: () => baseUrl.value,
+  token: () => session.token.value
+})
+const goalTitle = ref('')
+const goalTargetDate = ref('')
+const milestoneDrafts = ref<Record<string, string>>({})
 const focus = createFocusStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
@@ -100,7 +108,12 @@ const syncing = ref(false)
 const signedIn = computed(() => session.status.value === 'signed_in')
 const signedOut = computed(() => session.status.value === 'signed_out')
 const errorText = computed(() => {
-  const error = session.error.value ?? tasks.error.value ?? habits.error.value ?? focus.error.value
+  const error =
+    session.error.value ??
+    tasks.error.value ??
+    habits.error.value ??
+    goals.error.value ??
+    focus.error.value
   if (!error) return null
   const messages: Record<string, string> = {
     INVALID_EMAIL: '请输入有效邮箱',
@@ -118,6 +131,10 @@ const errorText = computed(() => {
     CHECK_IN_FAILED: '打卡失败，请重试',
     HABIT_PAUSE_FAILED: '暂停操作失败，请重试',
     HABIT_UPDATE_FAILED: '习惯更新失败，请重试',
+    INVALID_GOAL: '目标名称需为 1~200 字',
+    GOAL_SIGNED_OUT: '请先登录再管理目标',
+    GOAL_NOT_FOUND: '目标不存在',
+    GOAL_FAILED: '目标操作失败，请重试',
     FOCUS_SESSION_ACTIVE: '已有进行中的专注，先完成或放弃当前会话',
     FOCUS_SESSION_FINISHED: '该专注会话已结束',
     FOCUS_SIGNED_OUT: '请先登录再开始专注',
@@ -151,6 +168,7 @@ async function submitLogin(): Promise<void> {
   if (await session.signIn(email.value, code.value)) {
     await tasks.refresh()
     await habits.refresh()
+    await goals.refresh()
     await focus.recover()
   }
 }
@@ -162,6 +180,27 @@ async function submitHabit(): Promise<void> {
     habitTitle.value = ''
     habitTarget.value = '1'
   }
+}
+
+async function submitGoal(): Promise<void> {
+  const created = await goals.create(goalTitle.value, goalTargetDate.value || null)
+  if (created) {
+    goalTitle.value = ''
+    goalTargetDate.value = ''
+  }
+}
+
+async function submitMilestone(goalId: string): Promise<void> {
+  const draft = milestoneDrafts.value[goalId] ?? ''
+  if (await goals.addMilestone(goalId, draft)) {
+    milestoneDrafts.value = { ...milestoneDrafts.value, [goalId]: '' }
+  }
+}
+
+async function toggleGoalMilestone(goalId: string, milestoneId: string): Promise<void> {
+  const goal = goals.goals.value.find((candidate) => candidate.id === goalId)
+  const milestone = goal?.milestones.find((candidate) => candidate.id === milestoneId)
+  if (milestone) await goals.toggleMilestone(goalId, milestone)
 }
 
 async function startFocus(plannedSeconds: number): Promise<void> {
@@ -213,6 +252,7 @@ async function signOut(): Promise<void> {
   tasks.tasks.value = []
   habits.habits.value = []
   habits.todayLogs.value = {}
+  goals.goals.value = []
   focus.session.value = null
   focus.snapshot.value = null
 }
@@ -394,6 +434,7 @@ onMounted(async () => {
   if (await session.restore()) {
     await tasks.refresh()
     await habits.refresh()
+    await goals.refresh()
     await focus.recover()
     await refreshOutbox()
   }
@@ -515,6 +556,89 @@ onMounted(async () => {
           </button>
         </div>
       </template>
+    </section>
+
+    <section v-if="signedIn" class="card" aria-labelledby="goals-title">
+      <h2 id="goals-title" class="card__title">目标</h2>
+      <form class="composer" @submit.prevent="submitGoal">
+        <label class="composer__label" for="goal-title">新增目标</label>
+        <div class="composer__row">
+          <input
+            id="goal-title"
+            v-model="goalTitle"
+            class="input"
+            type="text"
+            maxlength="200"
+            placeholder="例如：完成第一次半马"
+            autocomplete="off"
+          />
+          <input v-model="goalTargetDate" class="input input--narrow" type="date" aria-label="目标日期" />
+          <button class="button" type="submit" :disabled="goals.loading.value || goalTitle.trim() === ''">
+            创建
+          </button>
+        </div>
+      </form>
+      <ul v-if="goals.goals.value.length > 0" class="goals">
+        <li v-for="goal in goals.goals.value" :key="goal.id" class="goals__item">
+          <div class="goals__header">
+            <span class="goals__title">{{ goal.title }}</span>
+            <span class="goals__meta">
+              {{ goal.status }} · {{ goal.progress.completedMilestones }}/{{ goal.progress.totalMilestones }}
+              <template v-if="goal.targetDate"> · {{ goal.targetDate }}</template>
+            </span>
+          </div>
+          <div class="goals__progress" :aria-label="`完成 ${goal.progress.percent}%`">
+            <div class="goals__bar" :style="{ width: `${goal.progress.percent}%` }"></div>
+          </div>
+          <ul class="goals__milestones">
+            <li v-for="milestone in goal.milestones" :key="milestone.id" class="goals__milestone">
+              <label>
+                <input
+                  type="checkbox"
+                  :checked="milestone.completed"
+                  @change="toggleGoalMilestone(goal.id, milestone.id)"
+                />
+                {{ milestone.title }}
+              </label>
+            </li>
+          </ul>
+          <div class="composer__row">
+            <input
+              v-model="milestoneDrafts[goal.id]"
+              class="input"
+              type="text"
+              maxlength="200"
+              placeholder="新增里程碑"
+              :aria-label="`为 ${goal.title} 新增里程碑`"
+            />
+            <button
+              class="button button--ghost"
+              type="button"
+              :disabled="goals.loading.value"
+              @click="submitMilestone(goal.id)"
+            >
+              添加
+            </button>
+            <button
+              v-if="goal.status !== 'completed'"
+              class="button button--ghost"
+              type="button"
+              @click="goals.setStatus(goal.id, 'completed')"
+            >
+              完成
+            </button>
+            <button
+              v-if="goal.status !== 'archived'"
+              class="button button--ghost"
+              type="button"
+              @click="goals.setStatus(goal.id, 'archived')"
+            >
+              归档
+            </button>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="empty">还没有目标，先创建一个可衡量的目标。</p>
     </section>
 
     <section v-if="signedIn" class="card" aria-labelledby="habits-title">

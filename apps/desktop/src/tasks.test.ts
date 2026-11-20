@@ -108,6 +108,19 @@ describe('task store', () => {
       },
       focusUpdate: async () => {
         throw new Error('offline')
+      },
+      goalList: async () => [],
+      goalCreate: async () => {
+        throw new Error('offline')
+      },
+      goalUpdate: async () => {
+        throw new Error('offline')
+      },
+      goalAddMilestone: async () => {
+        throw new Error('offline')
+      },
+      goalUpdateMilestone: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')

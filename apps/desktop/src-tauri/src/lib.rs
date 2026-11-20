@@ -566,6 +566,160 @@ fn focus_update(
     response.json().map_err(|error| error.to_string())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct GoalProgressDto {
+    completed_milestones: i64,
+    total_milestones: i64,
+    percent: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MilestoneDto {
+    id: String,
+    goal_id: String,
+    title: String,
+    due_date: Option<String>,
+    completed: bool,
+    position: i64,
+    version: i64,
+    created_at: String,
+    updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GoalDto {
+    id: String,
+    title: String,
+    description: String,
+    target_date: Option<String>,
+    status: String,
+    version: i64,
+    created_at: String,
+    updated_at: String,
+    progress: GoalProgressDto,
+    milestones: Vec<MilestoneDto>,
+}
+
+#[derive(Deserialize)]
+struct GoalListResponse {
+    items: Vec<GoalDto>,
+}
+
+#[tauri::command]
+fn goal_list(base_url: String, access_token: String) -> Result<Vec<GoalDto>, String> {
+    let response = http_client()
+        .get(format!("{}/goals", base(&base_url)))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let page: GoalListResponse = response.json().map_err(|error| error.to_string())?;
+    Ok(page.items)
+}
+
+#[tauri::command]
+fn goal_create(
+    base_url: String,
+    access_token: String,
+    title: String,
+    description: String,
+    target_date: Option<String>,
+) -> Result<GoalDto, String> {
+    let response = http_client()
+        .post(format!("{}/goals", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "title": title,
+            "description": description,
+            "target_date": target_date
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn goal_update(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    expected_version: i64,
+    patch: serde_json::Value,
+) -> Result<GoalDto, String> {
+    let response = http_client()
+        .patch(format!("{}/goals/{goal_id}", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "expected_version": expected_version,
+            "patch": patch
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn goal_add_milestone(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    title: String,
+    due_date: Option<String>,
+) -> Result<MilestoneDto, String> {
+    let response = http_client()
+        .post(format!("{}/goals/{goal_id}/milestones", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "title": title,
+            "due_date": due_date
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn goal_update_milestone(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    milestone_id: String,
+    expected_version: i64,
+    patch: serde_json::Value,
+) -> Result<MilestoneDto, String> {
+    let response = http_client()
+        .patch(format!(
+            "{}/goals/{goal_id}/milestones/{milestone_id}",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "expected_version": expected_version,
+            "patch": patch
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -839,6 +993,11 @@ pub fn run() {
             focus_list,
             focus_start,
             focus_update,
+            goal_list,
+            goal_create,
+            goal_update,
+            goal_add_milestone,
+            goal_update_milestone,
             outbox_issues,
             discard_mutation,
             list_conflicts,
