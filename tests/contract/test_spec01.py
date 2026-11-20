@@ -583,6 +583,32 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(schema["properties"]["next_page_token"]["type"], ["string", "null"])
 
 
+    def test_note_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        notes = api["paths"]["/notes"]
+        self.assertEqual(set(notes["get"]["responses"]), {"200", "400", "401"})
+        self.assertEqual(set(notes["post"]["responses"]),
+                         {"200", "201", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, notes["post"]["parameters"])
+        params = {parameter["name"]: parameter for parameter in notes["get"]["parameters"]}
+        self.assertEqual(set(params), {"query", "task_id", "limit"})
+        self.assertEqual(params["limit"]["schema"],
+                         {"type": "integer", "minimum": 1, "maximum": 100, "default": 50})
+
+        by_id = api["paths"]["/notes/{id}"]
+        self.assertEqual(set(by_id["get"]["responses"]), {"200", "400", "401", "404"})
+        self.assertEqual(set(by_id["patch"]["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertEqual(set(by_id["delete"]["responses"]), {"204", "400", "401", "404", "409"})
+        delete_params = {parameter.get("name"): parameter for parameter in by_id["delete"]["parameters"]}
+        self.assertEqual(delete_params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+
+        note = api["components"]["schemas"]["Note"]
+        self.assertEqual(set(note["required"]),
+                         {"id", "title", "content", "task_id", "version", "created_at", "updated_at"})
+        self.assertEqual(note["properties"]["content"]["maxLength"], 20000)
+        self.assertEqual(api["components"]["schemas"]["UpdateNoteRequest"]["required"],
+                         ["expected_version", "patch"])
+
     def test_reminder_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         task_reminders = api["paths"]["/tasks/{taskId}/reminders"]

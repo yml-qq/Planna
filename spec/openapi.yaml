@@ -17,6 +17,7 @@ tags:
   - name: Tags
   - name: Steps
   - name: Goals
+  - name: Notes
   - name: Reminders
   - name: Focus
   - name: Sync
@@ -1351,6 +1352,103 @@ paths:
         "401": {$ref: '#/components/responses/ErrorResponse'}
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "409": {$ref: '#/components/responses/ErrorResponse'}
+  /notes:
+    get:
+      tags: [Notes]
+      summary: List or search owned notes (title/content ILIKE)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: query, in: query, required: false, schema: {type: string, maxLength: 100}}
+        - {name: task_id, in: query, required: false, schema: {type: string, format: uuid}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NoteList'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Notes]
+      summary: Create a note, optionally linked to an owned task
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateNoteRequest'}
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Note'}
+        "200":
+          description: Idempotent replay
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Note'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+  /notes/{id}:
+    get:
+      tags: [Notes]
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Note'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+    patch:
+      tags: [Notes]
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateNoteRequest'}
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Note'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Notes]
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        "204": {description: Note soft-deleted}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
   /tasks/{taskId}/reminders:
     get:
       tags: [Reminders]
@@ -2198,6 +2296,47 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused: {type: boolean}
+    Note:
+      type: object
+      additionalProperties: false
+      required: [id, title, content, task_id, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, maxLength: 200}
+        content: {type: string, maxLength: 20000}
+        task_id: {type: [string, "null"], format: uuid}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    NoteList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Note'}
+    CreateNoteRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        title: {type: string, maxLength: 200}
+        content: {type: string, maxLength: 20000}
+        task_id: {type: [string, "null"], format: uuid}
+    NotePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: {type: string, maxLength: 200}
+        content: {type: string, maxLength: 20000}
+    UpdateNoteRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, patch]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        patch: {$ref: '#/components/schemas/NotePatch'}
     Reminder:
       type: object
       additionalProperties: false

@@ -54,7 +54,7 @@
 | GET/POST/PATCH | `/focus-sessions`、`/focus-sessions/stats` | 专注会话与统计（见 `84-FOCUS-01.md`、`87-FOCUS-04.md`） | V1.1 |
 | GET/POST/PATCH/DELETE | `/goals`、`/goals/{id}/milestones` | 目标/里程碑与进度（见 `88-GOAL-01.md`） | V1.1 |
 | GET/POST/PATCH/DELETE | `/tasks/{taskId}/reminders`、`/reminders/upcoming` | 提醒调度（见 `89-TIME-01E.md`） | V1.1 |
-| GET/POST | `/notes` | 轻笔记 | V1.1 |
+| GET/POST/PATCH/DELETE | `/notes`、`/notes/{id}` | 轻笔记（见 `92-NOTE-01.md`；导出纳入待 NOTE-02） | V1.1 |
 | GET | `/stats/weekly` | 周统计 | V1.1 |
 
 `spec/openapi.yaml` 已包含 MVP 核心路径的机器可读初稿；本文件定义更多语义，开发前对齐二者。
