@@ -545,3 +545,12 @@
 - **首次 Server CI 失败**（[44736928898](https://github.com/yml-qq/Planna/actions/runs/44736928898)）：矩阵误用不存在的 `GET /steps/{id}`（405）；改为 `GET /tasks/{id}/steps`（`627dd60`）。
 - 修复后 [Server integration 44738975360](https://github.com/yml-qq/Planna/actions/runs/44738975360) 与 [Desktop core 44738975361](https://github.com/yml-qq/Planna/actions/runs/44738975361) 均 **success**；本地 build/format/契约 32 项通过。
 - 未连接生产库、未提交凭据；外部渗透、密钥/部署审计与依赖许可证留待 `SEC-02`。
+
+## NOTE-02 账号导出 v3 检查（2026-11-20）
+
+- 新增 `spec/account-export-v3.schema.json`（v2 基础上 required/properties 增加 `notes`、`$defs.note`、content ≤20000）；两个示例升级为 v3 并带 notes；v2 schema 保留用于历史校验。
+- `AccountExportService` 在导出事务内查询 owner 未删除 notes，输出 `data.notes`，`schema_version=account-export-v3`；软删笔记不导出。
+- `HttpExportSmoke` 增加 note fixture 与 v3/notes 断言；契约测试映射切 v3 并新增 notes required/长度断言（**32 项**保持）。
+- 关闭 SEC-01 F1（笔记可导出）；笔记内容仍不写日志、不进 AI；笔记仍未进入 `/sync`。
+- [Server integration 44741234930](https://github.com/yml-qq/Planna/actions/runs/44741234930) 与 [Desktop core 44741234902](https://github.com/yml-qq/Planna/actions/runs/44741234902) 均 **success**；本地 build/format/契约 32 项通过。
+- 未连接生产库、未提交凭据；桌面笔记 UI、附件/模板与笔记同步留待 `NOTE-03`。
