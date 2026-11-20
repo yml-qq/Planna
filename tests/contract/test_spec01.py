@@ -583,6 +583,37 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(schema["properties"]["next_page_token"]["type"], ["string", "null"])
 
 
+    def test_reminder_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        task_reminders = api["paths"]["/tasks/{taskId}/reminders"]
+        self.assertEqual(set(task_reminders["get"]["responses"]), {"200", "400", "401", "404"})
+        self.assertEqual(set(task_reminders["post"]["responses"]),
+                         {"200", "201", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"},
+                      task_reminders["post"]["parameters"])
+        by_id = api["paths"]["/tasks/{taskId}/reminders/{reminderId}"]
+        self.assertEqual(set(by_id["patch"]["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertEqual(set(by_id["delete"]["responses"]), {"204", "400", "401", "404", "409"})
+        params = {parameter.get("name"): parameter for parameter in by_id["delete"]["parameters"]}
+        self.assertEqual(params["If-Match"]["schema"]["pattern"], '^"v[0-9]+"$')
+
+        upcoming = api["paths"]["/reminders/upcoming"]["get"]
+        self.assertEqual(set(upcoming["responses"]), {"200", "400", "401", "422"})
+        params = {parameter["name"]: parameter for parameter in upcoming["parameters"]}
+        self.assertEqual(set(params), {"from", "to", "limit"})
+        self.assertEqual(params["limit"]["schema"],
+                         {"type": "integer", "minimum": 1, "maximum": 200, "default": 100})
+
+        reminder = api["components"]["schemas"]["Reminder"]
+        self.assertEqual(set(reminder["required"]),
+                         {"id", "task_id", "occurrence_id", "channel", "scheduled_at",
+                          "offset_minutes", "enabled", "version"})
+        self.assertEqual(reminder["properties"]["channel"]["enum"], ["local", "push", "in_app"])
+        self.assertEqual(api["components"]["schemas"]["CreateReminderRequest"]["required"],
+                         ["scheduled_at"])
+        self.assertEqual(api["components"]["schemas"]["UpdateReminderRequest"]["required"],
+                         ["expected_version", "patch"])
+
     def test_goal_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         goals = api["paths"]["/goals"]

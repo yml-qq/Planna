@@ -17,6 +17,7 @@ tags:
   - name: Tags
   - name: Steps
   - name: Goals
+  - name: Reminders
   - name: Focus
   - name: Sync
   - name: AI
@@ -1350,6 +1351,111 @@ paths:
         "401": {$ref: '#/components/responses/ErrorResponse'}
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "409": {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{taskId}/reminders:
+    get:
+      tags: [Reminders]
+      summary: List reminders of an owned task
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: include_disabled, in: query, required: false, schema: {type: boolean, default: false}}
+      responses:
+        "200":
+          description: Reminders
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReminderList'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+    post:
+      tags: [Reminders]
+      summary: Schedule a reminder for a task or occurrence
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateReminderRequest'}
+      responses:
+        "201":
+          description: Created reminder
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Reminder'}
+        "200":
+          description: Idempotent replay
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Reminder'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{taskId}/reminders/{reminderId}:
+    patch:
+      tags: [Reminders]
+      summary: Reschedule or toggle a reminder with an expected version
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: reminderId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateReminderRequest'}
+      responses:
+        "200":
+          description: Updated reminder
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Reminder'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Reminders]
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: reminderId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string, pattern: '^"v[0-9]+"$'}
+      responses:
+        "204": {description: Reminder soft-deleted}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "409": {$ref: '#/components/responses/ErrorResponse'}
+  /reminders/upcoming:
+    get:
+      tags: [Reminders]
+      summary: List enabled reminders scheduled in a window (max 31 days)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: from, in: query, required: false, schema: {type: string, format: date-time}}
+        - {name: to, in: query, required: false, schema: {type: string, format: date-time}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
+      responses:
+        "200":
+          description: Upcoming reminders
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReminderList'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
   /focus-sessions:
     get:
       tags: [Focus]
@@ -2092,6 +2198,52 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused: {type: boolean}
+    Reminder:
+      type: object
+      additionalProperties: false
+      required: [id, task_id, occurrence_id, channel, scheduled_at, offset_minutes, enabled, version]
+      properties:
+        id: {type: string, format: uuid}
+        task_id: {type: string, format: uuid}
+        occurrence_id: {type: [string, "null"], format: uuid}
+        channel: {type: string, enum: [local, push, in_app]}
+        scheduled_at: {type: string, format: date-time}
+        offset_minutes: {type: [integer, "null"], minimum: -10080, maximum: 10080}
+        enabled: {type: boolean}
+        version: {type: integer, minimum: 1}
+    ReminderList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Reminder'}
+    CreateReminderRequest:
+      type: object
+      additionalProperties: false
+      required: [scheduled_at]
+      properties:
+        occurrence_id: {type: [string, "null"], format: uuid}
+        scheduled_at: {type: string, format: date-time}
+        offset_minutes: {type: integer, minimum: -10080, maximum: 10080}
+        channel: {type: string, enum: [local, push, in_app]}
+    ReminderPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        scheduled_at: {type: string, format: date-time}
+        offset_minutes: {type: [integer, "null"], minimum: -10080, maximum: 10080}
+        channel: {type: string, enum: [local, push, in_app]}
+        enabled: {type: boolean}
+    UpdateReminderRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, patch]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        patch: {$ref: '#/components/schemas/ReminderPatch'}
     Milestone:
       type: object
       additionalProperties: false
