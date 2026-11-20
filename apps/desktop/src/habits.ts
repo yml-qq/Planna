@@ -67,7 +67,7 @@ export function currentStreak(logs: HabitLog[], targetQuantity: number, today: s
 
 export interface HabitStoreOptions {
   timeZone: () => string
-  today?: () => string
+  now?: () => Date
   newId?: () => string
 }
 
@@ -102,6 +102,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
   const loading = ref(false)
   const error = ref<string | null>(null)
   const newId = options.newId ?? (() => crypto.randomUUID())
+  const now = options.now ?? (() => new Date())
 
   function applyLogs(habitId: string, rows: HabitLog[], day: string): void {
     logs.value = { ...logs.value, [habitId]: rows }
@@ -128,7 +129,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
       const nextTodayLogs: Record<string, HabitLog> = {}
       const nextStreaks: Record<string, number> = {}
       for (const habit of habits.value) {
-        const day = dateInTimeZone(habit.timeZone)
+        const day = dateInTimeZone(habit.timeZone, now())
         const from = addDays(day, -(STREAK_WINDOW_DAYS - 1))
         const rows = await bridge.listHabitLogs(habit.id, from, day)
         nextLogs[habit.id] = rows
@@ -208,7 +209,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
         unit: patch.unit.trim() || habit.unit
       })
       habits.value = habits.value.map((candidate) => (candidate.id === habitId ? updated : candidate))
-      applyLogs(habitId, logs.value[habitId] ?? [], dateInTimeZone(updated.timeZone))
+      applyLogs(habitId, logs.value[habitId] ?? [], dateInTimeZone(updated.timeZone, now()))
       return true
     } catch {
       error.value = 'HABIT_UPDATE_FAILED'
@@ -247,7 +248,7 @@ export function createHabitStore(bridge: DesktopBridge, options: HabitStoreOptio
     loading.value = true
     error.value = null
     try {
-      const day = dateInTimeZone(habit.timeZone)
+      const day = dateInTimeZone(habit.timeZone, now())
       const log = await bridge.upsertHabitLog({
         habitId,
         logDate: day,

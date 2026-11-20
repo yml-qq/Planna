@@ -12,7 +12,7 @@ describe('localDate', () => {
 function storeOptions(overrides: Record<string, unknown> = {}) {
   return {
     timeZone: () => 'Asia/Shanghai',
-    today: () => '2026-11-12',
+    now: () => new Date(2026, 10, 12, 12, 0),
     newId: () => 'habit-1',
     ...overrides
   }
