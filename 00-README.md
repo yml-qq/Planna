@@ -103,6 +103,7 @@
 | 90 | `docs/90-GOAL-02.md` | 目标/里程碑桌面 UI |
 | 91 | `docs/91-FOCUS-05.md` | 专注统计 UI 与完成休息提示 |
 | 92 | `docs/92-NOTE-01.md` | 轻笔记服务端 API |
+| 93 | `docs/93-SEC-01.md` | 首发安全与隐私内部评审 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
