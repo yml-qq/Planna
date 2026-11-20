@@ -536,3 +536,12 @@
 - 隐私缺口已在 `92-NOTE-01.md` 明确：`account-export-v2` 尚未包含 notes（导出 v3 留 `NOTE-02`）；笔记未进入 `/sync`。
 - [Server integration 44734688255](https://github.com/yml-qq/Planna/actions/runs/44734688255) 与 [Desktop core 44734688493](https://github.com/yml-qq/Planna/actions/runs/44734688493) 均 **success**；本地 build/format/契约 32 项通过。
 - 未连接生产库、未提交凭据；桌面笔记 UI、导出纳入与附件/模板留待 `NOTE-02`。
+
+## SEC-01 首发安全/隐私评审检查（2026-11-20）
+
+- 新增 `HttpAuthMatrixSmoke`：30 个匿名读/写/删请求覆盖 tasks/lists/tags/steps/sync/habits/focus/goals/notes/ai/me/reminders，全部断言 401 且带安全头；无效 JWT 401；`/health/live` 200 公开；带 token `/notes` 200。
+- 依赖扫描：`dotnet list ... --vulnerable --include-transitive` 无易受攻击包；`pnpm audit --registry https://registry.npmjs.org` 无已知漏洞（默认 npmmirror 无 audit 端点，已记录）。
+- 评审结论与发现写入 `93-SEC-01.md`：F1 notes 未纳入导出（中，`NOTE-02` 关闭）、CORS 未配置（低，Web 客户端前需白名单）、应用内限流仅 AI（低，需网关）、401 无统一错误体（信息）、无外部渗透（信息，`SEC-02`）。
+- **首次 Server CI 失败**（[44736928898](https://github.com/yml-qq/Planna/actions/runs/44736928898)）：矩阵误用不存在的 `GET /steps/{id}`（405）；改为 `GET /tasks/{id}/steps`（`627dd60`）。
+- 修复后 [Server integration 44738975360](https://github.com/yml-qq/Planna/actions/runs/44738975360) 与 [Desktop core 44738975361](https://github.com/yml-qq/Planna/actions/runs/44738975361) 均 **success**；本地 build/format/契约 32 项通过。
+- 未连接生产库、未提交凭据；外部渗透、密钥/部署审计与依赖许可证留待 `SEC-02`。
