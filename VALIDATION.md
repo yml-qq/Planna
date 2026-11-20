@@ -527,3 +527,12 @@
 - 前端新增 2 项统计测试（按日聚合 1 次/600 秒、未登录报 `FOCUS_SIGNED_OUT`），合计 **54 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44732461769](https://github.com/yml-qq/Planna/actions/runs/44732461769) 与 [Desktop core 44732461757](https://github.com/yml-qq/Planna/actions/runs/44732461757) 均 **success**。
 - 未连接生产库、未提交凭据；休息倒计时/系统通知与任务详情联动留待 `FOCUS-06`。
+
+## NOTE-01 轻笔记 API 检查（2026-11-20）
+
+- 迁移 `202611140003_Notes`：`notes`（title ≤200、content ≤20000、可选 task 外键 SET NULL、版本/软删、owner 索引）。
+- 契约：`GET/POST /notes`（`query` 转义 ILIKE、`task_id` 过滤、limit 1..100）、`GET/PATCH/DELETE /notes/{id}`（版本/If-Match、幂等、owner 隔离、task 归属校验）；OpenAPI 新增 2 路径与 5 schema，契约测试新增 `test_note_contract`（**32 项**）。
+- 冒烟 `HttpNoteSmoke`：创建/重放/同 key 复用、`%` 字面搜索、任务过滤、更新/陈旧版本、跨 owner 404、空内容/非法任务/limit/超长 query、删除后 404。
+- 隐私缺口已在 `92-NOTE-01.md` 明确：`account-export-v2` 尚未包含 notes（导出 v3 留 `NOTE-02`）；笔记未进入 `/sync`。
+- [Server integration 44734688255](https://github.com/yml-qq/Planna/actions/runs/44734688255) 与 [Desktop core 44734688493](https://github.com/yml-qq/Planna/actions/runs/44734688493) 均 **success**；本地 build/format/契约 32 项通过。
+- 未连接生产库、未提交凭据；桌面笔记 UI、导出纳入与附件/模板留待 `NOTE-02`。
