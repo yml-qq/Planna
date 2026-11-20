@@ -54,7 +54,7 @@
 | GET/POST/PATCH | `/focus-sessions`、`/focus-sessions/stats` | 专注会话与统计（见 `84-FOCUS-01.md`、`87-FOCUS-04.md`） | V1.1 |
 | GET/POST/PATCH/DELETE | `/goals`、`/goals/{id}/milestones` | 目标/里程碑与进度（见 `88-GOAL-01.md`） | V1.1 |
 | GET/POST/PATCH/DELETE | `/tasks/{taskId}/reminders`、`/reminders/upcoming` | 提醒调度（见 `89-TIME-01E.md`） | V1.1 |
-| GET/POST/PATCH/DELETE | `/notes`、`/notes/{id}` | 轻笔记（见 `92-NOTE-01.md`；导出纳入待 NOTE-02） | V1.1 |
+| GET/POST/PATCH/DELETE | `/notes`、`/notes/{id}` | 轻笔记（见 `92-NOTE-01.md`，导出 v3 已纳入见 `94-NOTE-02.md`） | V1.1 |
 | GET | `/stats/weekly` | 周统计 | V1.1 |
 
 `spec/openapi.yaml` 已包含 MVP 核心路径的机器可读初稿；本文件定义更多语义，开发前对齐二者。
@@ -99,7 +99,7 @@
 
 `AI-03/04` 实现计划预览与应用：`POST /ai/plans` 以确定性排程生成顺序时间块预览（`estimate_minutes` 缺省 30，范围 ≤ 7 天，最多 20 个操作；与既有时间块冲突的任务进 `conflicts`、不排程，其余进 `unplanned_task_ids`），持久化 30 分钟有效；`POST /ai/plans/{id}/apply` 要求 `accepted_operation_ids` 与持久化操作完全一致，并校验快照/token/过期/每个任务 `expected_version`，通过后同一事务创建全部 `task_time_blocks`、推进一次 revision、写 `sync_changes(entity_type='time_block')` 与 `ai_action_audits`；失败返回 `409 PLAN_STALE` 且不部分执行。详见 `52-AI-03-04.md`。
 
-`PRIV-EXPORT-01` 实现云端导出：`POST /me/exports` 在 `REPEATABLE READ` 快照内生成 `account-export-v1` JSON（account/lists/tasks/steps/tags/reminders/time_blocks/ai_consents，`source=cloud`、`pending_mutation_ids=[]`），MVP 同步生成并返回 `202` job，同键重放；`GET /me/exports` 列表、`GET /me/exports/{id}` 状态、`GET /me/exports/{id}/download` 仅 owner 且 ready 未过期（24 小时）返回附件，过期 `410 EXPORT_EXPIRED`、未就绪 `409 EXPORT_NOT_READY`。详见 `53-PRIV-EXPORT-01.md`。
+`PRIV-EXPORT-01` 实现云端导出：`POST /me/exports` 在 `REPEATABLE READ` 快照内生成 `account-export-v3` JSON（account/lists/tasks/steps/tags/reminders/time_blocks/ai_consents/habits/habit_logs/notes，`source=cloud`、`pending_mutation_ids=[]`），MVP 同步生成并返回 `202` job，同键重放；`GET /me/exports` 列表、`GET /me/exports/{id}` 状态、`GET /me/exports/{id}/download` 仅 owner 且 ready 未过期（24 小时）返回附件，过期 `410 EXPORT_EXPIRED`、未就绪 `409 EXPORT_NOT_READY`。详见 `53-PRIV-EXPORT-01.md`。
 
 `TIME-01D` 扩展 `POST /tasks/{id}/reopen`：RRULE 任务必须用 `occurrence_id` 撤销已完成的 occurrence（`done → todo`、清空 `completed_at`、版本 +1），响应返回 `Occurrence`；缺失 `occurrence_id` `422 RECURRING_TASK_REQUIRES_OCCURRENCE`，非法/跨任务 `422 INVALID_OCCURRENCE`，未完成 `409 NOT_COMPLETED`；普通任务保持任务级 reopen。详见 `54-TIME-01D.md`。
 

@@ -43,6 +43,7 @@ internal static class HttpExportSmoke
         await Exec(db, "INSERT INTO ai_consents(owner_id,allowed_scopes) VALUES($1,ARRAY['task_drafts'])", owner);
         await Exec(db, "INSERT INTO habits(id,owner_id,title,schedule_type,target_quantity,unit,time_zone) VALUES($1,$2,'Read','daily',2,'pages','Asia/Shanghai')",
             habit, owner);
+        await Exec(db, "INSERT INTO notes(owner_id,title,content) VALUES($1,'Export note','note body')", owner);
         await Exec(db, "INSERT INTO habit_logs(owner_id,habit_id,log_date,quantity,status) VALUES($1,$2,'2026-11-01',2,'done')",
             owner, habit);
         var ownerSession = Guid.NewGuid();
@@ -92,7 +93,7 @@ internal static class HttpExportSmoke
         using var payload = JsonDocument.Parse(await download.Content.ReadAsStringAsync());
         var root = payload.RootElement;
         var data = root.GetProperty("data");
-        if (root.GetProperty("schema_version").GetString() != "account-export-v2" ||
+        if (root.GetProperty("schema_version").GetString() != "account-export-v3" ||
             root.GetProperty("source").GetString() != "cloud" ||
             root.GetProperty("pending_mutation_ids").GetArrayLength() != 0 ||
             data.GetProperty("lists").GetArrayLength() != 1 ||
@@ -104,6 +105,8 @@ internal static class HttpExportSmoke
             data.GetProperty("ai_memories").GetArrayLength() != 0 ||
             data.GetProperty("habits").GetArrayLength() != 1 ||
             data.GetProperty("habit_logs").GetArrayLength() != 1 ||
+            data.GetProperty("notes").GetArrayLength() != 1 ||
+            data.GetProperty("notes")[0].GetProperty("content").GetString() != "note body" ||
             data.GetProperty("ai_consents")[0].GetProperty("allowed_scopes")[0].GetString() != "task_drafts")
             throw new InvalidOperationException("Export payload content mismatch.");
         var exportedHabit = data.GetProperty("habits")[0];

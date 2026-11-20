@@ -1,5 +1,5 @@
 {
-  "schema_version": "account-export-v2",
+  "schema_version": "account-export-v3",
   "source": "local",
   "generated_at": "2026-11-03T10:00:00Z",
   "snapshot_at": "2026-11-03T10:00:00Z",
@@ -32,6 +32,17 @@
     "ai_consents": [],
     "ai_memories": [],
     "habits": [],
-    "habit_logs": []
+    "habit_logs": [],
+    "notes": [
+      {
+        "id": "c1000000-0000-4000-8000-000000000002",
+        "title": "",
+        "content": "local note",
+        "task_id": null,
+        "version": 1,
+        "created_at": "2026-11-12T01:00:00Z",
+        "updated_at": "2026-11-12T01:00:00Z"
+      }
+    ]
   }
 }

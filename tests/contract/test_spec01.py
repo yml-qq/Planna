@@ -39,19 +39,22 @@ class Spec01Contracts(unittest.TestCase):
         samples = {
             "ai-plan.schema.json": "examples/ai-plan-preview.json",
             "ai-breakdown.schema.json": "examples/spec-01/ai-breakdown-preview.json",
-            "account-export-v2.schema.json": "examples/spec-01/account-export-local.json",
+            "account-export-v3.schema.json": "examples/spec-01/account-export-local.json",
             "account-deletion.schema.json": "examples/spec-01/account-deletion-accepted.json",
         }
         for schema, file in samples.items():
             with self.subTest(file=file):
                 validate(schema, file)
-        validate("account-export-v2.schema.json", "examples/spec-01/account-export-cloud.json")
+        validate("account-export-v3.schema.json", "examples/spec-01/account-export-cloud.json")
 
     def test_cloud_export_cannot_claim_pending_mutations(self):
         value = json.loads((ROOT / "examples/spec-01/account-export-cloud.json").read_text(encoding="utf-8"))
         value["pending_mutation_ids"] = ["018f4400-1234-7000-8000-000000000041"]
-        errors = list(Draft202012Validator(SCHEMAS["account-export-v2.schema.json"], registry=REGISTRY).iter_errors(value))
+        errors = list(Draft202012Validator(SCHEMAS["account-export-v3.schema.json"], registry=REGISTRY).iter_errors(value))
         self.assertTrue(errors)
+        v3 = SCHEMAS["account-export-v3.schema.json"]
+        self.assertIn("notes", v3["properties"]["data"]["required"])
+        self.assertEqual(v3["$defs"]["note"]["properties"]["content"]["maxLength"], 20000)
 
     def test_breakdown_rejects_more_than_20_steps(self):
         value = json.loads((ROOT / "examples/spec-01/ai-breakdown-preview.json").read_text(encoding="utf-8"))

@@ -159,6 +159,12 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
             WHERE l.owner_id=@Owner AND h.deleted_at IS NULL
             ORDER BY l.log_date, l.id
             """, new { Owner = ownerId }, transaction, cancellationToken: ct))).ToList();
+        var notes = (await connection.QueryAsync<NoteRow>(new CommandDefinition("""
+            SELECT id AS "Id", title AS "Title", content AS "Content", task_id AS "TaskId",
+                version AS "Version", created_at AS "CreatedAt", updated_at AS "UpdatedAt"
+            FROM notes WHERE owner_id=@Owner AND deleted_at IS NULL
+            ORDER BY created_at, id
+            """, new { Owner = ownerId }, transaction, cancellationToken: ct))).ToList();
 
         var data = new JsonObject
         {
@@ -244,6 +250,16 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
                 ["status"] = log.Status,
                 ["version"] = log.Version
             }).ToArray()),
+            ["notes"] = new JsonArray(notes.Select(note => (JsonNode)new JsonObject
+            {
+                ["id"] = note.Id,
+                ["title"] = note.Title,
+                ["content"] = note.Content,
+                ["task_id"] = note.TaskId,
+                ["version"] = note.Version,
+                ["created_at"] = Instant(note.CreatedAt),
+                ["updated_at"] = Instant(note.UpdatedAt)
+            }).ToArray()),
             ["ai_consents"] = scopes is { Length: > 0 }
                 ? new JsonArray(new JsonObject
                 {
@@ -254,7 +270,7 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
         };
         var export = new JsonObject
         {
-            ["schema_version"] = "account-export-v2",
+            ["schema_version"] = "account-export-v3",
             ["source"] = "cloud",
             ["generated_at"] = now,
             ["snapshot_at"] = now,
@@ -363,6 +379,17 @@ public sealed class AccountExportService(string connectionString, TimeProvider c
         public string Unit { get; set; } = "count";
         public string TimeZone { get; set; } = "";
         public DateTime? PausedAt { get; set; }
+        public long Version { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    private sealed class NoteRow
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Content { get; set; } = "";
+        public Guid? TaskId { get; set; }
         public long Version { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
