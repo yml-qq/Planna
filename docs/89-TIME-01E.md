@@ -1,6 +1,6 @@
 # 89｜TIME-01E：任务/occurrence 提醒调度 API
 
-状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 **31 项**通过，PostgreSQL 18 CI 见 `VALIDATION.md` 的 TIME-01E 小节。
+状态：代码已实现；本地 `dotnet build --warnaserror`、`dotnet format`、契约测试 **31 项**通过；[Server integration 44728339335](https://github.com/yml-qq/Planna/actions/runs/44728339335) 与 [Desktop core 44728339256](https://github.com/yml-qq/Planna/actions/runs/44728339256) 均 **success**（Desktop 首次失败为习惯测试日期依赖，已改为注入时钟）。
 
 ## 范围与验收
 

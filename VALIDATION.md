@@ -502,3 +502,12 @@
 - 首次 Server CI 失败（[43184881234](https://github.com/yml-qq/Planna/actions/runs/43184881234)）：迁移 `42830 there is no unique constraint matching given keys for referenced table "goals"`；为 `goals` 增加 `ak_goals_owner_id (owner_id,id)` 唯一约束（提交 `6edf7fc`）。
 - 修复后 [Server integration 43186872041](https://github.com/yml-qq/Planna/actions/runs/43186872041) 与 [Desktop core 43186872036](https://github.com/yml-qq/Planna/actions/runs/43186872036) 均 **success**；本地 build/format/契约 30 项通过。
 - 未连接生产库、未提交凭据；目标/里程碑尚未进入 `/sync`，客户端 UI 与 AI 拆解留待 `GOAL-02`。
+
+## TIME-01E 提醒调度 API 检查（2026-11-20）
+
+- 契约：`GET/POST /tasks/{taskId}/reminders`、`PATCH/DELETE /tasks/{taskId}/reminders/{reminderId}`、`GET /reminders/upcoming`；`Idempotency-Key`、`expected_version`/`If-Match`、owner/任务/occurrence 归属、scheduled_at 窗口（now-1d..+366d）、offset ±10080、channel local/push/in_app、upcoming 窗口 ≤31 天与 limit 1..200。
+- OpenAPI 新增 3 路径与 5 schema；契约测试新增 `test_reminder_contract`（**31 项**）。冒烟 `HttpReminderSmoke` 覆盖创建/重放/同 key 复用、列表与 disabled 过滤、upcoming 与跨 owner 隔离、改期禁用、陈旧版本、非法参数、删除后不再列出。
+- 规格拆分：`legal_workday`（需节假日数据服务）与 occurrence 编辑范围拆到 `TIME-01F`，原因写入 `89-TIME-01E.md`。
+- **Desktop CI 时间炸弹修复**：夜间/跨日运行暴露 `habits.test.ts` 依赖真实“今日”，习惯 store 已改为按习惯时区取今日；测试改为注入固定时钟（`HabitStoreOptions.now`）。修复后前端 47 项本地通过。
+- 首次 Desktop CI 失败（[44726400987](https://github.com/yml-qq/Planna/actions/runs/44726400987)），修复提交 `acacaf0` 后 [Desktop core 44728339256](https://github.com/yml-qq/Planna/actions/runs/44728339256) 与 [Server integration 44728339335](https://github.com/yml-qq/Planna/actions/runs/44728339335) 均 **success**；本地 build/format/契约 31 项通过。
+- 未连接生产库、未提交凭据；法定工作日数据服务与 occurrence 编辑范围留待 `TIME-01F`，远程推送投递留待 `REM-02`。
