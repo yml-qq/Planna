@@ -60,6 +60,23 @@ export interface Goal {
   milestones: Milestone[]
 }
 
+export interface FocusDayStat {
+  date: string
+  completedSessions: number
+  actualSeconds: number
+}
+
+export interface FocusStats {
+  from: string
+  to: string
+  timeZone: string
+  totalSessions: number
+  completedSessions: number
+  abandonedSessions: number
+  actualSeconds: number
+  days: FocusDayStat[]
+}
+
 export interface GoalPatch {
   title?: string
   description?: string
@@ -220,6 +237,13 @@ export interface DesktopBridge {
     expectedVersion: number,
     patch: MilestonePatch
   ): Promise<Milestone>
+  focusStats(
+    baseUrl: string,
+    accessToken: string,
+    from: string,
+    to: string,
+    timeZone: string
+  ): Promise<FocusStats>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -538,6 +562,47 @@ export class MemoryBridge implements DesktopBridge {
     milestone.updatedAt = new Date().toISOString()
     MemoryBridge.refreshProgress(goal)
     return milestone
+  }
+
+  async focusStats(
+    _baseUrl: string,
+    _accessToken: string,
+    from: string,
+    to: string,
+    timeZone: string
+  ): Promise<FocusStats> {
+    const days = new Map<string, FocusDayStat>()
+    let totalSessions = 0
+    let completedSessions = 0
+    let abandonedSessions = 0
+    let actualSeconds = 0
+    for (const session of this.focusSessions.values()) {
+      const date = session.startedAt.slice(0, 10)
+      if (date < from || date > to) continue
+      totalSessions += 1
+      const day = days.get(date) ?? { date, completedSessions: 0, actualSeconds: 0 }
+      if (session.state === 'completed') {
+        completedSessions += 1
+        day.completedSessions += 1
+        day.actualSeconds += session.actualSeconds
+        actualSeconds += session.actualSeconds
+      } else if (session.state === 'abandoned') {
+        abandonedSessions += 1
+        day.actualSeconds += session.actualSeconds
+        actualSeconds += session.actualSeconds
+      }
+      days.set(date, day)
+    }
+    return {
+      from,
+      to,
+      timeZone,
+      totalSessions,
+      completedSessions,
+      abandonedSessions,
+      actualSeconds,
+      days: [...days.values()].sort((left, right) => left.date.localeCompare(right.date))
+    }
   }
 
   async exportConflicts(): Promise<string> {
@@ -1000,6 +1065,39 @@ export class TauriBridge implements DesktopBridge {
       }
     })
     return toMilestone(row)
+  }
+
+  async focusStats(
+    baseUrl: string,
+    accessToken: string,
+    from: string,
+    to: string,
+    timeZone: string
+  ): Promise<FocusStats> {
+    const row = await this.invoke<{
+      from: string
+      to: string
+      time_zone: string
+      total_sessions: number
+      completed_sessions: number
+      abandoned_sessions: number
+      actual_seconds: number
+      days: Array<{ date: string; completed_sessions: number; actual_seconds: number }>
+    }>('focus_stats', { baseUrl, accessToken, from, to, timeZone })
+    return {
+      from: row.from,
+      to: row.to,
+      timeZone: row.time_zone,
+      totalSessions: row.total_sessions,
+      completedSessions: row.completed_sessions,
+      abandonedSessions: row.abandoned_sessions,
+      actualSeconds: row.actual_seconds,
+      days: row.days.map((day) => ({
+        date: day.date,
+        completedSessions: day.completed_sessions,
+        actualSeconds: day.actual_seconds
+      }))
+    }
   }
 
   async exportConflicts(): Promise<string> {

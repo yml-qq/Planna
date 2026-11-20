@@ -158,6 +158,9 @@ describe('habit store', () => {
       focusUpdate: async () => {
         throw new Error('offline')
       },
+      focusStats: async () => {
+        throw new Error('offline')
+      },
       goalList: async () => [],
       goalCreate: async () => {
         throw new Error('offline')

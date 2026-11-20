@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { DesktopBridge, FocusSession, FocusState } from './api'
+import type { DesktopBridge, FocusSession, FocusState, FocusStats } from './api'
 
 const SNAPSHOT_KEY = 'planna.focus'
 
@@ -77,6 +77,8 @@ export interface FocusStore {
   snapshot: Ref<FocusSnapshot | null>
   seconds: Ref<number>
   driftSeconds: Ref<number>
+  stats: Ref<FocusStats | null>
+  restHint: Ref<string | null>
   loading: Ref<boolean>
   error: Ref<string | null>
   start: (plannedSeconds: number, taskId?: string | null) => Promise<boolean>
@@ -85,6 +87,7 @@ export interface FocusStore {
   complete: (actualSeconds?: number) => Promise<boolean>
   abandon: () => Promise<boolean>
   recover: () => Promise<void>
+  loadStats: (from: string, to: string, timeZone: string) => Promise<void>
   tick: () => void
 }
 
@@ -97,6 +100,8 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const loading = ref(false)
   const error = ref<string | null>(null)
   const driftSeconds = ref(0)
+  const stats = ref<FocusStats | null>(null)
+  const restHint = ref<string | null>(null)
   let lastTickAt = 0
   const now = options.now ?? (() => Date.now())
   const read = options.read ?? (() => null)
@@ -157,6 +162,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
       })
       seconds.value = created.actualSeconds
       driftSeconds.value = 0
+      restHint.value = null
       lastTickAt = now()
       return true
     } catch (failure) {
@@ -197,6 +203,9 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
         persist(null)
         seconds.value = actual
         driftSeconds.value = 0
+        if (nextState === 'completed') {
+          restHint.value = `本次专注 ${formatDuration(actual)}，建议休息 5 分钟。`
+        }
       } else {
         persist({
           sessionId: updated.id,
@@ -265,11 +274,23 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     return transition('completed')
   }
 
+  async function loadStats(from: string, to: string, timeZone: string): Promise<void> {
+    const token = requireToken()
+    if (!token) return
+    try {
+      stats.value = await bridge.focusStats(options.baseUrl(), token, from, to, timeZone)
+    } catch (failure) {
+      error.value = errorCode(failure)
+    }
+  }
+
   return {
     session,
     snapshot,
     seconds,
     driftSeconds,
+    stats,
+    restHint,
     loading,
     error,
     start,
@@ -278,6 +299,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     complete: (actualSeconds?: number) => completeWith(actualSeconds),
     abandon: () => transition('abandoned'),
     recover,
+    loadStats,
     tick
   }
 }

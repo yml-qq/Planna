@@ -720,6 +720,48 @@ fn goal_update_milestone(
     response.json().map_err(|error| error.to_string())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct FocusDayStatDto {
+    date: String,
+    completed_sessions: i64,
+    actual_seconds: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FocusStatsDto {
+    from: String,
+    to: String,
+    time_zone: String,
+    total_sessions: i64,
+    completed_sessions: i64,
+    abandoned_sessions: i64,
+    actual_seconds: i64,
+    days: Vec<FocusDayStatDto>,
+}
+
+#[tauri::command]
+fn focus_stats(
+    base_url: String,
+    access_token: String,
+    from: String,
+    to: String,
+    time_zone: String,
+) -> Result<FocusStatsDto, String> {
+    let response = http_client()
+        .get(format!(
+            "{}/focus-sessions/stats?from={from}&to={to}&time_zone={}",
+            base(&base_url),
+            urlencoding::encode(&time_zone)
+        ))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -998,6 +1040,7 @@ pub fn run() {
             goal_update,
             goal_add_milestone,
             goal_update_milestone,
+            focus_stats,
             outbox_issues,
             discard_mutation,
             list_conflicts,

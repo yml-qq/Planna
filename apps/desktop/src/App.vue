@@ -4,7 +4,7 @@ import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIss
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
 import { createGoalStore } from './goals'
-import { createHabitStore } from './habits'
+import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
   isReminderTime,
@@ -170,6 +170,7 @@ async function submitLogin(): Promise<void> {
     await habits.refresh()
     await goals.refresh()
     await focus.recover()
+    await refreshFocusStats()
   }
 }
 
@@ -218,7 +219,19 @@ async function resumeFocus(): Promise<void> {
 async function completeFocus(): Promise<void> {
   const minutes = Number.parseInt(focusMinutes.value, 10)
   const override = Number.isFinite(minutes) && minutes >= 0 ? minutes * 60 : undefined
-  if (await focus.complete(override)) focusMinutes.value = ''
+  if (await focus.complete(override)) {
+    focusMinutes.value = ''
+    await refreshFocusStats()
+  }
+}
+
+async function refreshFocusStats(): Promise<void> {
+  const today = localDate()
+  await focus.loadStats(
+    addDays(today, -6),
+    today,
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
+  )
 }
 
 async function checkInHabit(habitId: string): Promise<void> {
@@ -436,6 +449,7 @@ onMounted(async () => {
     await habits.refresh()
     await goals.refresh()
     await focus.recover()
+    await refreshFocusStats()
     await refreshOutbox()
   }
   reminderTimer = setInterval(() => {
@@ -541,6 +555,7 @@ onMounted(async () => {
           <button class="button button--ghost" type="button" @click="completeFocus">完成</button>
         </div>
       </template>
+      <p v-if="focus.restHint.value" class="status">{{ focus.restHint.value }}</p>
       <template v-else>
         <p class="empty">开始一段专注，退出后重新打开会按服务端记录恢复。</p>
         <div class="composer__row">
@@ -556,6 +571,22 @@ onMounted(async () => {
           </button>
         </div>
       </template>
+      <div class="focus__stats">
+        <h3 class="focus__stats-title">近 7 天专注</h3>
+        <template v-if="focus.stats.value && focus.stats.value.days.length > 0">
+          <p class="status">
+            共 {{ Math.round(focus.stats.value.actualSeconds / 60) }} 分钟 · 完成
+            {{ focus.stats.value.completedSessions }} 次
+          </p>
+          <ul class="focus__days">
+            <li v-for="day in focus.stats.value.days" :key="day.date" class="focus__day">
+              <span>{{ day.date.slice(5) }}</span>
+              <span>{{ Math.round(day.actualSeconds / 60) }} 分钟</span>
+            </li>
+          </ul>
+        </template>
+        <p v-else class="empty">完成一次专注后这里会显示统计。</p>
+      </div>
     </section>
 
     <section v-if="signedIn" class="card" aria-labelledby="goals-title">

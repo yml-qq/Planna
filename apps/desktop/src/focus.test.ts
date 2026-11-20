@@ -180,3 +180,30 @@ describe('focus store', () => {
     expect(signedOut.store.error.value).toBe('FOCUS_SIGNED_OUT')
   })
 })
+
+describe('focus statistics', () => {
+  it('aggregates completed sessions by day and exposes a rest hint', async () => {
+    let clock = 7_000_000
+    const { store, bridge } = createStore(() => clock)
+    await store.start(1500)
+    clock += 600_000
+    await store.complete()
+    expect(store.restHint.value).toContain('建议休息')
+    const sessions = await bridge.focusList('', 'token')
+    const date = sessions[0]!.startedAt.slice(0, 10)
+    await store.loadStats(date, date, 'UTC')
+    expect(store.stats.value?.completedSessions).toBe(1)
+    expect(store.stats.value?.actualSeconds).toBe(600)
+    expect(store.stats.value?.days).toEqual([
+      { date, completedSessions: 1, actualSeconds: 600 }
+    ])
+    expect(await bridge.focusList('', 'token')).toHaveLength(1)
+  })
+
+  it('requires a token before loading statistics', async () => {
+    const { store } = createStore(() => 0, { token: () => null })
+    await store.loadStats('2026-11-01', '2026-11-07', 'UTC')
+    expect(store.stats.value).toBeNull()
+    expect(store.error.value).toBe('FOCUS_SIGNED_OUT')
+  })
+})
