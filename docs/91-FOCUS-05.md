@@ -1,6 +1,6 @@
 # 91｜FOCUS-05：专注统计 UI 与完成休息提示
 
-状态：代码已实现；本地 `pnpm test`（54 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-05 小节。休息通知真机投递与任务详情联动属 `FOCUS-06`。
+状态：代码已实现；本地 `pnpm test`（54 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 44732461769](https://github.com/yml-qq/Planna/actions/runs/44732461769) 与 [Desktop core 44732461757](https://github.com/yml-qq/Planna/actions/runs/44732461757) 均 **success**。休息通知真机投递与任务详情联动属 `FOCUS-06`。
 
 ## 范围与验收
 

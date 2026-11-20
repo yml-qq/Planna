@@ -519,3 +519,11 @@
 - 前端新增 5 项目标测试，合计 **52 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44730403454](https://github.com/yml-qq/Planna/actions/runs/44730403454) 与 [Desktop core 44730403198](https://github.com/yml-qq/Planna/actions/runs/44730403198) 均 **success**。
 - 未连接生产库、未提交凭据；AI 目标拆解、目标编辑与里程碑排序留待 `GOAL-03`。
+
+## FOCUS-05 专注统计 UI 检查（2026-11-20）
+
+- Tauri 新增 `focus_stats`（`GET /focus-sessions/stats`，`time_zone` URL 编码）；桥接新增 `FocusStats/FocusDayStat` 与 `focusStats`（Memory 按 startedAt 日期聚合、Tauri 映射）。
+- focus store 新增 `stats/restHint/loadStats`；完成专注后显示“建议休息 5 分钟”，开始新会话时清除；UI 专注卡片新增“近 7 天专注”（总分钟、完成次数、按日列表），登录/恢复/完成后加载。
+- 前端新增 2 项统计测试（按日聚合 1 次/600 秒、未登录报 `FOCUS_SIGNED_OUT`），合计 **54 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44732461769](https://github.com/yml-qq/Planna/actions/runs/44732461769) 与 [Desktop core 44732461757](https://github.com/yml-qq/Planna/actions/runs/44732461757) 均 **success**。
+- 未连接生产库、未提交凭据；休息倒计时/系统通知与任务详情联动留待 `FOCUS-06`。
