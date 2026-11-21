@@ -105,6 +105,7 @@
 | 92 | `docs/92-NOTE-01.md` | 轻笔记服务端 API |
 | 93 | `docs/93-SEC-01.md` | 首发安全与隐私内部评审 |
 | 94 | `docs/94-NOTE-02.md` | 账号导出 v3 纳入笔记 |
+| 95 | `docs/95-REL-01.md` | 发布门禁与运维就绪包 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

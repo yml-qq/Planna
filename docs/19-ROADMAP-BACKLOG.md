@@ -86,7 +86,8 @@
 | E11 | SEC-01A | 服务端安全基线（安全头/异常兜底/请求上限/AI 限流，已交付，见 `59-SEC-01A.md`） | PRIV-CLEANUP-01 | security smoke |
 | E11 | SEC-01 | 首发安全与隐私内部评审（已交付，见 `93-SEC-01.md`；鉴权矩阵/依赖扫描/配置审计） | SEC-01A | 权限/数据治理 |
 | E11 | SEC-02 | 外部渗透测试、密钥/部署配置审计与依赖许可证检查 | SEC-01 | 渗透测试 |
-| E11 | REL-01 | 上架/签名/灰度/运维 | SEC-01 | release checklist |
+| E11 | REL-01 | 发布门禁与运维就绪包（已交付，见 `95-REL-01.md`；迁移工具/Release dry-run/备份手册） | SEC-01 | release checklist |
+| E11 | REL-02 | 真实 staging/生产部署、签名公证、灰度与回滚演练（需凭据/环境） | REL-01 | release checklist |
 
 E04 切片命名以实际交付为准：早期 `TASK-01` 交付的是任务创建写入 `POST /tasks`（`30-TASK-01.md`），不是原计划的 List CRUD；List CRUD 并入 `TASK-03` 后拆分为 `TASK-LIST-01`（清单 CRUD）与 `TASK-TAG-01A/B`、`TASK-STEP-01`（标签、任务标签关联、步骤与查询）。任务读取单独列为 `TASK-READ-01`（`37-TASK-READ-01.md`）；原 `TASK-02`（更新/完成/软删）拆分为 `TASK-UPDATE-01`（详情/更新/软删，`38-TASK-UPDATE-01.md`）与 `TASK-COMPLETE-01`（完成/撤销完成，`39-TASK-COMPLETE-01.md`）。E05 的 `SYNC-02`（push/outbox/幂等）交付为 `SYNC-PUSH-01`（`45-SYNC-PUSH-01.md`）；`SYNC-03`（pull/bootstrap/conflict）拆分为 `SYNC-PULL-01`（增量拉取，`44-SYNC-PULL-01.md`）与 `SYNC-BOOTSTRAP-01`（快照与游标，`46-SYNC-BOOTSTRAP-01.md`）。E07 的 `TIME-01` 拆分为 `TIME-01A`（循环规则与 occurrence 窗口，`47-TIME-01A.md`）、`TIME-01B`（occurrence 完成，`48-TIME-01B.md`）与 `TIME-01C`（after_completion/法定工作日与撤销）。
 

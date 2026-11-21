@@ -1,0 +1,55 @@
+name: Release build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  server-release:
+    name: Server release dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore server/Planna.slnx
+
+      - name: Build Release
+        run: dotnet build server/Planna.slnx --no-restore --configuration Release --warnaserror
+
+      - name: Contract checks
+        run: |
+          python3 -m venv /tmp/planna-release-contract
+          /tmp/planna-release-contract/bin/pip install -r tests/contract/requirements.txt
+          /tmp/planna-release-contract/bin/python -m unittest discover -s tests/contract -p 'test_*.py'
+
+      - name: Publish API and migration tool
+        run: |
+          dotnet publish server/src/Planna.Api/Planna.Api.csproj --no-build --configuration Release \
+            --runtime linux-x64 --self-contained false --output artifacts/api
+          dotnet publish server/tools/Planna.Migrate/Planna.Migrate.csproj --no-build --configuration Release \
+            --runtime linux-x64 --self-contained false --output artifacts/migrate
+          dotnet publish server/src/Planna.Worker/Planna.Worker.csproj --no-build --configuration Release \
+            --runtime linux-x64 --self-contained false --output artifacts/worker
+
+      - name: Checksums
+        run: |
+          find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/SHA256SUMS.txt
+          cat artifacts/SHA256SUMS.txt
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: planna-server-${{ github.ref_name }}
+          path: artifacts
+          if-no-files-found: error

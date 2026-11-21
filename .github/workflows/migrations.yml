@@ -44,5 +44,7 @@ jobs:
           /tmp/planna-contract-venv/bin/pip install -r tests/contract/requirements.txt
           /tmp/planna-contract-venv/bin/python -m unittest discover -s tests/contract -p 'test_*.py'
           /tmp/planna-contract-venv/bin/python -m openapi_spec_validator spec/openapi.yaml
+      - name: Apply migrations via production tool
+        run: dotnet run --project server/tools/Planna.Migrate --no-build
       - name: PostgreSQL migration and HTTP checks
         run: dotnet run --project server/tests/Planna.MigrationSmoke --no-build
