@@ -564,3 +564,12 @@
 - 发布门禁清单与未完成项（备份恢复演练、外部渗透、签名/灰度）写入 `95-REL-01.md`，真实部署拆为 `REL-02`（需凭据/环境）。
 - [Server integration 44939312691](https://github.com/yml-qq/Planna/actions/runs/44939312691)（含 `Planna.Migrate` 步骤）与 [Desktop core 44939312806](https://github.com/yml-qq/Planna/actions/runs/44939312806) 均 **success**。
 - 未连接生产库、未提交凭据；`release.yml` 仅在 tag/手动触发，本轮未执行 tag 发布。
+
+## NOTE-03 桌面笔记 UI 检查（2026-11-22）
+
+- Tauri 新增 `note_list/note_create/note_update/note_delete`（query/task 过滤、URL 编码、`Idempotency-Key`、`If-Match`、错误映射）。
+- 桥接新增 `Note` 与四个方法（Memory 搜索/版本/删除 + Tauri 映射）；note store 支持搜索刷新、创建校验、按版本更新/删除与错误码。
+- UI 新增“笔记”卡片：搜索即刷新、标题+正文创建、列表展示、内联编辑正文、删除；登录/恢复会话刷新、登出清空。
+- 前端新增 5 项笔记测试，合计 **59 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44940746565](https://github.com/yml-qq/Planna/actions/runs/44940746565) 与 [Desktop core 44940746639](https://github.com/yml-qq/Planna/actions/runs/44940746639) 均 **success**。
+- 未连接生产库、未提交凭据；笔记同步/离线编辑、附件/模板与任务关联 UI 留待 `NOTE-04`。
