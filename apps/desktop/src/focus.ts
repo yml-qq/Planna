@@ -18,6 +18,7 @@ export interface FocusStoreOptions {
   read?: (key: string) => string | null
   write?: (key: string, value: string) => void
   now?: () => number
+  notify?: (title: string, body: string) => Promise<void>
 }
 
 export function formatDuration(totalSeconds: number): string {
@@ -79,6 +80,8 @@ export interface FocusStore {
   driftSeconds: Ref<number>
   stats: Ref<FocusStats | null>
   restHint: Ref<string | null>
+  restRemaining: Ref<number>
+  restEndsAt: Ref<number | null>
   loading: Ref<boolean>
   error: Ref<string | null>
   start: (plannedSeconds: number, taskId?: string | null) => Promise<boolean>
@@ -88,7 +91,9 @@ export interface FocusStore {
   abandon: () => Promise<boolean>
   recover: () => Promise<void>
   loadStats: (from: string, to: string, timeZone: string) => Promise<void>
+  skipRest: () => void
   tick: () => void
+  tickRest: () => void
 }
 
 export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptions): FocusStore {
@@ -102,6 +107,9 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const driftSeconds = ref(0)
   const stats = ref<FocusStats | null>(null)
   const restHint = ref<string | null>(null)
+  const restRemaining = ref(0)
+  const restEndsAt = ref<number | null>(null)
+  let restNotified = false
   let lastTickAt = 0
   const now = options.now ?? (() => Date.now())
   const read = options.read ?? (() => null)
@@ -205,6 +213,9 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
         driftSeconds.value = 0
         if (nextState === 'completed') {
           restHint.value = `本次专注 ${formatDuration(actual)}，建议休息 5 分钟。`
+          restEndsAt.value = now() + 300_000
+          restRemaining.value = 300
+          restNotified = false
         }
       } else {
         persist({
@@ -274,6 +285,26 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     return transition('completed')
   }
 
+  function skipRest(): void {
+    restEndsAt.value = null
+    restRemaining.value = 0
+    restHint.value = null
+    restNotified = false
+  }
+
+  function tickRest(): void {
+    if (restEndsAt.value === null) return
+    const remaining = Math.max(0, Math.ceil((restEndsAt.value - now()) / 1000))
+    restRemaining.value = remaining
+    if (remaining > 0 || restNotified) return
+    restNotified = true
+    restHint.value = '休息结束，可以开始下一段专注。'
+    void options
+      .notify?.('休息结束', '可以开始下一段专注了。')
+      .catch(() => undefined)
+    restEndsAt.value = null
+  }
+
   async function loadStats(from: string, to: string, timeZone: string): Promise<void> {
     const token = requireToken()
     if (!token) return
@@ -291,6 +322,8 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     driftSeconds,
     stats,
     restHint,
+    restRemaining,
+    restEndsAt,
     loading,
     error,
     start,
@@ -300,6 +333,8 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     abandon: () => transition('abandoned'),
     recover,
     loadStats,
-    tick
+    skipRest,
+    tick,
+    tickRest
   }
 }

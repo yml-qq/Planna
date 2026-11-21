@@ -72,7 +72,8 @@
 | E10 | FOCUS-03 | 任务关联、完成时长修正与漂移提示（已交付，见 `86-FOCUS-03.md`） | FOCUS-02 | interruption tests |
 | E10 | FOCUS-04 | 专注统计聚合 API（已交付，见 `87-FOCUS-04.md`） | FOCUS-03 | stats tests |
 | E10 | FOCUS-05 | 专注统计 UI 与完成休息提示（已交付，见 `91-FOCUS-05.md`） | FOCUS-04 | stats tests |
-| E10 | FOCUS-06 | 休息倒计时/通知、任务详情专注入口与周月统计 | FOCUS-05 | stats tests |
+| E10 | FOCUS-06 | 休息倒计时与结束通知（已交付，见 `97-FOCUS-06.md`） | FOCUS-05 | device tests |
+| E10 | FOCUS-07 | 任务详情专注入口、周/月统计与休息时长配置 | FOCUS-06 | stats tests |
 | E10 | GOAL-01 | 目标/里程碑服务端 API（已交付，见 `88-GOAL-01.md`） | E04 | progress tests |
 | E10 | GOAL-02 | 目标/里程碑桌面 UI（已交付，见 `90-GOAL-02.md`） | GOAL-01 | progress tests |
 | E10 | GOAL-03 | AI 目标拆解接入、目标编辑与里程碑排序 | GOAL-02 | progress tests |

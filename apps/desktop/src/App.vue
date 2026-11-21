@@ -83,7 +83,11 @@ const goalTargetDate = ref('')
 const milestoneDrafts = ref<Record<string, string>>({})
 const focus = createFocusStore(bridge, {
   baseUrl: () => baseUrl.value,
-  token: () => session.token.value
+  token: () => session.token.value,
+  notify: async (title, body) => {
+    const notifier = await notifierPromise
+    await notifier.notify(title, body)
+  }
 })
 
 const reminders = ref<HabitReminder[]>(loadReminders(readStorage('planna.habitReminders')))
@@ -504,7 +508,10 @@ onMounted(async () => {
   reminderTimer = setInterval(() => {
     void tickReminders()
   }, 30_000)
-  focusTimer = setInterval(() => focus.tick(), 1_000)
+  focusTimer = setInterval(() => {
+    focus.tick()
+    focus.tickRest()
+  }, 1_000)
 })
 </script>
 
@@ -676,7 +683,11 @@ onMounted(async () => {
           <button class="button button--ghost" type="button" @click="completeFocus">完成</button>
         </div>
       </template>
-      <p v-if="focus.restHint.value" class="status">{{ focus.restHint.value }}</p>
+      <p v-if="focus.restEndsAt.value" class="status">
+        休息中 {{ formatDuration(focus.restRemaining.value) }}
+        <button class="button button--ghost" type="button" @click="focus.skipRest()">跳过休息</button>
+      </p>
+      <p v-else-if="focus.restHint.value" class="status">{{ focus.restHint.value }}</p>
       <template v-else>
         <p class="empty">开始一段专注，退出后重新打开会按服务端记录恢复。</p>
         <div class="composer__row">

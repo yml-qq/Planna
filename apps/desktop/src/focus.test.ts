@@ -207,3 +207,51 @@ describe('focus statistics', () => {
     expect(store.error.value).toBe('FOCUS_SIGNED_OUT')
   })
 })
+
+describe('rest countdown', () => {
+  it('counts down after completion and notifies once when rest ends', async () => {
+    let clock = 9_000_000
+    const notifications: string[] = []
+    const { store } = createStore(() => clock, {
+      notify: async (title: string) => {
+        notifications.push(title)
+      }
+    })
+    await store.start(1500)
+    clock += 600_000
+    await store.complete()
+    expect(store.restEndsAt.value).toBe(clock + 300_000)
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(300)
+
+    clock += 299_000
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(1)
+    expect(notifications).toHaveLength(0)
+
+    clock += 1_000
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(0)
+    expect(store.restHint.value).toContain('休息结束')
+    expect(notifications).toEqual(['休息结束'])
+    expect(store.restEndsAt.value).toBeNull()
+
+    store.tickRest()
+    expect(notifications).toEqual(['休息结束'])
+  })
+
+  it('skips rest and clears the reminder', async () => {
+    let clock = 10_000_000
+    const { store } = createStore(() => clock)
+    await store.start(1500)
+    clock += 60_000
+    await store.complete()
+    expect(store.restEndsAt.value).not.toBeNull()
+    store.skipRest()
+    expect(store.restEndsAt.value).toBeNull()
+    expect(store.restHint.value).toBeNull()
+    clock += 300_000
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(0)
+  })
+})
