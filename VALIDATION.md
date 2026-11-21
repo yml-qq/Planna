@@ -591,3 +591,12 @@
 - **首次 Server CI 失败**（[44943555835](https://github.com/yml-qq/Planna/actions/runs/44943555835)）：冒烟漏算 recurrence 创建自身 +1 revision（误断言 6）；修正为 7（`f490a78`）。
 - 修复后 [Server integration 44944887823](https://github.com/yml-qq/Planna/actions/runs/44944887823) 与 [Desktop core 44944887817](https://github.com/yml-qq/Planna/actions/runs/44944887817) 均 **success**；本地 build/format/契约 33 项通过。
 - 未连接生产库、未提交凭据；法定工作日数据服务与提醒重排留待 `TIME-01G`。
+
+## FOCUS-07 专注入口/休息配置检查（2026-11-22）
+
+- 任务列表每行新增“专注”按钮，以任务 `task_id` 开始 25 分钟专注（复用 FOCUS-03 关联与错误处理）。
+- 休息时长可选 0/5/10/15 分钟并持久化 `planna.focusRestMinutes`；focus store 通过注入 `restSeconds` 控制完成后倒计时与提示（0 不启动倒计时）。
+- 统计卡片支持 7/30 天切换（重新请求服务端 stats，服务端 ≤92 天限制不变）。
+- 前端新增 1 项 90 秒休息配置测试，合计 **62 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44946244484](https://github.com/yml-qq/Planna/actions/runs/44946244484) 与 [Desktop core 44946244478](https://github.com/yml-qq/Planna/actions/runs/44946244478) 均 **success**。
+- 未连接生产库、未提交凭据；周/月图表、任务详情专注历史与后台通知真机验证留待 `FOCUS-08`。

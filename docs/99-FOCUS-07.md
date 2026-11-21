@@ -1,6 +1,6 @@
 # 99｜FOCUS-07：任务专注入口、休息时长配置与统计切换
 
-状态：代码已实现；本地 `pnpm test`（62 项）与 `pnpm build` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-07 小节。更深统计与后台通知属 `FOCUS-08`。
+状态：代码已实现；本地 `pnpm test`（62 项）与 `pnpm build` 通过；[Server integration 44946244484](https://github.com/yml-qq/Planna/actions/runs/44946244484) 与 [Desktop core 44946244478](https://github.com/yml-qq/Planna/actions/runs/44946244478) 均 **success**。更深统计与后台通知属 `FOCUS-08`。
 
 ## 范围与验收
 
