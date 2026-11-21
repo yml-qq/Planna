@@ -554,3 +554,13 @@
 - 关闭 SEC-01 F1（笔记可导出）；笔记内容仍不写日志、不进 AI；笔记仍未进入 `/sync`。
 - [Server integration 44741234930](https://github.com/yml-qq/Planna/actions/runs/44741234930) 与 [Desktop core 44741234902](https://github.com/yml-qq/Planna/actions/runs/44741234902) 均 **success**；本地 build/format/契约 32 项通过。
 - 未连接生产库、未提交凭据；桌面笔记 UI、附件/模板与笔记同步留待 `NOTE-03`。
+
+## REL-01 发布就绪检查（2026-11-22）
+
+- 新增 `server/tools/Planna.Migrate`（仅读 `PLANNADB_CONNECTION`，打印 pending 数量/名称，不打印连接串；无配置时退出码 2）；加入 `server/Planna.slnx`。
+- 新增 `deploy/.env.example`（仅占位符）与 `deploy/README.md`（环境矩阵、发布步骤、备份/恢复、监控最低集、回滚原则）；更新 `docs/17-DEVOPS.md` 指向就绪包。
+- 新增 `.github/workflows/release.yml`（tag `v*`/手动：Release 构建 + 契约 + 发布 API/Worker/Migrate + `SHA256SUMS.txt`，`contents: read`）；`migrations.yml` 在冒烟前用正式迁移工具应用迁移。
+- 本地：`dotnet build --configuration Release --warnaserror` 0 警告 0 错误、`dotnet format`、契约 32 项通过；`Planna.Migrate` 无配置退出码 **2**。
+- 发布门禁清单与未完成项（备份恢复演练、外部渗透、签名/灰度）写入 `95-REL-01.md`，真实部署拆为 `REL-02`（需凭据/环境）。
+- [Server integration 44939312691](https://github.com/yml-qq/Planna/actions/runs/44939312691)（含 `Planna.Migrate` 步骤）与 [Desktop core 44939312806](https://github.com/yml-qq/Planna/actions/runs/44939312806) 均 **success**。
+- 未连接生产库、未提交凭据；`release.yml` 仅在 tag/手动触发，本轮未执行 tag 发布。
