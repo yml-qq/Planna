@@ -12,7 +12,7 @@ export interface NoteStore {
   loading: Ref<boolean>
   error: Ref<string | null>
   refresh: () => Promise<void>
-  create: (title: string, content: string) => Promise<Note | null>
+  create: (title: string, content: string, taskId?: string | null) => Promise<Note | null>
   update: (noteId: string, expectedVersion: number, content: string) => Promise<boolean>
   remove: (note: Note) => Promise<boolean>
 }
@@ -52,7 +52,11 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
     }
   }
 
-  async function create(title: string, content: string): Promise<Note | null> {
+  async function create(
+    title: string,
+    content: string,
+    taskId: string | null = null
+  ): Promise<Note | null> {
     const trimmedTitle = title.trim()
     if (trimmedTitle.length > 200 || content.length > 20000 ||
         (trimmedTitle.length === 0 && content.trim().length === 0)) {
@@ -66,7 +70,8 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
     try {
       const note = await bridge.noteCreate(options.baseUrl(), token, {
         title: trimmedTitle,
-        content
+        content,
+        taskId
       })
       notes.value = [note, ...notes.value]
       return note

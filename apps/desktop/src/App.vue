@@ -76,6 +76,7 @@ const notes = createNoteStore(bridge, {
 })
 const noteTitle = ref('')
 const noteContent = ref('')
+const noteTaskId = ref('')
 const editingNote = ref<string | null>(null)
 const editNoteContent = ref('')
 const goals = createGoalStore(bridge, {
@@ -232,12 +233,22 @@ async function toggleGoalMilestone(goalId: string, milestoneId: string): Promise
 }
 
 async function submitNote(): Promise<void> {
-  const created = await notes.create(noteTitle.value, noteContent.value)
+  const created = await notes.create(
+    noteTitle.value,
+    noteContent.value,
+    noteTaskId.value === '' ? null : noteTaskId.value
+  )
   if (created) {
     noteTitle.value = ''
     noteContent.value = ''
+    noteTaskId.value = ''
     await notes.refresh()
   }
+}
+
+function taskTitle(taskId: string | null): string | null {
+  if (!taskId) return null
+  return tasks.tasks.value.find((task) => task.id === taskId)?.title ?? null
 }
 
 function startEditNote(noteId: string, content: string): void {
@@ -646,6 +657,12 @@ onMounted(async () => {
             aria-label="笔记标题"
           />
         </div>
+        <div class="composer__row">
+          <select v-model="noteTaskId" class="input" aria-label="关联任务">
+            <option value="">不关联任务</option>
+            <option v-for="task in tasks.tasks.value" :key="task.id" :value="task.id">{{ task.title }}</option>
+          </select>
+        </div>
         <textarea
           v-model="noteContent"
           class="input input--multiline"
@@ -678,7 +695,10 @@ onMounted(async () => {
           <template v-else>
             <div class="notes__header">
               <span class="notes__title">{{ note.title || '未命名笔记' }}</span>
-              <span class="notes__meta">v{{ note.version }}</span>
+              <span class="notes__meta">
+                <template v-if="taskTitle(note.taskId)">关联：{{ taskTitle(note.taskId) }} · </template>
+                v{{ note.version }}
+              </span>
             </div>
             <p class="notes__content">{{ note.content }}</p>
             <div class="composer__row">

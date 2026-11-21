@@ -33,6 +33,14 @@ describe('note store', () => {
     expect(signedOut.store.error.value).toBe('NOTE_SIGNED_OUT')
   })
 
+  it('links a note to a task on create', async () => {
+    const { store } = createStore()
+    const note = await store.create('Task context', 'details', 'task-1')
+    expect(note?.taskId).toBe('task-1')
+    await store.refresh()
+    expect(store.notes.value[0]?.taskId).toBe('task-1')
+  })
+
   it('filters by query on refresh', async () => {
     const { store } = createStore()
     await store.create('Meeting', 'agenda for Monday')
