@@ -1,6 +1,6 @@
 # 97｜FOCUS-06：休息倒计时与结束通知
 
-状态：代码已实现；本地 `pnpm test`（61 项）与 `pnpm build` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-06 小节。任务详情专注入口与周/月统计属 `FOCUS-07`。
+状态：代码已实现；本地 `pnpm test`（61 项）与 `pnpm build` 通过；[Server integration 44942070506](https://github.com/yml-qq/Planna/actions/runs/44942070506) 与 [Desktop core 44942070540](https://github.com/yml-qq/Planna/actions/runs/44942070540) 均 **success**。任务详情专注入口与周/月统计属 `FOCUS-07`。
 
 ## 范围与验收
 

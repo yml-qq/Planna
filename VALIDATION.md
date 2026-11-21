@@ -573,3 +573,11 @@
 - 前端新增 5 项笔记测试，合计 **59 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44940746565](https://github.com/yml-qq/Planna/actions/runs/44940746565) 与 [Desktop core 44940746639](https://github.com/yml-qq/Planna/actions/runs/44940746639) 均 **success**。
 - 未连接生产库、未提交凭据；笔记同步/离线编辑、附件/模板与任务关联 UI 留待 `NOTE-04`。
+
+## FOCUS-06 休息倒计时检查（2026-11-22）
+
+- focus store 完成专注后启动 300 秒休息倒计时（`restEndsAt`/`restRemaining`），`tickRest()` 每秒递减、归零只通知一次；`skipRest()` 清空；新专注重置。
+- 通知经注入的 `notify` 接入既有 Tauri notification 适配器（失败静默）；UI 显示“休息中 mm:ss + 跳过休息”，结束后显示休息完成提示；ticker 同时驱动专注与休息。
+- 前端新增 2 项测试（299s→300s 只通知一次并清空、跳过休息不通知），合计 **61 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44942070506](https://github.com/yml-qq/Planna/actions/runs/44942070506) 与 [Desktop core 44942070540](https://github.com/yml-qq/Planna/actions/runs/44942070540) 均 **success**。
+- 未连接生产库、未提交凭据；休息时长配置、任务详情入口与周/月统计留待 `FOCUS-07`；休息倒计时不持久化，应用退出后不恢复。
