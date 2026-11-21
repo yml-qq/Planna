@@ -14,6 +14,7 @@ public static class RecurrenceEndpoints
         recurrence.MapDelete("", DeleteRecurrence).WithName("DeleteRecurrence");
         var occurrences = app.MapGroup("/tasks/{taskId}/occurrences").WithTags("Tasks").RequireAuthorization();
         occurrences.MapGet("", ListOccurrences).WithName("ListOccurrences");
+        occurrences.MapPatch("/{occurrenceId}", PatchOccurrence).WithName("PatchOccurrence");
         return app;
     }
 
@@ -94,6 +95,34 @@ public static class RecurrenceEndpoints
             DeleteRecurrenceStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
             DeleteRecurrenceStatus.Conflict => Error(http, 409, result.Code!),
             DeleteRecurrenceStatus.AccountDeleted => Error(http, 401, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> PatchOccurrence(HttpContext http, string taskId,
+        string occurrenceId, UpdateOccurrenceRequest request, IPatchOccurrence command,
+        CancellationToken ct)
+    {
+        if (!Guid.TryParse(taskId, out var parsedTaskId) || parsedTaskId == Guid.Empty)
+            return Error(http, 400, "INVALID_TASK_ID");
+        if (!Guid.TryParse(occurrenceId, out var parsedOccurrenceId) || parsedOccurrenceId == Guid.Empty)
+            return Error(http, 400, "INVALID_OCCURRENCE_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var mutation) ||
+            mutation == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var result = await command.ExecuteAsync(owner, mutation, parsedTaskId, parsedOccurrenceId,
+            request, ct);
+        return result.Status switch
+        {
+            PatchOccurrenceStatus.Updated or PatchOccurrenceStatus.Replayed =>
+                TypedResults.Ok(result.Occurrence),
+            PatchOccurrenceStatus.NotFound => Error(http, 404, result.Code!),
+            PatchOccurrenceStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
+            PatchOccurrenceStatus.Invalid => Error(http, 422, result.Code!),
+            PatchOccurrenceStatus.Conflict => Error(http, 409, result.Code!),
+            PatchOccurrenceStatus.AccountDeleted => Error(http, 401, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
     }

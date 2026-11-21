@@ -1192,6 +1192,32 @@ paths:
         '400': {$ref: '#/components/responses/ErrorResponse'}
         '401': {$ref: '#/components/responses/ErrorResponse'}
         '404': {$ref: '#/components/responses/ErrorResponse'}
+  /tasks/{id}/occurrences/{occurrenceId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+      - {name: occurrenceId, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      tags: [Tasks]
+      operationId: patchOccurrence
+      description: Reschedule the due instant or skip/unskip a single non-completed occurrence with an expected version and idempotency key. Completed occurrences return 409 OCCURRENCE_COMPLETED; skipped occurrences cannot be completed.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateOccurrenceRequest'}
+      responses:
+        '200':
+          description: Updated occurrence
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Occurrence'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '409': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
   /goals:
     get:
       tags: [Goals]
@@ -2119,6 +2145,20 @@ components:
         time_zone: {type: string}
         dtstart_local: {type: string}
         version: {type: integer, minimum: 1}
+    OccurrencePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        due_at: {type: string, format: date-time}
+        status: {type: string, enum: [todo, skipped]}
+    UpdateOccurrenceRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, patch]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        patch: {$ref: '#/components/schemas/OccurrencePatch'}
     Occurrence:
       type: object
       additionalProperties: false

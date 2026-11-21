@@ -107,6 +107,7 @@ builder.Services.AddScoped<ISyncBootstrapQuery>(_ => new SyncBootstrapQuery(conn
 builder.Services.AddScoped<IPutRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IDeleteRecurrence, RecurrenceService>();
 builder.Services.AddScoped<IRecurrenceQuery>(_ => new RecurrenceQuery(connection));
+builder.Services.AddScoped<IPatchOccurrence, OccurrencePatchService>();
 if (!string.Equals(builder.Configuration["AI_PROVIDER"], "none", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddSingleton<IAiParseProvider, RuleBasedParseProvider>();
@@ -122,6 +123,7 @@ builder.Services.AddScoped<IAccountExportService>(sp =>
     new AccountExportService(connection, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddScoped<IAiConsent, AiConsentService>();
 builder.Services.AddScoped<IHabitCreate, HabitService>();
+builder.Services.AddScoped<IPatchOccurrence, OccurrencePatchService>();
 builder.Services.AddScoped<IHabitUpdate, HabitService>();
 builder.Services.AddScoped<IHabitDelete, HabitService>();
 builder.Services.AddScoped<IHabitQuery, HabitService>();

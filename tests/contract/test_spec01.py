@@ -675,6 +675,20 @@ class Spec01Contracts(unittest.TestCase):
                          {"id", "goal_id", "title", "due_date", "completed", "position", "version",
                           "created_at", "updated_at"})
 
+    def test_occurrence_patch_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        operation = api["paths"]["/tasks/{id}/occurrences/{occurrenceId}"]["patch"]
+        self.assertEqual(set(operation["responses"]),
+                         {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, operation["parameters"])
+        patch = api["components"]["schemas"]["OccurrencePatch"]
+        self.assertEqual(patch["properties"]["status"]["enum"], ["todo", "skipped"])
+        self.assertEqual(patch["minProperties"], 1)
+        update = api["components"]["schemas"]["UpdateOccurrenceRequest"]
+        self.assertEqual(set(update["required"]), {"expected_version", "patch"})
+        self.assertEqual(operation["requestBody"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/UpdateOccurrenceRequest")
+
     def test_focus_session_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         collection = api["paths"]["/focus-sessions"]

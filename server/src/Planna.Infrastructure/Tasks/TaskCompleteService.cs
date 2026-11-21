@@ -71,6 +71,8 @@ public sealed class TaskCompleteService(TaskWriteContext db, TimeProvider clock)
             if (occurrence is null) return new(CompleteTaskStatus.InvalidOccurrence, Code: "INVALID_OCCURRENCE");
             if (occurrence.Status == "done")
                 return new(CompleteTaskStatus.AlreadyCompleted, Code: "ALREADY_COMPLETED");
+            if (occurrence.Status == "skipped")
+                return new(CompleteTaskStatus.Conflict, Code: "OCCURRENCE_SKIPPED");
             var completedNow = clock.GetUtcNow();
             var occurrenceCompletedAt = request.CompletedAt?.ToUniversalTime() ?? completedNow;
             if (occurrenceCompletedAt < row.CreatedAt) occurrenceCompletedAt = row.CreatedAt;
