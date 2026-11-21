@@ -27,6 +27,16 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export interface Note {
+  id: string
+  title: string
+  content: string
+  taskId: string | null
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+
 export type GoalState = 'active' | 'completed' | 'archived'
 
 export interface Milestone {
@@ -244,6 +254,29 @@ export interface DesktopBridge {
     to: string,
     timeZone: string
   ): Promise<FocusStats>
+  noteList(
+    baseUrl: string,
+    accessToken: string,
+    input?: { query?: string; taskId?: string | null; limit?: number }
+  ): Promise<Note[]>
+  noteCreate(
+    baseUrl: string,
+    accessToken: string,
+    input: { title?: string; content: string; taskId?: string | null }
+  ): Promise<Note>
+  noteUpdate(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    expectedVersion: number,
+    patch: { title?: string; content?: string }
+  ): Promise<Note>
+  noteDelete(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    expectedVersion: number
+  ): Promise<void>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -605,6 +638,88 @@ export class MemoryBridge implements DesktopBridge {
     }
   }
 
+  private readonly notes = new Map<string, Note>()
+
+  async noteList(
+    _baseUrl: string,
+    _accessToken: string,
+    input: { query?: string; taskId?: string | null; limit?: number } = {}
+  ): Promise<Note[]> {
+    const query = (input.query ?? '').trim().toLowerCase()
+    return [...this.notes.values()]
+      .filter((note) => {
+        if (input.taskId && note.taskId !== input.taskId) return false
+        if (query.length === 0) return true
+        return (
+          note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query)
+        )
+      })
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id))
+      .slice(0, input.limit ?? 50)
+  }
+
+  async noteCreate(
+    _baseUrl: string,
+    _accessToken: string,
+    input: { title?: string; content: string; taskId?: string | null }
+  ): Promise<Note> {
+    const title = (input.title ?? '').trim()
+    const content = input.content ?? ''
+    if (title.length > 200 || content.length > 20000 || (title.length === 0 && content.trim().length === 0)) {
+      throw new Error('422:INVALID_NOTE')
+    }
+    const now = new Date().toISOString()
+    const note: Note = {
+      id: crypto.randomUUID(),
+      title,
+      content,
+      taskId: input.taskId ?? null,
+      version: 1,
+      createdAt: now,
+      updatedAt: now
+    }
+    this.notes.set(note.id, note)
+    return note
+  }
+
+  async noteUpdate(
+    _baseUrl: string,
+    _accessToken: string,
+    noteId: string,
+    expectedVersion: number,
+    patch: { title?: string; content?: string }
+  ): Promise<Note> {
+    const note = this.notes.get(noteId)
+    if (!note) throw new Error('404:NOTE_NOT_FOUND')
+    if (note.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    const title = patch.title === undefined ? note.title : patch.title.trim()
+    const content = patch.content === undefined ? note.content : patch.content
+    if (title.length > 200 || content.length > 20000 || (title.length === 0 && content.trim().length === 0)) {
+      throw new Error('422:INVALID_NOTE')
+    }
+    const updated: Note = {
+      ...note,
+      title,
+      content,
+      version: note.version + 1,
+      updatedAt: new Date().toISOString()
+    }
+    this.notes.set(noteId, updated)
+    return updated
+  }
+
+  async noteDelete(
+    _baseUrl: string,
+    _accessToken: string,
+    noteId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    const note = this.notes.get(noteId)
+    if (!note) throw new Error('404:NOTE_NOT_FOUND')
+    if (note.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    this.notes.delete(noteId)
+  }
+
   async exportConflicts(): Promise<string> {
     return JSON.stringify({
       schema_version: 'conflict-ledger-v1',
@@ -730,6 +845,28 @@ function toHabitLog(row: RawHabitLog): HabitLog {
     quantity: row.quantity,
     status: row.status,
     version: row.version,
+    updatedAt: row.updated_at
+  }
+}
+
+interface RawNote {
+  id: string
+  title: string
+  content: string
+  task_id: string | null
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+function toNote(row: RawNote): Note {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    taskId: row.task_id,
+    version: row.version,
+    createdAt: row.created_at,
     updatedAt: row.updated_at
   }
 }
@@ -1098,6 +1235,63 @@ export class TauriBridge implements DesktopBridge {
         actualSeconds: day.actual_seconds
       }))
     }
+  }
+
+  async noteList(
+    baseUrl: string,
+    accessToken: string,
+    input: { query?: string; taskId?: string | null; limit?: number } = {}
+  ): Promise<Note[]> {
+    const rows = await this.invoke<RawNote[]>('note_list', {
+      baseUrl,
+      accessToken,
+      query: input.query ?? null,
+      taskId: input.taskId ?? null,
+      limit: input.limit ?? 50
+    })
+    return rows.map(toNote)
+  }
+
+  async noteCreate(
+    baseUrl: string,
+    accessToken: string,
+    input: { title?: string; content: string; taskId?: string | null }
+  ): Promise<Note> {
+    const row = await this.invoke<RawNote>('note_create', {
+      baseUrl,
+      accessToken,
+      title: input.title ?? '',
+      content: input.content,
+      taskId: input.taskId ?? null
+    })
+    return toNote(row)
+  }
+
+  async noteUpdate(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    expectedVersion: number,
+    patch: { title?: string; content?: string }
+  ): Promise<Note> {
+    const row = await this.invoke<RawNote>('note_update', {
+      baseUrl,
+      accessToken,
+      noteId,
+      expectedVersion,
+      title: patch.title ?? null,
+      content: patch.content ?? null
+    })
+    return toNote(row)
+  }
+
+  async noteDelete(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    await this.invoke<void>('note_delete', { baseUrl, accessToken, noteId, expectedVersion })
   }
 
   async exportConflicts(): Promise<string> {

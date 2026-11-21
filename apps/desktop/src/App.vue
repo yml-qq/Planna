@@ -4,6 +4,7 @@ import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIss
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
 import { createGoalStore } from './goals'
+import { createNoteStore } from './notes'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -65,6 +66,14 @@ const habits = createHabitStore(bridge, {
 })
 const focusTaskId = ref('')
 const focusMinutes = ref('')
+const notes = createNoteStore(bridge, {
+  baseUrl: () => baseUrl.value,
+  token: () => session.token.value
+})
+const noteTitle = ref('')
+const noteContent = ref('')
+const editingNote = ref<string | null>(null)
+const editNoteContent = ref('')
 const goals = createGoalStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
@@ -113,6 +122,7 @@ const errorText = computed(() => {
     tasks.error.value ??
     habits.error.value ??
     goals.error.value ??
+    notes.error.value ??
     focus.error.value
   if (!error) return null
   const messages: Record<string, string> = {
@@ -135,6 +145,10 @@ const errorText = computed(() => {
     GOAL_SIGNED_OUT: '请先登录再管理目标',
     GOAL_NOT_FOUND: '目标不存在',
     GOAL_FAILED: '目标操作失败，请重试',
+    INVALID_NOTE: '笔记内容不能为空，且标题/正文不能超长',
+    NOTE_SIGNED_OUT: '请先登录再使用笔记',
+    NOTE_NOT_FOUND: '笔记不存在',
+    NOTE_FAILED: '笔记操作失败，请重试',
     FOCUS_SESSION_ACTIVE: '已有进行中的专注，先完成或放弃当前会话',
     FOCUS_SESSION_FINISHED: '该专注会话已结束',
     FOCUS_SIGNED_OUT: '请先登录再开始专注',
@@ -169,6 +183,7 @@ async function submitLogin(): Promise<void> {
     await tasks.refresh()
     await habits.refresh()
     await goals.refresh()
+    await notes.refresh()
     await focus.recover()
     await refreshFocusStats()
   }
@@ -202,6 +217,37 @@ async function toggleGoalMilestone(goalId: string, milestoneId: string): Promise
   const goal = goals.goals.value.find((candidate) => candidate.id === goalId)
   const milestone = goal?.milestones.find((candidate) => candidate.id === milestoneId)
   if (milestone) await goals.toggleMilestone(goalId, milestone)
+}
+
+async function submitNote(): Promise<void> {
+  const created = await notes.create(noteTitle.value, noteContent.value)
+  if (created) {
+    noteTitle.value = ''
+    noteContent.value = ''
+    await notes.refresh()
+  }
+}
+
+function startEditNote(noteId: string, content: string): void {
+  editingNote.value = noteId
+  editNoteContent.value = content
+}
+
+function cancelEditNote(): void {
+  editingNote.value = null
+  editNoteContent.value = ''
+}
+
+async function saveEditNote(noteId: string, version: number): Promise<void> {
+  if (await notes.update(noteId, version, editNoteContent.value)) {
+    editingNote.value = null
+    editNoteContent.value = ''
+  }
+}
+
+async function removeNote(noteId: string, version: number): Promise<void> {
+  const note = notes.notes.value.find((candidate) => candidate.id === noteId)
+  if (note) await notes.remove({ ...note, version })
 }
 
 async function startFocus(plannedSeconds: number): Promise<void> {
@@ -266,6 +312,8 @@ async function signOut(): Promise<void> {
   habits.habits.value = []
   habits.todayLogs.value = {}
   goals.goals.value = []
+  notes.notes.value = []
+  notes.query.value = ''
   focus.session.value = null
   focus.snapshot.value = null
 }
@@ -448,6 +496,7 @@ onMounted(async () => {
     await tasks.refresh()
     await habits.refresh()
     await goals.refresh()
+    await notes.refresh()
     await focus.recover()
     await refreshFocusStats()
     await refreshOutbox()
@@ -526,6 +575,78 @@ onMounted(async () => {
       </ul>
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
     </template>
+
+    <section v-if="signedIn" class="card" aria-labelledby="notes-title">
+      <h2 id="notes-title" class="card__title">笔记</h2>
+      <div class="composer__row">
+        <input
+          v-model="notes.query.value"
+          class="input"
+          type="search"
+          placeholder="搜索标题或正文"
+          aria-label="搜索笔记"
+          @input="notes.refresh()"
+        />
+      </div>
+      <form class="composer" @submit.prevent="submitNote">
+        <div class="composer__row">
+          <input
+            v-model="noteTitle"
+            class="input"
+            type="text"
+            maxlength="200"
+            placeholder="标题（可选）"
+            aria-label="笔记标题"
+          />
+        </div>
+        <textarea
+          v-model="noteContent"
+          class="input input--multiline"
+          maxlength="20000"
+          rows="3"
+          placeholder="记点什么…"
+          aria-label="笔记正文"
+        ></textarea>
+        <div class="composer__row">
+          <button class="button" type="submit" :disabled="notes.loading.value || (noteTitle.trim() === '' && noteContent.trim() === '')">
+            保存笔记
+          </button>
+        </div>
+      </form>
+      <ul v-if="notes.notes.value.length > 0" class="notes">
+        <li v-for="note in notes.notes.value" :key="note.id" class="notes__item">
+          <template v-if="editingNote === note.id">
+            <textarea
+              v-model="editNoteContent"
+              class="input input--multiline"
+              maxlength="20000"
+              rows="3"
+              aria-label="编辑笔记正文"
+            ></textarea>
+            <div class="composer__row">
+              <button class="button" type="button" @click="saveEditNote(note.id, note.version)">保存</button>
+              <button class="button button--ghost" type="button" @click="cancelEditNote">取消</button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="notes__header">
+              <span class="notes__title">{{ note.title || '未命名笔记' }}</span>
+              <span class="notes__meta">v{{ note.version }}</span>
+            </div>
+            <p class="notes__content">{{ note.content }}</p>
+            <div class="composer__row">
+              <button class="button button--ghost" type="button" @click="startEditNote(note.id, note.content)">
+                编辑
+              </button>
+              <button class="button button--ghost" type="button" @click="removeNote(note.id, note.version)">
+                删除
+              </button>
+            </div>
+          </template>
+        </li>
+      </ul>
+      <p v-else class="empty">还没有笔记，记录一条想法或会议要点。</p>
+    </section>
 
     <section v-if="signedIn" class="card" aria-labelledby="focus-title">
       <h2 id="focus-title" class="card__title">专注</h2>

@@ -762,6 +762,128 @@ fn focus_stats(
     response.json().map_err(|error| error.to_string())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct NoteDto {
+    id: String,
+    title: String,
+    content: String,
+    task_id: Option<String>,
+    version: i64,
+    created_at: String,
+    updated_at: String,
+}
+
+#[derive(Deserialize)]
+struct NoteListResponse {
+    items: Vec<NoteDto>,
+}
+
+#[tauri::command]
+fn note_list(
+    base_url: String,
+    access_token: String,
+    query: Option<String>,
+    task_id: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<NoteDto>, String> {
+    let mut url = format!("{}/notes?limit={}", base(&base_url), limit.unwrap_or(50));
+    if let Some(query) = query.filter(|value| !value.trim().is_empty()) {
+        url.push_str("&query=");
+        url.push_str(&urlencoding::encode(&query));
+    }
+    if let Some(task_id) = task_id.filter(|value| !value.is_empty()) {
+        url.push_str("&task_id=");
+        url.push_str(&urlencoding::encode(&task_id));
+    }
+    let response = http_client()
+        .get(url)
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let page: NoteListResponse = response.json().map_err(|error| error.to_string())?;
+    Ok(page.items)
+}
+
+#[tauri::command]
+fn note_create(
+    base_url: String,
+    access_token: String,
+    title: String,
+    content: String,
+    task_id: Option<String>,
+) -> Result<NoteDto, String> {
+    let response = http_client()
+        .post(format!("{}/notes", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "title": title,
+            "content": content,
+            "task_id": task_id
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn note_update(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    expected_version: i64,
+    title: Option<String>,
+    content: Option<String>,
+) -> Result<NoteDto, String> {
+    let mut patch = serde_json::Map::new();
+    if let Some(title) = title {
+        patch.insert("title".to_string(), serde_json::Value::String(title));
+    }
+    if let Some(content) = content {
+        patch.insert("content".to_string(), serde_json::Value::String(content));
+    }
+    let response = http_client()
+        .patch(format!("{}/notes/{note_id}", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "expected_version": expected_version,
+            "patch": serde_json::Value::Object(patch)
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn note_delete(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    expected_version: i64,
+) -> Result<(), String> {
+    let response = http_client()
+        .delete(format!("{}/notes/{note_id}", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .header("If-Match", format!("\"v{expected_version}\""))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1041,6 +1163,10 @@ pub fn run() {
             goal_add_milestone,
             goal_update_milestone,
             focus_stats,
+            note_list,
+            note_create,
+            note_update,
+            note_delete,
             outbox_issues,
             discard_mutation,
             list_conflicts,

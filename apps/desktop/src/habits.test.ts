@@ -173,6 +173,16 @@ describe('habit store', () => {
       },
       goalUpdateMilestone: async () => {
         throw new Error('offline')
+      },
+      noteList: async () => [],
+      noteCreate: async () => {
+        throw new Error('offline')
+      },
+      noteUpdate: async () => {
+        throw new Error('offline')
+      },
+      noteDelete: async () => {
+        throw new Error('offline')
       }
     }
     const store = createHabitStore(failing, storeOptions())
