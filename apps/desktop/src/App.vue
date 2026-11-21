@@ -66,6 +66,8 @@ const habits = createHabitStore(bridge, {
 })
 const focusTaskId = ref('')
 const focusMinutes = ref('')
+const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
+const focusStatsDays = ref(7)
 const notes = createNoteStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
@@ -87,6 +89,10 @@ const focus = createFocusStore(bridge, {
   notify: async (title, body) => {
     const notifier = await notifierPromise
     await notifier.notify(title, body)
+  },
+  restSeconds: () => {
+    const minutes = Number.parseInt(focusRestMinutes.value, 10)
+    return Number.isFinite(minutes) && minutes > 0 ? minutes * 60 : 0
   }
 })
 
@@ -278,10 +284,20 @@ async function completeFocus(): Promise<void> {
 async function refreshFocusStats(): Promise<void> {
   const today = localDate()
   await focus.loadStats(
-    addDays(today, -6),
+    addDays(today, -(focusStatsDays.value - 1)),
     today,
     Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
   )
+}
+
+async function setFocusStatsDays(days: number): Promise<void> {
+  focusStatsDays.value = days
+  await refreshFocusStats()
+}
+
+async function startTaskFocus(taskId: string): Promise<void> {
+  focusTaskId.value = taskId
+  await startFocus(1500)
 }
 
 async function checkInHabit(habitId: string): Promise<void> {
@@ -482,6 +498,10 @@ watch(
   { deep: true }
 )
 
+watch(focusRestMinutes, (value) => {
+  writeStorage('planna.focusRestMinutes', value)
+})
+
 watch([quietStart, quietEnd], ([start, end]) => {
   if (start === '' && end === '') {
     writeStorage('planna.quietHours', '')
@@ -578,6 +598,9 @@ onMounted(async () => {
         <li v-for="task in tasks.tasks.value" :key="task.id" class="tasks__item">
           <span class="tasks__title">{{ task.title }}</span>
           <span class="tasks__meta">v{{ task.version }}</span>
+          <button class="button button--ghost" type="button" @click="startTaskFocus(task.id)">
+            专注
+          </button>
         </li>
       </ul>
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
@@ -657,6 +680,17 @@ onMounted(async () => {
 
     <section v-if="signedIn" class="card" aria-labelledby="focus-title">
       <h2 id="focus-title" class="card__title">专注</h2>
+      <div class="composer__row">
+        <label class="habits__meta">
+          休息时长
+          <select v-model="focusRestMinutes" class="input input--narrow" aria-label="休息时长（分钟）">
+            <option value="0">不休息</option>
+            <option value="5">5 分钟</option>
+            <option value="10">10 分钟</option>
+            <option value="15">15 分钟</option>
+          </select>
+        </label>
+      </div>
       <template v-if="focus.snapshot.value">
         <p class="focus__time">{{ formatDuration(focus.seconds.value) }}</p>
         <p class="status">
@@ -704,7 +738,11 @@ onMounted(async () => {
         </div>
       </template>
       <div class="focus__stats">
-        <h3 class="focus__stats-title">近 7 天专注</h3>
+        <div class="issues__header">
+          <h3 class="focus__stats-title">近 {{ focusStatsDays }} 天专注</h3>
+          <button class="button button--ghost" type="button" @click="setFocusStatsDays(7)">7 天</button>
+          <button class="button button--ghost" type="button" @click="setFocusStatsDays(30)">30 天</button>
+        </div>
         <template v-if="focus.stats.value && focus.stats.value.days.length > 0">
           <p class="status">
             共 {{ Math.round(focus.stats.value.actualSeconds / 60) }} 分钟 · 完成

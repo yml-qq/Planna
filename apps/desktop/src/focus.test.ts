@@ -240,6 +240,27 @@ describe('rest countdown', () => {
     expect(notifications).toEqual(['休息结束'])
   })
 
+  it('honours a configured rest duration', async () => {
+    let clock = 11_000_000
+    const notifications: string[] = []
+    const { store } = createStore(() => clock, {
+      restSeconds: () => 90,
+      notify: async (title: string) => {
+        notifications.push(title)
+      }
+    })
+    await store.start(1500)
+    clock += 30_000
+    await store.complete()
+    expect(store.restEndsAt.value).toBe(clock + 90_000)
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(90)
+    clock += 90_000
+    store.tickRest()
+    expect(store.restRemaining.value).toBe(0)
+    expect(notifications).toEqual(['休息结束'])
+  })
+
   it('skips rest and clears the reminder', async () => {
     let clock = 10_000_000
     const { store } = createStore(() => clock)

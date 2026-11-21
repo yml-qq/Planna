@@ -19,6 +19,7 @@ export interface FocusStoreOptions {
   write?: (key: string, value: string) => void
   now?: () => number
   notify?: (title: string, body: string) => Promise<void>
+  restSeconds?: () => number
 }
 
 export function formatDuration(totalSeconds: number): string {
@@ -212,10 +213,16 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
         seconds.value = actual
         driftSeconds.value = 0
         if (nextState === 'completed') {
-          restHint.value = `本次专注 ${formatDuration(actual)}，建议休息 5 分钟。`
-          restEndsAt.value = now() + 300_000
-          restRemaining.value = 300
-          restNotified = false
+          const restSeconds = Math.max(0, Math.floor(options.restSeconds?.() ?? 300))
+          if (restSeconds === 0) {
+            restHint.value = `本次专注 ${formatDuration(actual)}。`
+          } else {
+            const restMinutes = Math.max(1, Math.round(restSeconds / 60))
+            restHint.value = `本次专注 ${formatDuration(actual)}，建议休息 ${restMinutes} 分钟。`
+            restEndsAt.value = now() + restSeconds * 1000
+            restRemaining.value = restSeconds
+            restNotified = false
+          }
         }
       } else {
         persist({
