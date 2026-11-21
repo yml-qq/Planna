@@ -1,6 +1,6 @@
 # 98｜TIME-01F：单次 occurrence 编辑（跳过/改期）
 
-状态：代码已实现；本地 build/format/契约测试 **33 项**通过，PostgreSQL 18 CI 见 `VALIDATION.md` 的 TIME-01F 小节。法定工作日与数据源属 `TIME-01G`。
+状态：代码已实现；本地 build/format/契约测试 **33 项**通过；[Server integration 44944887823](https://github.com/yml-qq/Planna/actions/runs/44944887823) 与 [Desktop core 44944887817](https://github.com/yml-qq/Planna/actions/runs/44944887817) 均 **success**（首次冒烟漏算 recurrence 创建 revision，已修复）。法定工作日与数据源属 `TIME-01G`。
 
 ## 范围与验收
 

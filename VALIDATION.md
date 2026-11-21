@@ -581,3 +581,13 @@
 - 前端新增 2 项测试（299s→300s 只通知一次并清空、跳过休息不通知），合计 **61 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44942070506](https://github.com/yml-qq/Planna/actions/runs/44942070506) 与 [Desktop core 44942070540](https://github.com/yml-qq/Planna/actions/runs/44942070540) 均 **success**。
 - 未连接生产库、未提交凭据；休息时长配置、任务详情入口与周/月统计留待 `FOCUS-07`；休息倒计时不持久化，应用退出后不恢复。
+
+## TIME-01F 单次 occurrence 编辑检查（2026-11-22）
+
+- 新增 `PATCH /tasks/{id}/occurrences/{occurrenceId}`（`Idempotency-Key`）：due_at 改期、status todo↔skipped；版本校验、owner/任务隔离、revision 与 `sync_changes(entity_type='occurrence')`；已完成 409 `OCCURRENCE_COMPLETED`。
+- `POST /tasks/{id}/complete` 对 skipped occurrence 返回 409 `OCCURRENCE_SKIPPED`；无 schema 变更。
+- OpenAPI 新增路径与 `OccurrencePatch/UpdateOccurrenceRequest`，契约测试新增 `test_occurrence_patch_contract`（**33 项**）。
+- 冒烟 `HttpOccurrenceEditSmoke`：规则物化→跳过→完成被拒→取消跳过→改期→陈旧版本→幂等重放/同 key 复用→完成后编辑被拒→跨 owner 404→非法状态/空 patch/缺失 key→revision=7（含规则创建 1 次）。
+- **首次 Server CI 失败**（[44943555835](https://github.com/yml-qq/Planna/actions/runs/44943555835)）：冒烟漏算 recurrence 创建自身 +1 revision（误断言 6）；修正为 7（`f490a78`）。
+- 修复后 [Server integration 44944887823](https://github.com/yml-qq/Planna/actions/runs/44944887823) 与 [Desktop core 44944887817](https://github.com/yml-qq/Planna/actions/runs/44944887817) 均 **success**；本地 build/format/契约 33 项通过。
+- 未连接生产库、未提交凭据；法定工作日数据服务与提醒重排留待 `TIME-01G`。
