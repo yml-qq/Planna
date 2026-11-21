@@ -143,7 +143,7 @@ internal static class HttpOccurrenceEditSmoke
             "/tasks/" + taskId + "/occurrences/" + occurrenceId,
             "{\"expected_version\":7,\"patch\":{\"status\":\"todo\"}}", null, null,
             HttpStatusCode.BadRequest);
-        if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 6)
+        if (await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 7)
             throw new InvalidOperationException("Occurrence edit revision mismatch.");
         Console.WriteLine("PASS: occurrence skip/unskip/reschedule, done guard, idempotency, version and owner isolation");
     }
