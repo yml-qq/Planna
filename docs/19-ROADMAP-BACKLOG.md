@@ -50,7 +50,8 @@
 | E08 | AI-04 | Plan preview/apply/audit（已交付，见 `52-AI-03-04.md`） | AI-03,SYNC-PULL-01 | stale apply tests |
 | E08 | AI-CONSENT-01 | AI 数据授权存储与 parse scope 校验（已交付，见 `57-AI-CONSENT-01.md`） | AI-01 | consent tests |
 | E09 | UX-01 | 设计系统/无障碍/空状态 | E06 | accessibility tests |
-| E09 | UX-02 | 可选模块入口与轻量首页（V1.1） | UX-01 | 隐藏/恢复不丢数据 |
+| E09 | UX-02 | 卡片级功能入口可见性（已交付，见 `100-UX-02.md`） | UX-01 | 隐藏/恢复不丢数据 |
+| E09 | UX-03 | 导航级入口、主题/密度与无障碍完善 | UX-02 | accessibility tests |
 | E10 | HAB-01A | 习惯 CRUD（服务端，已交付，见 `68-HAB-01A.md`） | E04 | repeat tests |
 | E10 | HAB-01B | 打卡日志：同日唯一、补签与窗口查询（已交付，见 `69-HAB-01B.md`） | HAB-01A | repeat tests |
 | E10 | HAB-01C | 连续天数规则与 streak 查询（已交付，见 `70-HAB-01C.md`） | HAB-01B | repeat tests |

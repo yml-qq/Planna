@@ -4,6 +4,7 @@ import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIss
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
 import { createGoalStore } from './goals'
+import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { createNoteStore } from './notes'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
@@ -68,6 +69,7 @@ const focusTaskId = ref('')
 const focusMinutes = ref('')
 const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
 const focusStatsDays = ref(7)
+const modules = createModuleStore()
 const notes = createNoteStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
@@ -293,6 +295,10 @@ async function refreshFocusStats(): Promise<void> {
 async function setFocusStatsDays(days: number): Promise<void> {
   focusStatsDays.value = days
   await refreshFocusStats()
+}
+
+function toggleModule(key: ModuleKey): void {
+  modules.toggle(key)
 }
 
 async function startTaskFocus(taskId: string): Promise<void> {
@@ -576,6 +582,17 @@ onMounted(async () => {
           <span v-if="syncing" class="status">同步中…</span>
           <span v-else-if="syncSummary" class="status">{{ syncSummary }}</span>
         </div>
+        <div class="card__row modules" aria-label="显示模块">
+          <span class="habits__meta">显示模块</span>
+          <label v-for="(label, key) in MODULE_LABELS" :key="key" class="modules__item">
+            <input
+              type="checkbox"
+              :checked="modules.visibility.value[key]"
+              @change="toggleModule(key)"
+            />
+            {{ label }}
+          </label>
+        </div>
       </section>
 
       <form class="composer" @submit.prevent="submitTask">
@@ -606,7 +623,7 @@ onMounted(async () => {
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
     </template>
 
-    <section v-if="signedIn" class="card" aria-labelledby="notes-title">
+    <section v-if="signedIn && modules.visibility.value.notes" class="card" aria-labelledby="notes-title">
       <h2 id="notes-title" class="card__title">笔记</h2>
       <div class="composer__row">
         <input
@@ -678,7 +695,7 @@ onMounted(async () => {
       <p v-else class="empty">还没有笔记，记录一条想法或会议要点。</p>
     </section>
 
-    <section v-if="signedIn" class="card" aria-labelledby="focus-title">
+    <section v-if="signedIn && modules.visibility.value.focus" class="card" aria-labelledby="focus-title">
       <h2 id="focus-title" class="card__title">专注</h2>
       <div class="composer__row">
         <label class="habits__meta">
@@ -759,7 +776,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="signedIn" class="card" aria-labelledby="goals-title">
+    <section v-if="signedIn && modules.visibility.value.goals" class="card" aria-labelledby="goals-title">
       <h2 id="goals-title" class="card__title">目标</h2>
       <form class="composer" @submit.prevent="submitGoal">
         <label class="composer__label" for="goal-title">新增目标</label>
@@ -842,7 +859,7 @@ onMounted(async () => {
       <p v-else class="empty">还没有目标，先创建一个可衡量的目标。</p>
     </section>
 
-    <section v-if="signedIn" class="card" aria-labelledby="habits-title">
+    <section v-if="signedIn && modules.visibility.value.habits" class="card" aria-labelledby="habits-title">
       <h2 id="habits-title" class="card__title">习惯打卡</h2>
       <div class="habits__quiet">
         <span>免打扰</span>

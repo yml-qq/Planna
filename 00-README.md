@@ -110,6 +110,7 @@
 | 97 | `docs/97-FOCUS-06.md` | 休息倒计时与结束通知 |
 | 98 | `docs/98-TIME-01F.md` | 单次 occurrence 编辑（跳过/改期） |
 | 99 | `docs/99-FOCUS-07.md` | 任务专注入口、休息配置与统计切换 |
+| 100 | `docs/100-UX-02.md` | 功能入口可见性（卡片级） |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

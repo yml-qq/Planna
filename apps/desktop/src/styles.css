@@ -412,3 +412,15 @@ body {
   font-size: 13px;
   white-space: pre-wrap;
 }
+
+.modules {
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modules__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
