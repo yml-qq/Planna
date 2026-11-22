@@ -688,4 +688,5 @@
 
 - 新增 `focusStatsCsv`/`focusStatsSummary` 纯函数（表头、按日行、CRLF、空报表合法、摘要文案）；统计卡片显示摘要并提供“复制 CSV”（剪贴板成功/失败状态）。
 - 前端新增 3 项报表测试，合计 **78 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44998172580](https://github.com/yml-qq/Planna/actions/runs/44998172580) 与 [Desktop core 44998172633](https://github.com/yml-qq/Planna/actions/runs/44998172633) 均 **success**。
 - 仅复制到剪贴板，不承诺文件下载；报表文件导出与后台通知真机验证留待 `FOCUS-09b-d`。

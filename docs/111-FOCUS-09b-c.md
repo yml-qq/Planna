@@ -1,6 +1,6 @@
 # 111｜FOCUS-09b-c：专注统计报表复制（CSV）
 
-状态：代码已实现；本地 `pnpm test`（78 项）与 `pnpm build` 通过，桌面 CI 见 `VALIDATION.md` 的 FOCUS-09b-c 小节。报表文件下载/后台通知属 `FOCUS-09b-d`。
+状态：代码已实现；本地 `pnpm test`（78 项）与 `pnpm build` 通过；[Server integration 44998172580](https://github.com/yml-qq/Planna/actions/runs/44998172580) 与 [Desktop core 44998172633](https://github.com/yml-qq/Planna/actions/runs/44998172633) 均 **success**。报表文件下载/后台通知属 `FOCUS-09b-d`。
 
 ## 范围与验收
 
