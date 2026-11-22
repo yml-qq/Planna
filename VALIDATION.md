@@ -739,4 +739,6 @@
 - `POST /sync/push` 支持 `note` upsert/delete：payload `{title?,content,task_id?}`，创建要求 content 非空，更新支持部分字段与解除关联；task 必须 owner 未删除；版本冲突/tombstone/duplicate 语义与 task 一致。
 - 笔记变更写入 `sync_changes`，`GET /sync/pull` 自动返回；OpenAPI 枚举加入 note，契约测试 **34 项**通过。
 - 冒烟扩展笔记创建/重复/更新/空内容/未知字段/跨 owner/删除，并断言 revision=6、note 变更 3、mutation 6、pull 含 note。
+- 首次 CI（`4ba63b8`）失败：note `task_id` 以字符串传给 Npgsql `Uuid` 参数导致 500；修复为 Guid（`a7bbf80`）后通过。
 - 本地 build/format/契约通过；服务端无迁移。桌面本地笔记同步与应用留待 `NOTE-04b-2b`（桌面尚未消费 note 变更）。
+- [Server integration 45010244099](https://github.com/yml-qq/Planna/actions/runs/45010244099) 与 [Desktop core 45010244105](https://github.com/yml-qq/Planna/actions/runs/45010244105) 均 **success**。
