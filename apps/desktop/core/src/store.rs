@@ -158,7 +158,36 @@ pub struct ConflictEntry {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewNote {
+    pub id: String,
+    #[serde(default)]
+    pub title: String,
+    pub content: String,
+    #[serde(default)]
+    pub task_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct NotePatch {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct StoredNote {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub task_id: Option<String>,
+    pub version: i64,
+    pub updated_at: String,
+    pub deleted_at: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub struct OutboxEntry {
     pub mutation_id: String,
     pub entity_type: String,
@@ -270,6 +299,16 @@ impl Store {
                 version INTEGER NOT NULL CHECK (version >= 1),
                 updated_at TEXT NOT NULL,
                 UNIQUE (habit_id, log_date)
+            );
+            CREATE TABLE IF NOT EXISTS notes (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL DEFAULT '',
+                task_id TEXT,
+                version INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT
             );
             CREATE TABLE IF NOT EXISTS sync_conflicts (
                 mutation_id TEXT PRIMARY KEY,
@@ -468,6 +507,209 @@ impl Store {
             tasks.push(row?);
         }
         Ok(tasks)
+    }
+
+    /// Creates a note and its outbox row atomically; replaying a mutation id is idempotent.
+    pub fn create_note(
+        &mut self,
+        note: &NewNote,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        validate_note(&note.title, &note.content)?;
+        if mutation_id.is_empty() || now.is_empty() {
+            return Err(StoreError::Validation("mutation_id and now are required"));
+        }
+        if self.mutation_exists(mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        transaction.execute(
+            "INSERT INTO notes(id, title, content, task_id, version, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)",
+            params![note.id, note.title.trim(), note.content, note.task_id, now],
+        )?;
+        let payload = serde_json::json!({
+            "title": note.title.trim(),
+            "content": note.content,
+            "task_id": note.task_id,
+        })
+        .to_string();
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "note",
+                entity_id: &note.id,
+                operation: "upsert",
+                base_version: 0,
+                payload: &payload,
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
+    }
+
+    /// Applies a local note edit and outbox row with an expected-version guard.
+    pub fn update_note(
+        &mut self,
+        note_id: &str,
+        patch: &NotePatch,
+        expected_version: i64,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        if mutation_id.is_empty() || now.is_empty() {
+            return Err(StoreError::Validation("mutation_id and now are required"));
+        }
+        if self.mutation_exists(mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        let (title, content, task_id, version, deleted): (
+            String,
+            String,
+            Option<String>,
+            i64,
+            Option<String>,
+        ) = transaction
+            .query_row(
+                "SELECT title, content, task_id, version, deleted_at FROM notes WHERE id = ?1",
+                params![note_id],
+                |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                    ))
+                },
+            )
+            .optional()?
+            .ok_or(StoreError::Validation("note not found"))?;
+        if deleted.is_some() {
+            return Err(StoreError::Validation("note is deleted"));
+        }
+        if version != expected_version {
+            return Err(StoreError::Conflict {
+                server_version: version,
+            });
+        }
+        let title = patch.title.clone().unwrap_or(title);
+        let content = patch.content.clone().unwrap_or(content);
+        validate_note(&title, &content)?;
+        let new_version = version + 1;
+        transaction.execute(
+            "UPDATE notes SET title = ?1, content = ?2, version = ?3, updated_at = ?4
+             WHERE id = ?5",
+            params![title.trim(), content, new_version, now, note_id],
+        )?;
+        let payload = serde_json::json!({
+            "title": title.trim(),
+            "content": content,
+            "task_id": task_id,
+        })
+        .to_string();
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "note",
+                entity_id: note_id,
+                operation: "upsert",
+                base_version: version,
+                payload: &payload,
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
+    }
+
+    /// Soft-deletes a note and queues a tombstone mutation.
+    pub fn delete_note(
+        &mut self,
+        note_id: &str,
+        expected_version: i64,
+        mutation_id: &str,
+        now: &str,
+    ) -> StoreResult<bool> {
+        if mutation_id.is_empty() || now.is_empty() {
+            return Err(StoreError::Validation("mutation_id and now are required"));
+        }
+        if self.mutation_exists(mutation_id)? {
+            return Ok(false);
+        }
+        let transaction = self.connection.transaction()?;
+        let (version, deleted): (i64, Option<String>) = transaction
+            .query_row(
+                "SELECT version, deleted_at FROM notes WHERE id = ?1",
+                params![note_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?
+            .ok_or(StoreError::Validation("note not found"))?;
+        if deleted.is_some() {
+            return Err(StoreError::Validation("note is deleted"));
+        }
+        if version != expected_version {
+            return Err(StoreError::Conflict {
+                server_version: version,
+            });
+        }
+        let new_version = version + 1;
+        transaction.execute(
+            "UPDATE notes SET deleted_at = ?1, version = ?2, updated_at = ?1 WHERE id = ?3",
+            params![now, new_version, note_id],
+        )?;
+        insert_outbox(
+            &transaction,
+            OutboxWrite {
+                mutation_id,
+                entity_type: "note",
+                entity_id: note_id,
+                operation: "delete",
+                base_version: version,
+                payload: "{}",
+                now,
+            },
+        )?;
+        transaction.commit()?;
+        Ok(true)
+    }
+
+    pub fn notes(&self) -> StoreResult<Vec<StoredNote>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, title, content, task_id, version, updated_at, deleted_at
+             FROM notes WHERE deleted_at IS NULL ORDER BY updated_at DESC, id",
+        )?;
+        let rows = statement.query_map([], |row| {
+            Ok(StoredNote {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                content: row.get(2)?,
+                task_id: row.get(3)?,
+                version: row.get(4)?,
+                updated_at: row.get(5)?,
+                deleted_at: row.get(6)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(StoreError::from)
+    }
+
+    fn mutation_exists(&self, mutation_id: &str) -> StoreResult<bool> {
+        let existing: Option<String> = self
+            .connection
+            .query_row(
+                "SELECT mutation_id FROM outbox WHERE mutation_id = ?1",
+                params![mutation_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(existing.is_some())
     }
 
     pub fn pending_mutations(&self, limit: i64) -> StoreResult<Vec<OutboxEntry>> {
@@ -1246,6 +1488,23 @@ struct OutboxWrite<'a> {
     base_version: i64,
     payload: &'a str,
     now: &'a str,
+}
+
+fn validate_note(title: &str, content: &str) -> StoreResult<()> {
+    if title.chars().count() > 200 {
+        return Err(StoreError::Validation(
+            "note title must be <= 200 characters",
+        ));
+    }
+    if content.chars().count() > 20000 {
+        return Err(StoreError::Validation(
+            "note content must be <= 20000 characters",
+        ));
+    }
+    if title.trim().is_empty() && content.trim().is_empty() {
+        return Err(StoreError::Validation("note title or content is required"));
+    }
+    Ok(())
 }
 
 fn insert_outbox(transaction: &Transaction<'_>, entry: OutboxWrite<'_>) -> StoreResult<()> {
