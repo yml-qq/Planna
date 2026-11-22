@@ -910,4 +910,6 @@
 - 上传前检查单笔记活跃附件 ≤20、单 owner 活跃总字节 ≤200 MiB；超限 422 `ATTACHMENT_NOTE_QUOTA`/`ATTACHMENT_OWNER_QUOTA`；软删不计入，重放先于配额。
 - OpenAPI 上传描述补充配额；无迁移/契约结构变更（契约仍 36 项）。
 - 冒烟插入 20 条/40 条 5 MiB 记录，验证数量与 owner 字节两条路径均 422。
+- 首次 CI（`8309ccb`）失败：OpenAPI 描述含未引号冒号导致 YAML 无效；补引号（`40f0120`）后通过。
+- [Server integration 45063490377](https://github.com/yml-qq/Planna/actions/runs/45063490377) 与 [Desktop core 45063490385](https://github.com/yml-qq/Planna/actions/runs/45063490385) 均 **success**。
 - 应用层检查，并发可超额；配额硬编码；不计磁盘实际占用。

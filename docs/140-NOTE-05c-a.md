@@ -1,6 +1,6 @@
 # 140｜NOTE-05c-a：附件配额（单笔记数量 + owner 总字节）
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过，CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；首次 CI（`8309ccb`）因 OpenAPI 描述未引号导致 YAML 无效失败，补引号（`40f0120`）后 [Server integration 45063490377](https://github.com/yml-qq/Planna/actions/runs/45063490377) 与 [Desktop core 45063490385](https://github.com/yml-qq/Planna/actions/runs/45063490385) 均 **success**。
 
 ## 范围与验收
 
