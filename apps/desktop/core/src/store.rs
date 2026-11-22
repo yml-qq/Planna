@@ -684,6 +684,35 @@ impl Store {
         Ok(true)
     }
 
+    /// Case-insensitive substring search over local note title/content.
+    pub fn notes_matching(&self, query: &str) -> StoreResult<Vec<StoredNote>> {
+        let needle = query.trim().to_lowercase();
+        if needle.is_empty() {
+            return self.notes();
+        }
+        let mut statement = self.connection.prepare(
+            "SELECT id, title, content, task_id, version, created_at, updated_at, deleted_at
+             FROM notes
+             WHERE deleted_at IS NULL
+               AND (instr(lower(title), ?1) > 0 OR instr(lower(content), ?1) > 0)
+             ORDER BY updated_at DESC, id",
+        )?;
+        let rows = statement.query_map(params![needle], |row| {
+            Ok(StoredNote {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                content: row.get(2)?,
+                task_id: row.get(3)?,
+                version: row.get(4)?,
+                created_at: row.get(5)?,
+                updated_at: row.get(6)?,
+                deleted_at: row.get(7)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(StoreError::from)
+    }
+
     pub fn notes(&self) -> StoreResult<Vec<StoredNote>> {
         let mut statement = self.connection.prepare(
             "SELECT id, title, content, task_id, version, created_at, updated_at, deleted_at

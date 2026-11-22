@@ -1402,19 +1402,12 @@ export class TauriBridge implements DesktopBridge {
     _accessToken: string,
     input: { query?: string; taskId?: string | null; limit?: number } = {}
   ): Promise<Note[]> {
-    const query = (input.query ?? '').trim().toLowerCase()
     const limit = input.limit ?? 50
-    const rows = await this.invoke<RawNote[]>('notes_local')
-    return rows
-      .map(toNote)
-      .filter(
-        (note) =>
-          (!query ||
-            note.title.toLowerCase().includes(query) ||
-            note.content.toLowerCase().includes(query)) &&
-          (!input.taskId || note.taskId === input.taskId)
-      )
-      .slice(0, limit)
+    const rows = await this.invoke<RawNote[]>('notes_local', {
+      query: input.query ?? null,
+      taskId: input.taskId ?? null
+    })
+    return rows.map(toNote).slice(0, limit)
   }
 
   async noteCreate(

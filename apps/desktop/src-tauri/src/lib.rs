@@ -142,12 +142,23 @@ impl From<StoredNote> for NoteDto {
 }
 
 #[tauri::command]
-fn notes_local(state: State<'_, AppState>) -> Result<Vec<NoteDto>, String> {
+fn notes_local(
+    state: State<'_, AppState>,
+    query: Option<String>,
+    task_id: Option<String>,
+) -> Result<Vec<NoteDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
-    store
-        .notes()
-        .map(|notes| notes.into_iter().map(NoteDto::from).collect())
-        .map_err(|error| error.to_string())
+    let notes = store
+        .notes_matching(query.as_deref().unwrap_or_default())
+        .map_err(|error| error.to_string())?;
+    Ok(notes
+        .into_iter()
+        .filter(|note| match &task_id {
+            Some(task_id) if !task_id.is_empty() => note.task_id.as_deref() == Some(task_id),
+            _ => true,
+        })
+        .map(NoteDto::from)
+        .collect())
 }
 
 #[tauri::command]

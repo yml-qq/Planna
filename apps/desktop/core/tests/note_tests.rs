@@ -232,3 +232,38 @@ fn force_apply_snapshot_accepts_note_conflicts() {
         .expect("server snapshot replaced");
     assert_eq!(store.notes().expect("notes")[0].version, 4);
 }
+
+#[test]
+fn notes_matching_searches_title_and_content_case_insensitively() {
+    let mut store = Store::open_in_memory().expect("store");
+    let first = NewNote {
+        id: "note-alpha".to_string(),
+        title: "Project Alpha".to_string(),
+        content: "Launch checklist".to_string(),
+        task_id: None,
+    };
+    let second = NewNote {
+        id: "note-beta".to_string(),
+        title: "Meeting".to_string(),
+        content: "Discuss ALPHA roadmap".to_string(),
+        task_id: None,
+    };
+    store
+        .create_note(&first, "mutation-alpha", "2026-11-22T00:00:00Z")
+        .expect("first");
+    store
+        .create_note(&second, "mutation-beta", "2026-11-22T00:01:00Z")
+        .expect("second");
+    let ids = store
+        .notes_matching("alpha")
+        .expect("search")
+        .into_iter()
+        .map(|note| note.id)
+        .collect::<Vec<_>>();
+    assert_eq!(ids.len(), 2);
+    assert!(ids.contains(&"note-alpha".to_string()));
+    assert!(ids.contains(&"note-beta".to_string()));
+    assert_eq!(store.notes_matching("checklist").expect("search").len(), 1);
+    assert!(store.notes_matching("missing").expect("search").is_empty());
+    assert_eq!(store.notes_matching("   ").expect("all").len(), 2);
+}
