@@ -1,6 +1,6 @@
 # 126｜NOTE-04b-2b-b-c-a：笔记冲突“以服务端为准”落库
 
-状态：代码已实现；本地 core 笔记 **7 项**测试与前端 88 项/build 通过。CI 结果见 `VALIDATION.md`。附件/模板/全文搜索属 `NOTE-04b-2b-b-c-b`。
+状态：代码已实现；本地 core 笔记 **7 项**测试与前端 88 项/build 通过；[Server integration 45032601924](https://github.com/yml-qq/Planna/actions/runs/45032601924) 与 [Desktop core 45032601891](https://github.com/yml-qq/Planna/actions/runs/45032601891) 均 **success**。附件/模板/全文搜索属 `NOTE-04b-2b-b-c-b`。
 
 ## 范围与验收
 

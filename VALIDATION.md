@@ -803,4 +803,5 @@
 - `force_apply_snapshot` 新增 note 分支（服务端视图 upsert、created_at 回退 updated_at），修复 note 冲突选择“以服务端为准”时的 unsupported entity。
 - 冲突解决/丢弃 mutation 后刷新笔记列表。
 - 新增 1 项 core 测试（快照 v3→v4），笔记测试合计 7 项；`cargo test`、fmt、clippy 与前端 88 项/build 通过。
+- [Server integration 45032601924](https://github.com/yml-qq/Planna/actions/runs/45032601924) 与 [Desktop core 45032601891](https://github.com/yml-qq/Planna/actions/runs/45032601891) 均 **success**。
 - 冲突列表仍为通用实体列表，无正文 diff；附件/模板/全文搜索留待 `NOTE-04b-2b-b-c-b`。
