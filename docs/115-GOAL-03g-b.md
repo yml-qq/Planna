@@ -1,6 +1,6 @@
 # 115｜GOAL-03g-b：桌面批量排序接入
 
-状态：代码已实现；本地 `pnpm test`（82 项）与 `pnpm build` 通过，CI 见 `VALIDATION.md` 的 GOAL-03g-b 小节。AI 重试/退避与删除审计属 `GOAL-03g-c`。
+状态：代码已实现；本地 `pnpm test`（82 项）与 `pnpm build` 通过；[Server integration 45004516799](https://github.com/yml-qq/Planna/actions/runs/45004516799) 与 [Desktop core 45004516897](https://github.com/yml-qq/Planna/actions/runs/45004516897) 均 **success**。AI 重试/退避与删除审计属 `GOAL-03g-c`。
 
 ## 范围与验收
 

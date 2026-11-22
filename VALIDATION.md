@@ -718,3 +718,4 @@
 
 - Tauri 新增 `goal_reorder_milestones`；桥接 `goalReorderMilestones`（Memory 版本/集合校验、重排并递增版本）；goal store `moveMilestone` 改为单次批量调用并直接替换目标。
 - 前端排序测试扩展断言 position `[1,2,3]` 与目标版本仅 +1；合计 **82 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 45004516799](https://github.com/yml-qq/Planna/actions/runs/45004516799) 与 [Desktop core 45004516897](https://github.com/yml-qq/Planna/actions/runs/45004516897) 均 **success**；目标保持 active，AI 重试/退避与删除审计留待 `GOAL-03g-c`。
