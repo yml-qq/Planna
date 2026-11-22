@@ -7,7 +7,7 @@ import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { createNoteStore } from './notes'
-import { focusStatsCsv, focusStatsSummary } from './report'
+import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -523,6 +523,14 @@ async function refreshOutbox(): Promise<void> {
   }
 }
 
+async function exportFocusReport(): Promise<void> {
+  reportStatus.value = ''
+  const stats = focus.stats.value
+  if (!stats) return
+  const path = await focus.saveReport(focusReportFilename(stats), focusStatsCsv(stats))
+  reportStatus.value = path ? '已保存：' + path : '保存失败（' + (focus.error.value ?? 'UNKNOWN') + '）'
+}
+
 async function copyFocusReport(): Promise<void> {
   reportStatus.value = ''
   const stats = focus.stats.value
@@ -911,6 +919,14 @@ onMounted(async () => {
             @click="copyFocusReport"
           >
             复制 CSV
+          </button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="!focus.stats.value"
+            @click="exportFocusReport"
+          >
+            导出 CSV
           </button>
           <span v-if="reportStatus" class="status">{{ reportStatus }}</span>
         </div>

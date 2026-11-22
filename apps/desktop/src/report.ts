@@ -17,3 +17,7 @@ export function focusStatsSummary(stats: FocusStats): string {
     `放弃 ${stats.abandonedSessions} 次`
   )
 }
+
+export function focusReportFilename(stats: FocusStats): string {
+  return `planna-focus-${stats.to}.csv`
+}

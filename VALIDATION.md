@@ -719,3 +719,9 @@
 - Tauri 新增 `goal_reorder_milestones`；桥接 `goalReorderMilestones`（Memory 版本/集合校验、重排并递增版本）；goal store `moveMilestone` 改为单次批量调用并直接替换目标。
 - 前端排序测试扩展断言 position `[1,2,3]` 与目标版本仅 +1；合计 **82 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 45004516799](https://github.com/yml-qq/Planna/actions/runs/45004516799) 与 [Desktop core 45004516897](https://github.com/yml-qq/Planna/actions/runs/45004516897) 均 **success**；目标保持 active，AI 重试/退避与删除审计留待 `GOAL-03g-c`。
+
+## FOCUS-09b-d 报表导出检查（2026-11-22）
+
+- Tauri 新增 `focus_report_save`（系统下载目录、文件名净化、返回路径）；桥接 `saveFocusReport`（Memory 空内容 `EMPTY_REPORT`）；UI 统计卡片新增“导出 CSV”，显示路径/错误。
+- 前端新增 2 项（导出成功/失败、文件名），合计 **84 项**；Rust 新增 3 项文件名净化测试（`cargo test --lib` 3 passed）；`pnpm build`、shell clippy/fmt 通过；服务端无变更。
+- 固定下载目录、同日覆盖、非原子写入；后台通知真机验证未执行，留待 `FOCUS-09b-e`。

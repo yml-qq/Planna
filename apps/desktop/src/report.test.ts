@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FocusStats } from './api'
-import { focusStatsCsv, focusStatsSummary } from './report'
+import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 
 function stats(): FocusStats {
   return {
@@ -33,6 +33,10 @@ describe('focus report', () => {
     expect(focusStatsSummary(stats())).toBe(
       '2026-11-16 ~ 2026-11-22（Asia/Shanghai）：62 分钟，完成 2 次，放弃 1 次'
     )
+  })
+
+  it('builds a dated CSV filename', () => {
+    expect(focusReportFilename(stats())).toBe('planna-focus-2026-11-22.csv')
   })
 
   it('keeps an empty export valid', () => {

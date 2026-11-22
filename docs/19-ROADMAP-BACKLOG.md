@@ -81,7 +81,8 @@
 | E10 | FOCUS-09b-a | 专注历史游标分页 API（已交付，见 `109-FOCUS-09b-a.md`） | FOCUS-09a | paging tests |
 | E10 | FOCUS-09b-b | 桌面专注历史分页消费（已交付，见 `110-FOCUS-09b-b.md`） | FOCUS-09b-a | paging tests |
 | E10 | FOCUS-09b-c | 专注统计报表复制 CSV（已交付，见 `111-FOCUS-09b-c.md`） | FOCUS-09b-b | report tests |
-| E10 | FOCUS-09b-d | 报表文件导出、独立任务详情页与后台通知真机验证 | FOCUS-09b-c | stats tests |
+| E10 | FOCUS-09b-d | 专注报表导出到下载目录（已交付，见 `116-FOCUS-09b-d.md`） | FOCUS-09b-c | file tests |
+| E10 | FOCUS-09b-e | 保存对话框/防覆盖、独立任务详情页与后台通知真机验证 | FOCUS-09b-d | stats tests |
 | E10 | GOAL-01 | 目标/里程碑服务端 API（已交付，见 `88-GOAL-01.md`） | E04 | progress tests |
 | E10 | GOAL-02 | 目标/里程碑桌面 UI（已交付，见 `90-GOAL-02.md`） | GOAL-01 | progress tests |
 | E10 | GOAL-03a | AI 目标拆解预览 API（只读，已交付，见 `105-GOAL-03a.md`） | GOAL-02 | no auto-write |

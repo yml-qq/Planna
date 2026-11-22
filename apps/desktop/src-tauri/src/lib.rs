@@ -1034,6 +1034,41 @@ fn goal_reorder_milestones(
     response.json().map_err(|error| error.to_string())
 }
 
+fn sanitize_report_filename(input: &str) -> String {
+    let base = input.rsplit(['/', '\\']).next().unwrap_or_default();
+    let mut cleaned: String = base
+        .chars()
+        .filter(|value| value.is_ascii_alphanumeric() || matches!(value, '.' | '-' | '_'))
+        .collect();
+    if cleaned.is_empty() {
+        cleaned.push_str("focus-report");
+    }
+    if !cleaned.to_ascii_lowercase().ends_with(".csv") {
+        cleaned.push_str(".csv");
+    }
+    if cleaned.len() > 120 {
+        cleaned.truncate(116);
+        cleaned.push_str(".csv");
+    }
+    cleaned
+}
+
+#[tauri::command]
+fn focus_report_save(
+    app: tauri::AppHandle,
+    filename: String,
+    content: String,
+) -> Result<String, String> {
+    let directory = app
+        .path()
+        .download_dir()
+        .map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    let path = directory.join(sanitize_report_filename(&filename));
+    std::fs::write(&path, content).map_err(|error| error.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1316,6 +1351,7 @@ pub fn run() {
             goal_delete_milestone,
             goal_delete,
             goal_reorder_milestones,
+            focus_report_save,
             focus_stats,
             focus_page,
             note_list,
@@ -1336,4 +1372,35 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running Planna desktop");
+}
+
+#[cfg(test)]
+mod report_tests {
+    use super::sanitize_report_filename;
+
+    #[test]
+    fn keeps_simple_csv_names() {
+        assert_eq!(
+            sanitize_report_filename("planna-focus-2026-11-22.csv"),
+            "planna-focus-2026-11-22.csv"
+        );
+    }
+
+    #[test]
+    fn strips_paths_and_unsafe_characters() {
+        assert_eq!(sanitize_report_filename("../evil name.csv"), "evilname.csv");
+        assert_eq!(
+            sanitize_report_filename("C:\\Users\\me\\report"),
+            "report.csv"
+        );
+    }
+
+    #[test]
+    fn falls_back_for_empty_and_caps_length() {
+        assert_eq!(sanitize_report_filename(""), "focus-report.csv");
+        let long = "a".repeat(200);
+        let name = sanitize_report_filename(&long);
+        assert!(name.len() <= 120);
+        assert!(name.ends_with(".csv"));
+    }
 }

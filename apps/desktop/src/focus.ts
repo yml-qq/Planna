@@ -98,6 +98,7 @@ export interface FocusStore {
   loadRecent: (limit?: number) => Promise<void>
   loadTaskHistory: (taskId: string, limit?: number) => Promise<void>
   loadMoreTaskHistory: (taskId: string) => Promise<void>
+  saveReport: (filename: string, content: string) => Promise<string | null>
   skipRest: () => void
   tick: () => void
   tickRest: () => void
@@ -360,6 +361,16 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     }
   }
 
+  async function saveReport(filename: string, content: string): Promise<string | null> {
+    error.value = null
+    try {
+      return await bridge.saveFocusReport(filename, content)
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return null
+    }
+  }
+
   async function loadStats(from: string, to: string, timeZone: string): Promise<void> {
     const token = requireToken()
     if (!token) return
@@ -394,6 +405,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     loadRecent,
     loadTaskHistory,
     loadMoreTaskHistory,
+    saveReport,
     skipRest,
     tick,
     tickRest

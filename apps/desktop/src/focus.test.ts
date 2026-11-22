@@ -343,3 +343,32 @@ describe('task history pagination', () => {
     expect(store.taskCursors.value['task-1']).toBeNull()
   })
 })
+
+describe('focus report saving', () => {
+  it('saves a report through the bridge and maps failures', async () => {
+    const { store } = createStore(() => 0)
+    expect(await store.saveReport('report.csv', 'a,b\r\n')).toBe('downloads/report.csv')
+    expect(store.error.value).toBeNull()
+
+    const failingBridge = new Proxy(new MemoryBridge(), {
+      get(target, property, receiver) {
+        if (property === 'saveFocusReport') {
+          return async () => {
+            throw new Error('400:EMPTY_REPORT')
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const storage = new Map<string, string>()
+    const failing = createFocusStore(failingBridge, {
+      baseUrl: () => 'http://127.0.0.1:5080',
+      token: () => 'token',
+      read: (key) => storage.get(key) ?? null,
+      write: (key, value) => storage.set(key, value),
+      now: () => 0
+    })
+    expect(await failing.saveReport('report.csv', '')).toBeNull()
+    expect(failing.error.value).toBe('EMPTY_REPORT')
+  })
+})

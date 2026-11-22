@@ -301,6 +301,7 @@ export interface DesktopBridge {
     accessToken: string,
     input?: { limit?: number; taskId?: string | null; cursor?: string | null }
   ): Promise<FocusPage>
+  saveFocusReport(filename: string, content: string): Promise<string>
   noteList(
     baseUrl: string,
     accessToken: string,
@@ -860,6 +861,11 @@ export class MemoryBridge implements DesktopBridge {
     goal.version += 1
     goal.updatedAt = new Date().toISOString()
     return { ...goal, milestones: [...goal.milestones] }
+  }
+
+  async saveFocusReport(filename: string, content: string): Promise<string> {
+    if (content.length === 0) throw new Error('400:EMPTY_REPORT')
+    return 'downloads/' + filename
   }
 
   async exportConflicts(): Promise<string> {
@@ -1521,6 +1527,10 @@ export class TauriBridge implements DesktopBridge {
       milestoneIds
     })
     return toGoal(row)
+  }
+
+  async saveFocusReport(filename: string, content: string): Promise<string> {
+    return this.invoke<string>('focus_report_save', { filename, content })
   }
 
   async exportConflicts(): Promise<string> {
