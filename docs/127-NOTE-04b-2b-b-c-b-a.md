@@ -1,6 +1,6 @@
 # 127｜NOTE-04b-2b-b-c-b-a：任务详情展示关联笔记
 
-状态：代码已实现；本地 `pnpm test`（89 项）与 `pnpm build` 通过。CI 待网络恢复。附件/模板/全文搜索属 `NOTE-04b-2b-b-c-b-b`。
+状态：代码已实现；本地 `pnpm test`（89 项）与 `pnpm build` 通过；[Server integration 45034780647](https://github.com/yml-qq/Planna/actions/runs/45034780647) 与 [Desktop core 45034780590](https://github.com/yml-qq/Planna/actions/runs/45034780590) 均 **success**。附件/模板/全文搜索属 `NOTE-04b-2b-b-c-b-b`。
 
 ## 范围与验收
 

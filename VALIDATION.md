@@ -810,4 +810,5 @@
 
 - 新增 `notesForTask` 纯函数；任务详情展开时展示关联笔记（标题/正文前 80 字符），仅使用本地已加载笔记。
 - 前端新增 1 项过滤测试，合计 **89 项**；`pnpm build` 通过；服务端无变更。
-- 仅展示不编辑；长正文截断 80 字符；未额外拉取服务端。CI 待网络恢复。
+- 仅展示不编辑；长正文截断 80 字符；未额外拉取服务端。
+- [Server integration 45034780647](https://github.com/yml-qq/Planna/actions/runs/45034780647) 与 [Desktop core 45034780590](https://github.com/yml-qq/Planna/actions/runs/45034780590) 均 **success**。
