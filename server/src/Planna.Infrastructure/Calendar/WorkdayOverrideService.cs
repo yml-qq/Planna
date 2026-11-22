@@ -1,3 +1,4 @@
+using System.Data;
 using System.Data.Common;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
@@ -109,7 +110,9 @@ public sealed class WorkdayOverrideService(TaskWriteContext db, TimeProvider clo
     private async Task<int> ExecuteAsync(string sql, Action<DbParameterCollection> addParameters,
         CancellationToken ct)
     {
-        await using var command = db.Database.GetDbConnection().CreateCommand();
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
+        await using var command = connection.CreateCommand();
         command.CommandText = sql;
         command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         addParameters(command.Parameters);
