@@ -88,7 +88,8 @@
 | E10 | GOAL-03b | 桌面 AI 拆解 UI 与逐条添加（已交付，见 `106-GOAL-03b.md`） | GOAL-03a | no auto-write |
 | E10 | GOAL-03c | 目标编辑与里程碑删除（已交付，见 `107-GOAL-03c.md`） | GOAL-03b | progress tests |
 | E10 | GOAL-03d | 里程碑上移/下移排序（已交付，见 `108-GOAL-03d.md`） | GOAL-03c | order tests |
-| E10 | GOAL-03e | AI 建议去重/重试、目标删除与归档过滤、批量排序接口 | GOAL-03d | progress tests |
+| E10 | GOAL-03e | AI 建议去重与目标归档过滤（已交付，见 `112-GOAL-03e.md`） | GOAL-03d | ui tests |
+| E10 | GOAL-03f | 目标删除、AI 建议重试/限流退避与批量排序接口 | GOAL-03e | progress tests |
 | E10 | NOTE-01 | 轻笔记服务端 API（已交付，见 `92-NOTE-01.md`） | E04 | search/privacy |
 | E10 | NOTE-02 | 账号导出 v3 纳入笔记（已交付，见 `94-NOTE-02.md`） | NOTE-01 | export tests |
 | E10 | NOTE-03 | 桌面笔记 UI（已交付，见 `96-NOTE-03.md`） | NOTE-02 | search/privacy |

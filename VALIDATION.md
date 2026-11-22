@@ -690,3 +690,9 @@
 - 前端新增 3 项报表测试，合计 **78 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44998172580](https://github.com/yml-qq/Planna/actions/runs/44998172580) 与 [Desktop core 44998172633](https://github.com/yml-qq/Planna/actions/runs/44998172633) 均 **success**。
 - 仅复制到剪贴板，不承诺文件下载；报表文件导出与后台通知真机验证留待 `FOCUS-09b-d`。
+
+## GOAL-03e AI 建议去重/归档过滤检查（2026-11-22）
+
+- goal store `previewBreakdown` 过滤空标题、已有里程碑标题（大小写不敏感）与建议内部重复；UI 新增“显示已归档目标”复选框，默认隐藏 archived。
+- 前端新增 2 项测试，合计 **80 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- 去重仅标题字符串；AI 建议仍只读；目标删除/批量排序/限流退避留待 `GOAL-03f`。

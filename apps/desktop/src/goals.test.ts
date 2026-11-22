@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
-import { createGoalStore } from './goals'
+import { createGoalStore, filterGoals } from './goals'
 
 function createStore(token = 'token') {
   const bridge = new MemoryBridge()
@@ -192,5 +192,39 @@ describe('milestone ordering', () => {
     const moved = current.milestones[0]!
     expect(await store.moveMilestone(current.id, moved, 'up')).toBe(false)
     expect(await store.moveMilestone(current.id, current.milestones[2]!, 'down')).toBe(false)
+  })
+})
+
+describe('goal suggestions and archive filter', () => {
+  it('drops suggestions that duplicate existing milestones or each other', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship')
+    await store.addMilestone(goal!.id, '调研')
+    expect(await store.previewBreakdown(goal!.id, '调研, 原型, 原型, 上线')).toBe(true)
+    expect((store.suggestions.value[goal!.id] ?? []).map((item) => item.title)).toEqual([
+      '原型',
+      '上线'
+    ])
+  })
+
+  it('filters archived goals unless requested', () => {
+    const base = {
+      id: 'g',
+      title: 'g',
+      description: '',
+      targetDate: null,
+      version: 1,
+      createdAt: '',
+      updatedAt: '',
+      progress: { completedMilestones: 0, totalMilestones: 0, percent: 0 },
+      milestones: []
+    }
+    const goals = [
+      { ...base, id: 'a', status: 'active' as const },
+      { ...base, id: 'b', status: 'archived' as const },
+      { ...base, id: 'c', status: 'completed' as const }
+    ]
+    expect(filterGoals(goals, false).map((goal) => goal.id)).toEqual(['a', 'c'])
+    expect(filterGoals(goals, true)).toHaveLength(3)
   })
 })

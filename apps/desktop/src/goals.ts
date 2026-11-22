@@ -7,6 +7,10 @@ import type {
   Milestone
 } from './api'
 
+export function filterGoals(goals: Goal[], includeArchived: boolean): Goal[] {
+  return includeArchived ? goals : goals.filter((goal) => goal.status !== 'archived')
+}
+
 export interface GoalStoreOptions {
   baseUrl: () => string
   token: () => string | null
@@ -261,7 +265,22 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     breakdownLoading.value = true
     error.value = null
     try {
-      const items = await bridge.goalBreakdownPreview(options.baseUrl(), token, goalId, guidance)
+      const goal = goals.value.find((candidate) => candidate.id === goalId)
+      if (!goal) {
+        error.value = 'GOAL_NOT_FOUND'
+        return false
+      }
+      const existing = new Set(
+        goal.milestones.map((milestone) => milestone.title.trim().toLowerCase())
+      )
+      const seen = new Set<string>()
+      const raw = await bridge.goalBreakdownPreview(options.baseUrl(), token, goalId, guidance)
+      const items = raw.filter((item) => {
+        const key = item.title.trim().toLowerCase()
+        if (key.length === 0 || existing.has(key) || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
       suggestions.value = { ...suggestions.value, [goalId]: items }
       return true
     } catch (failure) {

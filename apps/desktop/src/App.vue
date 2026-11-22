@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
-import { createGoalStore } from './goals'
+import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { createNoteStore } from './notes'
@@ -89,6 +89,7 @@ const goals = createGoalStore(bridge, {
 })
 const goalTitle = ref('')
 const goalTargetDate = ref('')
+const showArchivedGoals = ref(false)
 const goalGuidance = ref<Record<string, string>>({})
 const editingGoal = ref<string | null>(null)
 const editGoalTitle = ref('')
@@ -949,8 +950,14 @@ onMounted(async () => {
           </button>
         </div>
       </form>
-      <ul v-if="goals.goals.value.length > 0" class="goals">
-        <li v-for="goal in goals.goals.value" :key="goal.id" class="goals__item">
+      <div class="composer__row">
+        <label class="habits__meta">
+          <input v-model="showArchivedGoals" type="checkbox" />
+          显示已归档目标
+        </label>
+      </div>
+      <ul v-if="filterGoals(goals.goals.value, showArchivedGoals).length > 0" class="goals">
+        <li v-for="goal in filterGoals(goals.goals.value, showArchivedGoals)" :key="goal.id" class="goals__item">
           <div v-if="editingGoal === goal.id" class="goals__edit">
             <input v-model="editGoalTitle" class="input" type="text" maxlength="200" aria-label="目标标题" />
             <input v-model="editGoalDescription" class="input" type="text" maxlength="2000" aria-label="目标描述" />
