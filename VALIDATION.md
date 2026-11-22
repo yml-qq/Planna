@@ -611,4 +611,13 @@
 
 - 笔记创建表单新增“关联任务”下拉，传 `task_id`；列表显示关联任务标题（任务缺失时不显示）；服务端 owner/未删除校验复用 NOTE-01。
 - 前端新增 1 项关联测试，合计 **66 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+
+## FOCUS-08 任务详情/统计柱状图检查（2026-11-22）
+
+- focus store 新增 `recent`/`loadRecent`（最近 30 条 `GET /focus-sessions`）；任务行新增“详情”内联面板，展示状态/版本与该任务专注记录（客户端按 taskId 过滤）。
+- 统计卡片新增柱状图（按当日分钟相对最大值归一化，带日期/分钟 title）；7/30 天切换沿用 FOCUS-07。
+- 前端新增 2 项历史测试，合计 **68 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- 限制：历史仅最近 30 条全局会话的客户端过滤，非完整分页/按任务查询；任务详情为内联面板。
+- [Server integration 44979891696](https://github.com/yml-qq/Planna/actions/runs/44979891696) 与 [Desktop core 44979891657](https://github.com/yml-qq/Planna/actions/runs/44979891657) 均 **success**。
+- 未连接生产库、未提交凭据；独立任务详情页、按任务分页历史、报表导出与后台通知真机验证留待 `FOCUS-09`。
 - 网络恢复后推送（`fbdefea`）并补 CI：[Server integration 44978693280](https://github.com/yml-qq/Planna/actions/runs/44978693280) 与 [Desktop core 44978693285](https://github.com/yml-qq/Planna/actions/runs/44978693285) 均 **success**。
