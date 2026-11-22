@@ -703,4 +703,4 @@
 - Tauri 新增 `goal_delete`（DELETE + Idempotency-Key + If-Match）；桥接 `goalDelete`；goal store `deleteGoal` 删除后清理列表与 AI 建议缓存。
 - UI 目标行新增“删除”（二次确认）。
 - 前端新增 2 项测试（按版本删除/清理建议、版本冲突），合计 **82 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
-- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。
+- 网络恢复后推送（`ef36c2d`）并补 CI：[Server integration 45001279869](https://github.com/yml-qq/Planna/actions/runs/45001279869) 与 [Desktop core 45001279839](https://github.com/yml-qq/Planna/actions/runs/45001279839) 均 **success**。
