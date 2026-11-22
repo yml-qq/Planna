@@ -961,3 +961,9 @@
 - 前端新增 2 项测试，合计 98 项；build/shell clippy/fmt 通过。
 - [Server integration 45076372346](https://github.com/yml-qq/Planna/actions/runs/45076372346) 与 [Desktop core 45076372291](https://github.com/yml-qq/Planna/actions/runs/45076372291) 均 **success**。
 - 仅粘贴文本导入；无文件选择/预览；客户端不强制 366 上限；重复日期跳过；不内置法定数据/不触发提醒重排。
+
+## NOTE-05c-b-b-b-a 附件限流检查（2026-11-22）
+
+- 上传增加按 owner 的进程内固定窗口限流（默认 30/分钟，`NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE` 可配），超限 429 `ATTACHMENT_RATE_LIMITED`。
+- OpenAPI 上传新增 429；契约测试更新（36 项）；冒烟设置上限 2 后第 3 次上传 429、DB 活跃 2 条。
+- 限流为进程内、固定窗口、无 Retry-After；重放/配额拒绝也计数；多实例不共享。

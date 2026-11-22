@@ -189,7 +189,35 @@ internal static class HttpNoteAttachmentSmoke
                 "big.txt", "text/plain", "hello"), HttpStatusCode.RequestEntityTooLarge);
         }
         Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_BYTES", null);
-        Console.WriteLine("PASS: attachment quotas serialize concurrent uploads and honor configured size limits");
+
+        var rateOwner = Guid.NewGuid();
+        var rateNote = Guid.NewGuid();
+        var rateSession = Guid.NewGuid();
+        await Exec(db, "INSERT INTO users(id,email) VALUES($1,'attach-rate@example.test')", rateOwner);
+        await Exec(db, "INSERT INTO notes(id,owner_id,title,content) VALUES($1,$2,'Rate note','Body')",
+            rateNote, rateOwner);
+        await AddSession(db, rateOwner, rateSession);
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE", "2");
+        await using (var rateFactory = new AttachmentFactory())
+        {
+            using var rateClient = rateFactory.CreateClient();
+            var rateToken = rateFactory.Services.GetRequiredService<IAccessTokenIssuer>()
+                .Issue(rateOwner, rateSession);
+            var first = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+                "a.txt", "text/plain", "a");
+            var second = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+                "b.txt", "text/plain", "b");
+            var third = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+                "c.txt", "text/plain", "c");
+            Check(first, HttpStatusCode.Created);
+            Check(second, HttpStatusCode.Created);
+            Check(third, HttpStatusCode.TooManyRequests);
+            if (await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1 AND deleted_at IS NULL",
+                    rateNote) != 2)
+                throw new InvalidOperationException("Attachment rate limit did not stop the third upload.");
+        }
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE", null);
+        Console.WriteLine("PASS: attachment rate limiting is enforced per owner");
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
     }
 

@@ -15,7 +15,7 @@ public sealed record NoteAttachmentList(
 
 public enum NoteAttachmentStatus
 {
-    Ok, Created, Replayed, Invalid, NotFound, TooLarge, UnsupportedType
+    Ok, Created, Replayed, Invalid, NotFound, TooLarge, UnsupportedType, RateLimited
 }
 
 public sealed record NoteAttachmentResult(NoteAttachmentStatus Status,

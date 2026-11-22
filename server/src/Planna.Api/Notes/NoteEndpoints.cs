@@ -87,6 +87,7 @@ public static class NoteEndpoints
             NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
             NoteAttachmentStatus.TooLarge => Error(http, 413, result.Code!),
             NoteAttachmentStatus.UnsupportedType => Error(http, 415, result.Code!),
+            NoteAttachmentStatus.RateLimited => Error(http, 429, result.Code!),
             NoteAttachmentStatus.Invalid => Error(http, 422, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };

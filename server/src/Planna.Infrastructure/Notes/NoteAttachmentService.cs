@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -21,6 +22,9 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
     private readonly long maxOwnerBytes =
         ParseLong(configuration["NOTE_ATTACHMENT_MAX_OWNER_BYTES"], 200L * 1024 * 1024,
             1, 10L * 1024 * 1024 * 1024);
+    private readonly int maxUploadsPerMinute =
+        ParseInt(configuration["NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE"], 30, 1, 1000);
+    private readonly ConcurrentDictionary<Guid, UploadWindow> uploadWindows = new();
 
     private static readonly Dictionary<string, string> Extensions = new()
     {
@@ -67,6 +71,8 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
+        if (!TryConsumeUpload(ownerId)) return new(NoteAttachmentStatus.RateLimited,
+            Code: "ATTACHMENT_RATE_LIMITED");
 
         // Serialize quota checks and inserts per owner so concurrent uploads cannot overshoot.
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -143,6 +149,29 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
         return exists is null
             ? new(NoteAttachmentStatus.NotFound, Code: "ATTACHMENT_NOT_FOUND")
             : new(NoteAttachmentStatus.Ok);
+    }
+
+    private bool TryConsumeUpload(Guid ownerId)
+    {
+        var now = clock.GetUtcNow();
+        var window = uploadWindows.GetOrAdd(ownerId, _ => new UploadWindow { Start = now });
+        lock (window)
+        {
+            if (now - window.Start >= TimeSpan.FromMinutes(1))
+            {
+                window.Start = now;
+                window.Count = 0;
+            }
+            if (window.Count >= maxUploadsPerMinute) return false;
+            window.Count++;
+            return true;
+        }
+    }
+
+    private sealed class UploadWindow
+    {
+        public DateTimeOffset Start { get; set; }
+        public int Count { get; set; }
     }
 
     private async Task<(long NoteCount, long OwnerBytes)> UsageAsync(Guid ownerId, Guid noteId,

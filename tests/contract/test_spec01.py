@@ -687,7 +687,8 @@ class Spec01Contracts(unittest.TestCase):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         collection = api["paths"]["/notes/{id}/attachments"]
         upload = collection["post"]
-        self.assertEqual(set(upload["responses"]), {"200", "201", "400", "401", "404", "413", "415"})
+        self.assertEqual(set(upload["responses"]),
+                         {"200", "201", "400", "401", "404", "413", "415", "429"})
         self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, upload["parameters"])
         form = upload["requestBody"]["content"]["multipart/form-data"]["schema"]
         self.assertEqual(form["required"], ["file"])
