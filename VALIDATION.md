@@ -847,4 +847,5 @@
 
 - core 新增 `notes_matching`（标题/正文大小写不敏感子串、空查询全量、更新时间倒序）；Tauri `notes_local` 接受 query/task_id 并在 SQLite 侧过滤；桥接不再前端全量过滤。
 - core 新增 1 项搜索测试，笔记合计 8 项；前端 89 项/build、shell clippy/fmt 通过。
+- [Server integration 45044198303](https://github.com/yml-qq/Planna/actions/runs/45044198303) 与 [Desktop core 45044198371](https://github.com/yml-qq/Planna/actions/runs/45044198371) 均 **success**。
 - 无 FTS5/分词/排名，全表扫描；仅本地 SQLite 笔记。全文索引/附件/模板留待后续。

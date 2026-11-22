@@ -1,6 +1,6 @@
 # 132｜NOTE-04b-2b-b-c-b-b-b-b-a：本地笔记搜索下推 SQLite
 
-状态：代码已实现；本地 core `cargo test`（笔记 8 项）、前端 89 项/build 通过。CI 见 `VALIDATION.md`。全文索引/附件/模板属后续切片。
+状态：代码已实现；本地 core `cargo test`（笔记 8 项）、前端 89 项/build 通过；[Server integration 45044198303](https://github.com/yml-qq/Planna/actions/runs/45044198303) 与 [Desktop core 45044198371](https://github.com/yml-qq/Planna/actions/runs/45044198371) 均 **success**。全文索引/附件/模板属后续切片。
 
 ## 范围与验收
 
