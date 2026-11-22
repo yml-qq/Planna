@@ -132,6 +132,8 @@ const ledgerText = ref('')
 const ledgerStatus = ref('')
 const reportStatus = ref('')
 const confirmGoal = ref<{ id: string; title: string } | null>(null)
+const attachmentsOpen = ref<Record<string, boolean>>({})
+const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -354,6 +356,38 @@ async function saveEditNote(noteId: string, version: number): Promise<void> {
     editingNote.value = null
     editNoteTitle.value = ''
     editNoteContent.value = ''
+  }
+}
+
+async function toggleNoteAttachments(noteId: string): Promise<void> {
+  const next = !(attachmentsOpen.value[noteId] ?? false)
+  attachmentsOpen.value = { ...attachmentsOpen.value, [noteId]: next }
+  if (next) await notes.loadAttachments(noteId)
+}
+
+async function uploadNoteAttachment(noteId: string): Promise<void> {
+  const path = await notes.pickAttachment()
+  if (!path) return
+  const saved = await notes.uploadAttachment(noteId, path)
+  attachmentMessage.value = {
+    ...attachmentMessage.value,
+    [noteId]: saved ? '已上传' : '上传失败：' + (notes.attachmentError.value ?? 'UNKNOWN')
+  }
+}
+
+async function downloadNoteAttachment(noteId: string, attachmentId: string): Promise<void> {
+  const path = await notes.downloadAttachment(noteId, attachmentId)
+  attachmentMessage.value = {
+    ...attachmentMessage.value,
+    [noteId]: path ? '已保存：' + path : notes.attachmentError.value ? '下载失败：' + notes.attachmentError.value : '已取消'
+  }
+}
+
+async function deleteNoteAttachment(noteId: string, attachmentId: string): Promise<void> {
+  const removed = await notes.deleteAttachment(noteId, attachmentId)
+  attachmentMessage.value = {
+    ...attachmentMessage.value,
+    [noteId]: removed ? '已删除附件' : '删除失败：' + (notes.attachmentError.value ?? 'UNKNOWN')
   }
 }
 
@@ -1012,6 +1046,39 @@ onMounted(async () => {
               <button class="button button--ghost" type="button" @click="removeNote(note.id, note.version)">
                 删除
               </button>
+            </div>
+            <div class="composer__row">
+              <button class="button button--ghost" type="button" @click="toggleNoteAttachments(note.id)">
+                附件（{{ (notes.attachments.value[note.id] ?? []).length }}）
+              </button>
+              <button
+                v-if="attachmentsOpen[note.id]"
+                class="button button--ghost"
+                type="button"
+                @click="uploadNoteAttachment(note.id)"
+              >
+                上传附件
+              </button>
+            </div>
+            <div v-if="attachmentsOpen[note.id]" class="attachments">
+              <p v-if="attachmentMessage[note.id]" class="status">{{ attachmentMessage[note.id] }}</p>
+              <ul v-if="(notes.attachments.value[note.id] ?? []).length > 0" class="goals__milestones">
+                <li
+                  v-for="attachment in notes.attachments.value[note.id]"
+                  :key="attachment.id"
+                  class="goals__milestone"
+                >
+                  <span>{{ attachment.filename }}</span>
+                  <span class="habits__meta">{{ Math.ceil(attachment.sizeBytes / 1024) }} KB</span>
+                  <button class="button button--ghost" type="button" @click="downloadNoteAttachment(note.id, attachment.id)">
+                    下载
+                  </button>
+                  <button class="button button--ghost" type="button" @click="deleteNoteAttachment(note.id, attachment.id)">
+                    删除
+                  </button>
+                </li>
+              </ul>
+              <p v-else class="empty">暂无附件（笔记需先同步到服务端）。</p>
             </div>
           </template>
         </li>

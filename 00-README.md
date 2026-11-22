@@ -147,6 +147,7 @@
 | 134 | `docs/134-NOTE-05a.md` | 笔记附件服务端（上传/列表/下载/删除） |
 | 135 | `docs/135-NOTE-05a-b.md` | 附件保留期清理（服务 + Worker） |
 | 136 | `docs/136-NOTE-05b-a.md` | Tauri 附件命令层 |
+| 137 | `docs/137-NOTE-05b-b.md` | 笔记附件面板 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -123,3 +123,18 @@ describe('note attachments bridge', () => {
     ).rejects.toThrow('UNSUPPORTED_ATTACHMENT_TYPE')
   })
 })
+
+describe('note attachment store', () => {
+  it('picks, uploads, downloads and deletes through the store', async () => {
+    const { store } = createStore()
+    expect(await store.pickAttachment()).toBe('/tmp/note.txt')
+    expect(await store.uploadAttachment('note-1', '/tmp/report.pdf')).toBe(true)
+    await store.loadAttachments('note-1')
+    const items = store.attachments.value['note-1'] ?? []
+    expect(items).toHaveLength(1)
+    expect(items[0]?.contentType).toBe('application/pdf')
+    expect(await store.downloadAttachment('note-1', items[0]!.id)).toBe('downloads/' + items[0]!.id)
+    expect(await store.deleteAttachment('note-1', items[0]!.id)).toBe(true)
+    expect(store.attachments.value['note-1']).toEqual([])
+  })
+})

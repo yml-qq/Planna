@@ -881,3 +881,9 @@
 - 附件不进入本地 SQLite/同步；上传仅按扩展名映射 MIME，服务端仍做白名单/大小校验；下载文件名固定 `attachment.<ext>`。
 - 无 UI 面板/病毒扫描/配额；离线或未同步笔记上传会 401/404。
 - [Server integration 45054313204](https://github.com/yml-qq/Planna/actions/runs/45054313204) 与 [Desktop core 45054313304](https://github.com/yml-qq/Planna/actions/runs/45054313304) 均 **success**。
+
+## NOTE-05b-b 附件面板检查（2026-11-22）
+
+- 笔记卡片新增附件展开/加载、上传（原生选择）、下载（另存为）、删除与状态提示；notes store 增加附件状态和方法。
+- 前端新增 2 项测试（bridge 文件类型/删除、store 上传/下载/删除流程），合计 91 项；shell clippy/fmt 通过。
+- 附件完全在线：离线/未同步笔记会 401/404；无缓存/离线队列/进度/预览；删除由服务端保留期清理。

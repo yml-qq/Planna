@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { DesktopBridge, Note } from './api'
+import type { DesktopBridge, Note, NoteAttachment } from './api'
 
 export function notesForTask(notes: Note[], taskId: string): Note[] {
   return notes.filter((note) => note.taskId === taskId)
@@ -23,6 +23,13 @@ export interface NoteStore {
     patch: { title?: string; content?: string }
   ) => Promise<boolean>
   remove: (note: Note) => Promise<boolean>
+  attachments: Ref<Record<string, NoteAttachment[]>>
+  attachmentError: Ref<string | null>
+  loadAttachments: (noteId: string) => Promise<void>
+  pickAttachment: () => Promise<string | null>
+  uploadAttachment: (noteId: string, path: string) => Promise<boolean>
+  downloadAttachment: (noteId: string, attachmentId: string) => Promise<string | null>
+  deleteAttachment: (noteId: string, attachmentId: string) => Promise<boolean>
 }
 
 function errorCode(error: unknown): string {
@@ -36,6 +43,8 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
   const query = ref('')
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const attachments = ref<Record<string, NoteAttachment[]>>({})
+  const attachmentError = ref<string | null>(null)
 
   function tokenOrNull(): string | null {
     const token = options.token()
@@ -140,5 +149,88 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
     }
   }
 
-  return { notes, query, loading, error, refresh, create, update, remove }
+  async function loadAttachments(noteId: string): Promise<void> {
+    const token = tokenOrNull()
+    if (!token) return
+    attachmentError.value = null
+    try {
+      const items = await bridge.noteAttachmentList(options.baseUrl(), token, noteId)
+      attachments.value = { ...attachments.value, [noteId]: items }
+    } catch (failure) {
+      attachmentError.value = errorCode(failure)
+    }
+  }
+
+  async function pickAttachment(): Promise<string | null> {
+    try {
+      return await bridge.pickNoteAttachment()
+    } catch (failure) {
+      attachmentError.value = errorCode(failure)
+      return null
+    }
+  }
+
+  async function uploadAttachment(noteId: string, path: string): Promise<boolean> {
+    const token = tokenOrNull()
+    if (!token) return false
+    attachmentError.value = null
+    try {
+      const created = await bridge.noteAttachmentUpload(options.baseUrl(), token, noteId, path)
+      attachments.value = {
+        ...attachments.value,
+        [noteId]: [...(attachments.value[noteId] ?? []), created]
+      }
+      return true
+    } catch (failure) {
+      attachmentError.value = errorCode(failure)
+      return false
+    }
+  }
+
+  async function downloadAttachment(noteId: string, attachmentId: string): Promise<string | null> {
+    const token = tokenOrNull()
+    if (!token) return null
+    attachmentError.value = null
+    try {
+      return await bridge.noteAttachmentDownload(options.baseUrl(), token, noteId, attachmentId)
+    } catch (failure) {
+      attachmentError.value = errorCode(failure)
+      return null
+    }
+  }
+
+  async function deleteAttachment(noteId: string, attachmentId: string): Promise<boolean> {
+    const token = tokenOrNull()
+    if (!token) return false
+    attachmentError.value = null
+    try {
+      await bridge.noteAttachmentDelete(options.baseUrl(), token, noteId, attachmentId)
+      attachments.value = {
+        ...attachments.value,
+        [noteId]: (attachments.value[noteId] ?? []).filter((item) => item.id !== attachmentId)
+      }
+      return true
+    } catch (failure) {
+      attachmentError.value = errorCode(failure)
+      return false
+    }
+  }
+
+  return {
+    notes,
+    query,
+    loading,
+    error,
+    refresh,
+    create,
+    update,
+    remove,
+    attachments,
+    attachmentError,
+    loadAttachments,
+    pickAttachment,
+    uploadAttachment,
+    downloadAttachment,
+    deleteAttachment
+  }
 }

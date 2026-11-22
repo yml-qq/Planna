@@ -1343,6 +1343,20 @@ fn note_attachment_delete(
 }
 
 #[tauri::command]
+fn note_attachment_pick(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let selected = app
+        .dialog()
+        .file()
+        .add_filter("Attachments", &["txt", "md", "png", "jpg", "jpeg", "pdf"])
+        .blocking_pick_file();
+    let Some(path) = selected else {
+        return Ok(None);
+    };
+    let path = path.into_path().map_err(|error| error.to_string())?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let entries = store
@@ -1616,6 +1630,7 @@ pub fn run() {
             note_attachment_upload,
             note_attachment_download,
             note_attachment_delete,
+            note_attachment_pick,
             create_habit,
             update_habit,
             upsert_habit_log,

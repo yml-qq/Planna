@@ -358,6 +358,7 @@ export interface DesktopBridge {
     noteId: string,
     attachmentId: string
   ): Promise<void>
+  pickNoteAttachment(): Promise<string | null>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -968,6 +969,10 @@ export class MemoryBridge implements DesktopBridge {
       noteId,
       (this.noteAttachments.get(noteId) ?? []).filter((item) => item.id !== attachmentId)
     )
+  }
+
+  async pickNoteAttachment(): Promise<string | null> {
+    return '/tmp/note.txt'
   }
 
   async exportConflicts(): Promise<string> {
@@ -1617,6 +1622,10 @@ export class TauriBridge implements DesktopBridge {
       noteId,
       attachmentId
     })
+  }
+
+  async pickNoteAttachment(): Promise<string | null> {
+    return this.invoke<string | null>('note_attachment_pick')
   }
 
   async goalBreakdownPreview(

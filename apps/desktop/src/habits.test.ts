@@ -206,7 +206,8 @@ describe('habit store', () => {
       noteAttachmentDownload: async () => null,
       noteAttachmentDelete: async () => {
         throw new Error('offline')
-      }
+      },
+      pickNoteAttachment: async () => null
     }
     const store = createHabitStore(failing, storeOptions())
     await store.refresh()

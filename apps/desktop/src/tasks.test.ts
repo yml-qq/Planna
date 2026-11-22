@@ -157,7 +157,8 @@ describe('task store', () => {
       noteAttachmentDownload: async () => null,
       noteAttachmentDelete: async () => {
         throw new Error('offline')
-      }
+      },
+      pickNoteAttachment: async () => null
     }
     const store = createTaskStore(failing, 'inbox')
     await store.refresh()
