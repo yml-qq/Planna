@@ -92,3 +92,45 @@ describe('goal store', () => {
     expect(store.error.value).toBe('VERSION_CONFLICT')
   })
 })
+
+describe('goal AI breakdown', () => {
+  it('previews suggestions and adds them as milestones', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship')
+    expect(await store.previewBreakdown(goal!.id, '调研, 原型, 上线')).toBe(true)
+    const items = store.suggestions.value[goal!.id] ?? []
+    expect(items.map((item) => item.title)).toEqual(['调研', '原型', '上线'])
+
+    expect(await store.addSuggestion(goal!.id, items[0]!)).toBe(true)
+    expect(store.goals.value[0]?.milestones).toHaveLength(1)
+    expect(store.suggestions.value[goal!.id]).toHaveLength(2)
+
+    expect(await store.addAllSuggestions(goal!.id)).toBe(2)
+    expect(store.goals.value[0]?.milestones).toHaveLength(3)
+    expect(store.goals.value[0]?.progress.totalMilestones).toBe(3)
+    expect(store.suggestions.value[goal!.id]).toEqual([])
+  })
+
+  it('maps AI unavailable errors and requires a token', async () => {
+    const bridge = new MemoryBridge()
+    const goal = await bridge.goalCreate('', 'token', { title: 'Ship' })
+    const failing: DesktopBridge = new Proxy(bridge, {
+      get(target, property, receiver) {
+        if (property === 'goalBreakdownPreview') {
+          return async () => {
+            throw new Error('503:AI_UNAVAILABLE')
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const store = createGoalStore(failing, { baseUrl: () => '', token: () => 'token' })
+    await store.refresh()
+    expect(await store.previewBreakdown(goal.id)).toBe(false)
+    expect(store.error.value).toBe('AI_UNAVAILABLE')
+
+    const signedOut = createStore('')
+    expect(await signedOut.store.previewBreakdown('goal-1')).toBe(false)
+    expect(signedOut.store.error.value).toBe('GOAL_SIGNED_OUT')
+  })
+})

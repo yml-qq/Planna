@@ -4,6 +4,7 @@ import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIss
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
 import { createGoalStore } from './goals'
+import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { createNoteStore } from './notes'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -87,6 +88,7 @@ const goals = createGoalStore(bridge, {
 })
 const goalTitle = ref('')
 const goalTargetDate = ref('')
+const goalGuidance = ref<Record<string, string>>({})
 const milestoneDrafts = ref<Record<string, string>>({})
 const focus = createFocusStore(bridge, {
   baseUrl: () => baseUrl.value,
@@ -160,6 +162,9 @@ const errorText = computed(() => {
     GOAL_SIGNED_OUT: '请先登录再管理目标',
     GOAL_NOT_FOUND: '目标不存在',
     GOAL_FAILED: '目标操作失败，请重试',
+    AI_UNAVAILABLE: 'AI 服务当前不可用',
+    RATE_LIMITED: 'AI 请求过于频繁，请稍后再试',
+    INVALID_GUIDANCE: 'AI 拆解提示不能超过 2000 字',
     INVALID_NOTE: '笔记内容不能为空，且标题/正文不能超长',
     NOTE_SIGNED_OUT: '请先登录再使用笔记',
     NOTE_NOT_FOUND: '笔记不存在',
@@ -222,11 +227,27 @@ async function submitGoal(): Promise<void> {
   }
 }
 
+async function previewGoalBreakdown(goalId: string): Promise<void> {
+  await goals.previewBreakdown(goalId, goalGuidance.value[goalId] ?? '')
+}
+
+async function addGoalSuggestion(goalId: string, suggestion: GoalBreakdownSuggestion): Promise<void> {
+  await goals.addSuggestion(goalId, suggestion)
+}
+
+async function addAllGoalSuggestions(goalId: string): Promise<void> {
+  await goals.addAllSuggestions(goalId)
+}
+
 async function submitMilestone(goalId: string): Promise<void> {
   const draft = milestoneDrafts.value[goalId] ?? ''
   if (await goals.addMilestone(goalId, draft)) {
     milestoneDrafts.value = { ...milestoneDrafts.value, [goalId]: '' }
   }
+}
+
+function goalSuggestions(goalId: string): GoalBreakdownSuggestion[] {
+  return goals.suggestions.value[goalId] ?? []
 }
 
 async function toggleGoalMilestone(goalId: string, milestoneId: string): Promise<void> {
@@ -927,6 +948,50 @@ onMounted(async () => {
             >
               归档
             </button>
+          </div>
+          <div class="composer__row">
+            <input
+              v-model="goalGuidance[goal.id]"
+              class="input"
+              type="text"
+              maxlength="2000"
+              placeholder="AI 拆解提示（可选，例如：调研, 原型, 上线）"
+              :aria-label="`为 ${goal.title} 的 AI 拆解提示`"
+            />
+            <button
+              class="button button--ghost"
+              type="button"
+              :disabled="goals.breakdownLoading.value"
+              @click="previewGoalBreakdown(goal.id)"
+            >
+              AI 拆解
+            </button>
+          </div>
+          <div v-if="goalSuggestions(goal.id).length > 0" class="goals__suggestions">
+            <div class="goals__header">
+              <span class="habits__meta">AI 建议（添加后才会写入）</span>
+              <button
+                class="button button--ghost"
+                type="button"
+                :disabled="goals.breakdownLoading.value"
+                @click="addAllGoalSuggestions(goal.id)"
+              >
+                全部添加
+              </button>
+            </div>
+            <ul class="goals__milestones">
+              <li v-for="suggestion in goalSuggestions(goal.id)" :key="suggestion.position" class="goals__milestone">
+                <span>{{ suggestion.title }}</span>
+                <button
+                  class="button button--ghost"
+                  type="button"
+                  :disabled="goals.breakdownLoading.value"
+                  @click="addGoalSuggestion(goal.id, suggestion)"
+                >
+                  添加
+                </button>
+              </li>
+            </ul>
           </div>
         </li>
       </ul>

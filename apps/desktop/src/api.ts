@@ -51,6 +51,12 @@ export interface Milestone {
   updatedAt: string
 }
 
+export interface GoalBreakdownSuggestion {
+  title: string
+  estimateMinutes: number | null
+  position: number
+}
+
 export interface GoalProgress {
   completedMilestones: number
   totalMilestones: number
@@ -252,6 +258,12 @@ export interface DesktopBridge {
     expectedVersion: number,
     patch: MilestonePatch
   ): Promise<Milestone>
+  goalBreakdownPreview(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    guidance?: string
+  ): Promise<GoalBreakdownSuggestion[]>
   focusStats(
     baseUrl: string,
     accessToken: string,
@@ -729,6 +741,23 @@ export class MemoryBridge implements DesktopBridge {
     if (!note) throw new Error('404:NOTE_NOT_FOUND')
     if (note.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
     this.notes.delete(noteId)
+  }
+
+  async goalBreakdownPreview(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    guidance?: string
+  ): Promise<GoalBreakdownSuggestion[]> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    const source = guidance?.trim() || goal.title
+    return source
+      .split(/[,，、；;。]/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+      .slice(0, 5)
+      .map((title, index) => ({ title, estimateMinutes: null, position: index + 1 }))
   }
 
   async exportConflicts(): Promise<string> {
@@ -1309,6 +1338,27 @@ export class TauriBridge implements DesktopBridge {
     expectedVersion: number
   ): Promise<void> {
     await this.invoke<void>('note_delete', { baseUrl, accessToken, noteId, expectedVersion })
+  }
+
+  async goalBreakdownPreview(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    guidance?: string
+  ): Promise<GoalBreakdownSuggestion[]> {
+    const rows = await this.invoke<
+      Array<{ title: string; estimate_minutes: number | null; position: number }>
+    >('goal_breakdown_preview', {
+      baseUrl,
+      accessToken,
+      goalId,
+      guidance: guidance ?? null
+    })
+    return rows.map((row) => ({
+      title: row.title,
+      estimateMinutes: row.estimate_minutes,
+      position: row.position
+    }))
   }
 
   async exportConflicts(): Promise<string> {

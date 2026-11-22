@@ -890,6 +890,41 @@ fn note_delete(
     Ok(())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct GoalBreakdownSuggestionDto {
+    title: String,
+    estimate_minutes: Option<i64>,
+    position: i64,
+}
+
+#[derive(Deserialize)]
+struct GoalBreakdownPreviewDto {
+    suggestions: Vec<GoalBreakdownSuggestionDto>,
+}
+
+#[tauri::command]
+fn goal_breakdown_preview(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    guidance: Option<String>,
+) -> Result<Vec<GoalBreakdownSuggestionDto>, String> {
+    let response = http_client()
+        .post(format!(
+            "{}/ai/goals/{goal_id}/breakdowns/preview",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .json(&serde_json::json!({ "guidance": guidance }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let preview: GoalBreakdownPreviewDto = response.json().map_err(|error| error.to_string())?;
+    Ok(preview.suggestions)
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1168,6 +1203,7 @@ pub fn run() {
             goal_update,
             goal_add_milestone,
             goal_update_milestone,
+            goal_breakdown_preview,
             focus_stats,
             note_list,
             note_create,

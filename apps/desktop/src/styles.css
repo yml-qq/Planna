@@ -455,3 +455,9 @@ body {
   background: var(--accent);
   opacity: 0.75;
 }
+
+.goals__suggestions {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}

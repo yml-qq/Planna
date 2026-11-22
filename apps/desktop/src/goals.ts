@@ -1,5 +1,11 @@
 import { ref, type Ref } from 'vue'
-import type { DesktopBridge, Goal, GoalState, Milestone } from './api'
+import type {
+  DesktopBridge,
+  Goal,
+  GoalBreakdownSuggestion,
+  GoalState,
+  Milestone
+} from './api'
 
 export interface GoalStoreOptions {
   baseUrl: () => string
@@ -15,6 +21,11 @@ export interface GoalStore {
   setStatus: (goalId: string, status: GoalState) => Promise<boolean>
   addMilestone: (goalId: string, title: string) => Promise<boolean>
   toggleMilestone: (goalId: string, milestone: Milestone) => Promise<boolean>
+  suggestions: Ref<Record<string, GoalBreakdownSuggestion[]>>
+  breakdownLoading: Ref<boolean>
+  previewBreakdown: (goalId: string, guidance?: string) => Promise<boolean>
+  addSuggestion: (goalId: string, suggestion: GoalBreakdownSuggestion) => Promise<boolean>
+  addAllSuggestions: (goalId: string) => Promise<number>
 }
 
 function errorCode(error: unknown): string {
@@ -27,6 +38,8 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
   const goals = ref<Goal[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const suggestions = ref<Record<string, GoalBreakdownSuggestion[]>>({})
+  const breakdownLoading = ref(false)
 
   function tokenOrNull(): string | null {
     const token = options.token()
@@ -146,5 +159,67 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     }
   }
 
-  return { goals, loading, error, refresh, create, setStatus, addMilestone, toggleMilestone }
+  async function previewBreakdown(goalId: string, guidance?: string): Promise<boolean> {
+    const token = tokenOrNull()
+    if (!token) return false
+    breakdownLoading.value = true
+    error.value = null
+    try {
+      const items = await bridge.goalBreakdownPreview(options.baseUrl(), token, goalId, guidance)
+      suggestions.value = { ...suggestions.value, [goalId]: items }
+      return true
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return false
+    } finally {
+      breakdownLoading.value = false
+    }
+  }
+
+  async function addSuggestion(goalId: string, suggestion: GoalBreakdownSuggestion): Promise<boolean> {
+    const token = tokenOrNull()
+    if (!token) return false
+    breakdownLoading.value = true
+    error.value = null
+    try {
+      await bridge.goalAddMilestone(options.baseUrl(), token, goalId, { title: suggestion.title })
+      suggestions.value = {
+        ...suggestions.value,
+        [goalId]: (suggestions.value[goalId] ?? []).filter((item) => item !== suggestion)
+      }
+      await refresh()
+      return true
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return false
+    } finally {
+      breakdownLoading.value = false
+    }
+  }
+
+  async function addAllSuggestions(goalId: string): Promise<number> {
+    const items = suggestions.value[goalId] ?? []
+    let added = 0
+    for (const item of [...items]) {
+      if (await addSuggestion(goalId, item)) added += 1
+      else break
+    }
+    return added
+  }
+
+  return {
+    goals,
+    loading,
+    error,
+    refresh,
+    create,
+    setStatus,
+    addMilestone,
+    toggleMilestone,
+    suggestions,
+    breakdownLoading,
+    previewBreakdown,
+    addSuggestion,
+    addAllSuggestions
+  }
 }
