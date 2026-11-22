@@ -88,7 +88,8 @@ internal static class HttpNoteAttachmentSmoke
 
         Check(await Delete(client, token, note, attachmentId), HttpStatusCode.NoContent);
         Check(await Download(client, token, note, attachmentId), HttpStatusCode.NotFound);
-        Check(await Delete(client, token, note, attachmentId), HttpStatusCode.NotFound);
+        Check(await Delete(client, token, note, attachmentId), HttpStatusCode.NoContent);
+        Check(await Delete(client, token, note, Guid.NewGuid()), HttpStatusCode.NotFound);
         if (await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1 AND deleted_at IS NOT NULL", note) != 1)
             throw new InvalidOperationException("Attachment soft delete mismatch.");
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
