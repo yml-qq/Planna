@@ -605,10 +605,10 @@
 
 - 新增 `modules` store：habits/focus/goals/notes 默认可见，持久化 `planna.modules`，非法/部分 JSON 回退默认；登录面板新增“显示模块”复选框，隐藏仅影响卡片渲染，不删数据、不影响提醒/同步。
 - 前端新增 3 项测试（默认、隐藏/恢复持久化、非法负载回退），合计 **65 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
-- **CI 未触发**：GitHub 443 不可达（推送与 Actions 同时中断）；本切片仅完成本地验证，待网络恢复后推送并补 CI 链接。
+- 网络恢复后推送（`fbdefea`）并补 CI：[Server integration 44978693280](https://github.com/yml-qq/Planna/actions/runs/44978693280) 与 [Desktop core 44978693285](https://github.com/yml-qq/Planna/actions/runs/44978693285) 均 **success**。
 
 ## NOTE-04a 笔记关联任务 UI 检查（2026-11-22）
 
 - 笔记创建表单新增“关联任务”下拉，传 `task_id`；列表显示关联任务标题（任务缺失时不显示）；服务端 owner/未删除校验复用 NOTE-01。
 - 前端新增 1 项关联测试，合计 **66 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
-- **CI 未触发**：GitHub 443 不可达；本切片仅完成本地验证，待网络恢复后推送并补 CI 链接。
+- 网络恢复后推送（`fbdefea`）并补 CI：[Server integration 44978693280](https://github.com/yml-qq/Planna/actions/runs/44978693280) 与 [Desktop core 44978693285](https://github.com/yml-qq/Planna/actions/runs/44978693285) 均 **success**。
