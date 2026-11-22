@@ -929,3 +929,10 @@
 - 本地 build/format/契约通过；并发行为在 CI 的 PostgreSQL 18 服务上执行。
 - [Server integration 45068120223](https://github.com/yml-qq/Planna/actions/runs/45068120223) 与 [Desktop core 45068120262](https://github.com/yml-qq/Planna/actions/runs/45068120262) 均 **success**（并发配额冒烟在 CI 通过）。
 - 未覆盖多实例/多进程；无速率限制/病毒扫描/预览。
+
+## UX-05-a axe 无障碍测试检查（2026-11-22）
+
+- 新增 devDeps `@vue/test-utils`/`jsdom`/`axe-core`；`confirm-dialog.a11y.test.ts` 挂载确认对话框并跑 axe 三条规则（dialog name/button name/aria allowed），无 violations。
+- 前端测试 91→**92 项**；`pnpm build`、`pnpm audit --prod --audit-level=high`（npmjs）通过。
+- 仅单组件/三条规则；jsdom 无真实 dialog 焦点/布局，不验证对比度/键盘/屏幕阅读器；不代表 WCAG 合规。
+- 全应用 axe/对比度与人工验证留待 `UX-05-b`。

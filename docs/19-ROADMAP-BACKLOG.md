@@ -56,7 +56,8 @@
 | E09 | UX-02 | 卡片级功能入口可见性（已交付，见 `100-UX-02.md`） | UX-01 | 隐藏/恢复不丢数据 |
 | E09 | UX-03 | 导航入口、主题/密度与无障碍基础（已交付，见 `121-UX-03.md`） | UX-02 | ui tests |
 | E09 | UX-04 | 原生确认对话框、响应式导航与 reduced-motion（已交付，见 `125-UX-04.md`） | UX-03 | ui tests |
-| E09 | UX-05 | axe 审计、屏幕阅读器验证、对话框复用与对比度校验 | UX-04 | accessibility tests |
+| E09 | UX-05-a | 确认对话框 axe 自动化测试（已交付，见 `143-UX-05-a.md`） | UX-04 | a11y tests |
+| E09 | UX-05-b | 全应用 axe/对比度、键盘与屏幕阅读器验证、对话框复用 | UX-05-a | accessibility tests |
 | E10 | HAB-01A | 习惯 CRUD（服务端，已交付，见 `68-HAB-01A.md`） | E04 | repeat tests |
 | E10 | HAB-01B | 打卡日志：同日唯一、补签与窗口查询（已交付，见 `69-HAB-01B.md`） | HAB-01A | repeat tests |
 | E10 | HAB-01C | 连续天数规则与 streak 查询（已交付，见 `70-HAB-01C.md`） | HAB-01B | repeat tests |
