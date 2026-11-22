@@ -812,3 +812,10 @@
 - 前端新增 1 项过滤测试，合计 **89 项**；`pnpm build` 通过；服务端无变更。
 - 仅展示不编辑；长正文截断 80 字符；未额外拉取服务端。
 - [Server integration 45034780647](https://github.com/yml-qq/Planna/actions/runs/45034780647) 与 [Desktop core 45034780590](https://github.com/yml-qq/Planna/actions/runs/45034780590) 均 **success**。
+
+## TIME-01G-b-b-a 工作日导入检查（2026-11-22）
+
+- 新增 `POST /calendar/workday-overrides/import`：1..366 条、单请求重复日期/非法 kind/note 超长/空/超额 422，事务内自然键 upsert，返回 imported/jurisdiction；幂等。
+- OpenAPI 新增路径与 3 schema；契约测试断言（**35 项**）。
+- 冒烟覆盖导入/重复导入/列表/重复日期/空数组/非法 kind/367 条。
+- 服务端仍不内置法定数据；导入来源授权与 legal_workday RRULE、提醒重排留待 `TIME-01G-b-b-b`。

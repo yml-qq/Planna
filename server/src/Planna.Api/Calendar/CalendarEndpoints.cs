@@ -11,6 +11,7 @@ public static class CalendarEndpoints
         var group = app.MapGroup("/calendar").WithTags("Calendar").RequireAuthorization();
         group.MapGet("/workday-overrides", List).WithName("ListWorkdayOverrides");
         group.MapGet("/workdays", Evaluate).WithName("EvaluateWorkdays");
+        group.MapPost("/workday-overrides/import", Import).WithName("ImportWorkdayOverrides");
         group.MapPut("/workday-overrides/{date}", Upsert).WithName("UpsertWorkdayOverride");
         group.MapDelete("/workday-overrides/{date}", Delete).WithName("DeleteWorkdayOverride");
         return app;
@@ -44,6 +45,19 @@ public static class CalendarEndpoints
         {
             WorkdayOverrideStatus.Ok => TypedResults.Ok(result.Days),
             WorkdayOverrideStatus.Invalid => Error(http, 400, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> Import(HttpContext http,
+        ImportWorkdayOverridesRequest request, IWorkdayOverrideService service, CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        var result = await service.ImportAsync(owner, request, ct);
+        return result.Status switch
+        {
+            WorkdayOverrideStatus.Ok => TypedResults.Ok(result.Imported),
+            WorkdayOverrideStatus.Invalid => Error(http, 422, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
     }

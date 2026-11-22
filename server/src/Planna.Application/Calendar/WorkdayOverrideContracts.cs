@@ -29,6 +29,21 @@ public sealed record UpsertWorkdayOverrideRequest(
     [property: JsonPropertyName("kind")] string? Kind,
     [property: JsonPropertyName("note")] string? Note);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ImportWorkdayOverrideItem(
+    [property: JsonPropertyName("date")] DateOnly? Date,
+    [property: JsonPropertyName("kind")] string? Kind,
+    [property: JsonPropertyName("note")] string? Note);
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ImportWorkdayOverridesRequest(
+    [property: JsonPropertyName("jurisdiction")] string? Jurisdiction,
+    [property: JsonPropertyName("overrides")] IReadOnlyList<ImportWorkdayOverrideItem>? Overrides);
+
+public sealed record ImportWorkdayOverridesResponse(
+    [property: JsonPropertyName("imported")] int Imported,
+    [property: JsonPropertyName("jurisdiction")] string Jurisdiction);
+
 public enum WorkdayOverrideStatus
 {
     Ok, Created, Updated, Invalid, NotFound
@@ -36,7 +51,7 @@ public enum WorkdayOverrideStatus
 
 public sealed record WorkdayOverrideResult(WorkdayOverrideStatus Status,
     WorkdayOverrideView? Override = null, WorkdayOverrideList? List = null,
-    WorkdayDays? Days = null, string? Code = null);
+    WorkdayDays? Days = null, ImportWorkdayOverridesResponse? Imported = null, string? Code = null);
 
 public interface IWorkdayOverrideService
 {
@@ -51,4 +66,7 @@ public interface IWorkdayOverrideService
 
     Task<WorkdayOverrideResult> EvaluateAsync(Guid ownerId, string? jurisdiction, DateOnly from,
         DateOnly to, CancellationToken ct);
+
+    Task<WorkdayOverrideResult> ImportAsync(Guid ownerId, ImportWorkdayOverridesRequest request,
+        CancellationToken ct);
 }

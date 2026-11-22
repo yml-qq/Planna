@@ -699,6 +699,13 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(override["properties"]["note"]["maxLength"], 200)
         delete = api["paths"]["/calendar/workday-overrides/{date}"]["delete"]
         self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404"})
+        imported = api["paths"]["/calendar/workday-overrides/import"]["post"]
+        self.assertEqual(set(imported["responses"]), {"200", "401", "422"})
+        import_schema = api["components"]["schemas"]["ImportWorkdayOverridesRequest"]
+        self.assertEqual(import_schema["properties"]["overrides"]["minItems"], 1)
+        self.assertEqual(import_schema["properties"]["overrides"]["maxItems"], 366)
+        self.assertEqual(api["components"]["schemas"]["ImportWorkdayOverrideItem"]
+                         ["properties"]["kind"]["enum"], ["holiday", "workday"])
         evaluated = api["paths"]["/calendar/workdays"]["get"]
         self.assertEqual(set(evaluated["responses"]), {"200", "400", "401"})
         days = api["components"]["schemas"]["WorkdayDays"]

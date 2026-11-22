@@ -134,6 +134,47 @@ public sealed class WorkdayOverrideService(TaskWriteContext db, TimeProvider clo
         return new(WorkdayOverrideStatus.Ok, Days: new WorkdayDays(Format(from), Format(to), zone, days));
     }
 
+    public async Task<WorkdayOverrideResult> ImportAsync(Guid ownerId,
+        ImportWorkdayOverridesRequest request, CancellationToken ct)
+    {
+        var zone = NormalizeJurisdiction(request.Jurisdiction);
+        if (zone is null || request.Overrides is null ||
+            request.Overrides.Count is < 1 or > 366)
+            return new(WorkdayOverrideStatus.Invalid, Code: "INVALID_IMPORT");
+        var seen = new HashSet<DateOnly>();
+        var items = new List<(DateOnly Date, string Kind, string Note)>();
+        foreach (var item in request.Overrides)
+        {
+            if (item.Date is not { } date || item.Kind is null ||
+                item.Kind.Trim().ToLowerInvariant() is not ("holiday" or "workday") ||
+                (item.Note ?? "").Trim().Length > 200 || !seen.Add(date))
+                return new(WorkdayOverrideStatus.Invalid, Code: "INVALID_IMPORT");
+            items.Add((date, item.Kind.Trim().ToLowerInvariant(), (item.Note ?? "").Trim()));
+        }
+        var now = clock.GetUtcNow();
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        foreach (var (date, kind, note) in items)
+        {
+            await ExecuteAsync("""
+                INSERT INTO workday_overrides(owner_id, jurisdiction, date, kind, note, created_at, updated_at)
+                VALUES(@Owner, @Jurisdiction, @Date, @Kind, @Note, @Now, @Now)
+                ON CONFLICT(owner_id, jurisdiction, date) DO UPDATE SET
+                    kind=excluded.kind, note=excluded.note, updated_at=excluded.updated_at
+                """, p =>
+            {
+                p.Add(new NpgsqlParameter("Owner", ownerId));
+                p.Add(new NpgsqlParameter("Jurisdiction", zone));
+                p.Add(new NpgsqlParameter("Date", NpgsqlDbType.Date) { Value = date });
+                p.Add(new NpgsqlParameter("Kind", kind));
+                p.Add(new NpgsqlParameter("Note", note));
+                p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = now.UtcDateTime });
+            }, ct);
+        }
+        await transaction.CommitAsync(ct);
+        return new(WorkdayOverrideStatus.Ok,
+            Imported: new ImportWorkdayOverridesResponse(items.Count, zone));
+    }
+
     private async Task<int> ExecuteAsync(string sql, Action<DbParameterCollection> addParameters,
         CancellationToken ct)
     {

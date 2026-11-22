@@ -127,7 +127,47 @@ internal static class HttpWorkdayOverrideSmoke
         }
         if (await Scalar(db, "SELECT count(*) FROM workday_overrides WHERE owner_id=$1 AND jurisdiction='CN'", owner) != 0)
             throw new InvalidOperationException("Workday override row still present after delete.");
-        Console.WriteLine("PASS: workday overrides isolate owners, default jurisdiction, upsert/delete and validation");
+
+        var importBody = "{\"jurisdiction\":\"CN\",\"overrides\":[" +
+            "{\"date\":\"2026-12-25\",\"kind\":\"holiday\",\"note\":\"Christmas\"}," +
+            "{\"date\":\"2026-12-26\",\"kind\":\"holiday\"}]}";
+        var imported = await Import(client, token, importBody);
+        Check(imported, HttpStatusCode.OK);
+        using (var document = JsonDocument.Parse(await imported.Content.ReadAsStringAsync()))
+        {
+            if (document.RootElement.GetProperty("imported").GetInt32() != 2 ||
+                document.RootElement.GetProperty("jurisdiction").GetString() != "CN")
+                throw new InvalidOperationException("Workday import response mismatch.");
+        }
+        var reimported = await Import(client, token, importBody);
+        Check(reimported, HttpStatusCode.OK);
+        using (var document = JsonDocument.Parse(await reimported.Content.ReadAsStringAsync()))
+        {
+            if (document.RootElement.GetProperty("imported").GetInt32() != 2)
+                throw new InvalidOperationException("Workday import is not idempotent.");
+        }
+        var importedList = await List(client, token, "2026-12-01", "2026-12-31", "CN");
+        Check(importedList, HttpStatusCode.OK);
+        using (var document = JsonDocument.Parse(await importedList.Content.ReadAsStringAsync()))
+        {
+            if (document.RootElement.GetProperty("items").GetArrayLength() != 2)
+                throw new InvalidOperationException("Workday import list mismatch.");
+        }
+        await AssertCode(await Import(client, token,
+            "{\"overrides\":[{\"date\":\"2026-12-25\",\"kind\":\"holiday\"}," +
+            "{\"date\":\"2026-12-25\",\"kind\":\"workday\"}]}"),
+            HttpStatusCode.UnprocessableEntity, "INVALID_IMPORT");
+        await AssertCode(await Import(client, token, "{\"overrides\":[]}"),
+            HttpStatusCode.UnprocessableEntity, "INVALID_IMPORT");
+        await AssertCode(await Import(client, token,
+            "{\"overrides\":[{\"date\":\"2026-12-25\",\"kind\":\"party\"}]}"),
+            HttpStatusCode.UnprocessableEntity, "INVALID_IMPORT");
+        var many = "{\"overrides\":[" + string.Join(",", Enumerable.Range(0, 367)
+            .Select(index => "{\"date\":\"" + new DateTime(2027, 1, 1).AddDays(index)
+                .ToString("yyyy-MM-dd") + "\",\"kind\":\"holiday\"}")) + "]}";
+        await AssertCode(await Import(client, token, many), HttpStatusCode.UnprocessableEntity,
+            "INVALID_IMPORT");
+        Console.WriteLine("PASS: workday overrides isolate owners, default jurisdiction, upsert/delete, import and validation");
     }
 
     private static async Task<HttpResponseMessage> Evaluate(HttpClient client, string? token,
@@ -150,6 +190,26 @@ internal static class HttpWorkdayOverrideSmoke
             "/calendar/workday-overrides?" + query);
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> Import(HttpClient client, string? token, string body)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            "/calendar/workday-overrides/import")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await client.SendAsync(request);
+    }
+
+    private static async Task AssertCode(HttpResponseMessage response, HttpStatusCode expected,
+        string code)
+    {
+        Check(response, expected);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        if (document.RootElement.GetProperty("error").GetProperty("code").GetString() != code)
+            throw new InvalidOperationException("Workday import error code mismatch.");
     }
 
     private static async Task<HttpResponseMessage> Upsert(HttpClient client, string? token, string date,

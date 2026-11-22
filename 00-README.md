@@ -138,6 +138,7 @@
 | 125 | `docs/125-UX-04.md` | 可访问确认对话框与响应式/动效偏好 |
 | 126 | `docs/126-NOTE-04b-2b-b-c-a.md` | 笔记冲突“以服务端为准”落库 |
 | 127 | `docs/127-NOTE-04b-2b-b-c-b-a.md` | 任务详情展示关联笔记 |
+| 128 | `docs/128-TIME-01G-b-b-a.md` | 工作日覆盖批量导入 API |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
