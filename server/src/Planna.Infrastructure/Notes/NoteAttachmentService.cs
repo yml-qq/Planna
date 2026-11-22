@@ -14,8 +14,11 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
     IConfiguration configuration) : INoteAttachmentService
 {
     private const long MaxBytes = 5 * 1024 * 1024;
-    private const long MaxOwnerBytes = 200L * 1024 * 1024;
-    private const int MaxPerNote = 20;
+    private readonly int maxPerNote =
+        ParseInt(configuration["NOTE_ATTACHMENT_MAX_PER_NOTE"], 20, 1, 1000);
+    private readonly long maxOwnerBytes =
+        ParseLong(configuration["NOTE_ATTACHMENT_MAX_OWNER_BYTES"], 200L * 1024 * 1024,
+            1, 10L * 1024 * 1024 * 1024);
 
     private static readonly Dictionary<string, string> Extensions = new()
     {
@@ -62,38 +65,49 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
+
+        // Serialize quota checks and inserts per owner so concurrent uploads cannot overshoot.
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var ownerKey = ownerId.ToString();
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({ownerKey}))", ct);
         var existing = await LoadAsync(ownerId, noteId, attachmentId, ct);
         if (existing is not null)
+        {
+            await transaction.CommitAsync(ct);
             return new(NoteAttachmentStatus.Replayed, ToView(existing));
+        }
         var usage = await UsageAsync(ownerId, noteId, ct);
-        if (usage.NoteCount >= MaxPerNote)
+        if (usage.NoteCount >= maxPerNote)
             return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_NOTE_QUOTA");
-        if (usage.OwnerBytes + length > MaxOwnerBytes)
+        if (usage.OwnerBytes + length > maxOwnerBytes)
             return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_OWNER_QUOTA");
 
         var extension = Extensions[type];
         var storageKey = $"{ownerId}/{noteId}/{attachmentId}{extension}";
-        var path = Path.Combine(root, storageKey.Replace('/', Path.DirectorySeparatorChar));
+        var path = NoteAttachmentStorage.PathWithinRoot(root, storageKey)
+            ?? throw new InvalidOperationException("attachment path escaped the root");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        await using (var output = File.Create(path))
-            await content.CopyToAsync(output, ct);
-        var now = clock.GetUtcNow();
         try
         {
+            await using (var output = File.Create(path))
+                await content.CopyToAsync(output, ct);
+            var now = clock.GetUtcNow();
             await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO note_attachments(id, owner_id, note_id, filename, content_type,
                     size_bytes, storage_key, version, created_at)
                 VALUES({attachmentId}, {ownerId}, {noteId}, {displayName}, {type}, {length},
                     {storageKey}, 1, {now.UtcDateTime})
                 """, ct);
+            await transaction.CommitAsync(ct);
+            return new(NoteAttachmentStatus.Created, new NoteAttachmentView(attachmentId, noteId,
+                displayName, type, length, now));
         }
         catch
         {
             File.Delete(path);
             throw;
         }
-        return new(NoteAttachmentStatus.Created, new NoteAttachmentView(attachmentId, noteId,
-            displayName, type, length, now));
     }
 
     public async Task<(NoteAttachmentResult Result, NoteAttachmentDownload? Download)> OpenAsync(
@@ -159,6 +173,18 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
                 WHERE id=@Id AND owner_id=@Owner AND note_id=@Note{deletedFilter}
                 """, new { Id = attachmentId, Owner = ownerId, Note = noteId },
                 db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+    }
+
+    private static int ParseInt(string? raw, int fallback, int min, int max)
+    {
+        if (string.IsNullOrEmpty(raw)) return fallback;
+        return int.TryParse(raw, out var value) && value >= min && value <= max ? value : fallback;
+    }
+
+    private static long ParseLong(string? raw, long fallback, long min, long max)
+    {
+        if (string.IsNullOrEmpty(raw)) return fallback;
+        return long.TryParse(raw, out var value) && value >= min && value <= max ? value : fallback;
     }
 
     private static NoteAttachmentView ToView(AttachmentRow row) => new(row.Id, row.NoteId,
