@@ -1403,6 +1403,66 @@ paths:
         "401": {$ref: '#/components/responses/ErrorResponse'}
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "409": {$ref: '#/components/responses/ErrorResponse'}
+  /calendar/workday-overrides:
+    get:
+      tags: [Calendar]
+      operationId: listWorkdayOverrides
+      summary: List owner-scoped holiday/workday overrides in a date range
+      description: No legal holiday data is bundled; clients import verified calendars explicitly. Ranges are limited to 366 days and default jurisdiction is CN.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+        - {name: jurisdiction, in: query, required: false, schema: {type: string, minLength: 1, maxLength: 32, default: CN}}
+      responses:
+        "200":
+          description: Overrides ordered by date
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkdayOverrideList'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+  /calendar/workday-overrides/{date}:
+    put:
+      tags: [Calendar]
+      operationId: upsertWorkdayOverride
+      summary: Create or replace a holiday/workday override for one date
+      description: Natural-key upsert by owner, jurisdiction and date; repeating the same request is idempotent.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: date, in: path, required: true, schema: {type: string, format: date}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpsertWorkdayOverrideRequest'}
+      responses:
+        "200":
+          description: Existing override replaced
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkdayOverride'}
+        "201":
+          description: Override created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkdayOverride'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "422": {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Calendar]
+      operationId: deleteWorkdayOverride
+      summary: Delete an owner override for one date
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: date, in: path, required: true, schema: {type: string, format: date}}
+        - {name: jurisdiction, in: query, required: false, schema: {type: string, minLength: 1, maxLength: 32, default: CN}}
+      responses:
+        "204": {description: Deleted}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
   /notes:
     get:
       tags: [Notes]
@@ -2414,6 +2474,32 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused: {type: boolean}
+    WorkdayOverride:
+      type: object
+      additionalProperties: false
+      required: [date, jurisdiction, kind, note, created_at, updated_at]
+      properties:
+        date: {type: string, format: date}
+        jurisdiction: {type: string, minLength: 1, maxLength: 32}
+        kind: {type: string, enum: [holiday, workday]}
+        note: {type: string, maxLength: 200}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    WorkdayOverrideList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/WorkdayOverride'}
+    UpsertWorkdayOverrideRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        jurisdiction: {type: [string, "null"], minLength: 1, maxLength: 32}
+        kind: {type: string, enum: [holiday, workday]}
+        note: {type: [string, "null"], maxLength: 200}
     Note:
       type: object
       additionalProperties: false

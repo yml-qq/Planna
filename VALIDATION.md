@@ -742,3 +742,10 @@
 - 首次 CI（`4ba63b8`）失败：note `task_id` 以字符串传给 Npgsql `Uuid` 参数导致 500；修复为 Guid（`a7bbf80`）后通过。
 - 本地 build/format/契约通过；服务端无迁移。桌面本地笔记同步与应用留待 `NOTE-04b-2b`（桌面尚未消费 note 变更）。
 - [Server integration 45010244099](https://github.com/yml-qq/Planna/actions/runs/45010244099) 与 [Desktop core 45010244105](https://github.com/yml-qq/Planna/actions/runs/45010244105) 均 **success**。
+
+## TIME-01G-a 工作日覆盖检查（2026-11-22）
+
+- 新增迁移 `202611220001_WorkdayOverrides`（owner+jurisdiction+date 唯一、kind 检查、note ≤200）；API `GET/PUT/DELETE /calendar/workday-overrides`，owner 作用域、范围 ≤366 天、默认 CN。
+- OpenAPI 新增 3 个操作/3 个 schema；契约测试新增 `test_workday_override_contract`（**35 项**）。
+- 冒烟覆盖未认证、创建/替换/jurisdiction 过滤、跨 owner 隔离、非法日期/kind/note/范围、删除与重复删除。
+- **不内置法定节假日数据**；legal_workday 求值与提醒重排未实现（`TIME-01G-b`）。本地 build/format/契约通过；CI 结果见下方链接。

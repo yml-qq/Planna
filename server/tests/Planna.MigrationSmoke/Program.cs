@@ -158,6 +158,7 @@ await HttpFocusStatsSmoke.RunAsync(connection);
 await HttpFocusPageSmoke.RunAsync(connection);
 await HttpGoalSmoke.RunAsync(connection);
 await HttpGoalOrderSmoke.RunAsync(connection);
+await HttpWorkdayOverrideSmoke.RunAsync(connection);
 await HttpReminderSmoke.RunAsync(connection);
 await HttpNoteSmoke.RunAsync(connection);
 await HttpGoalBreakdownSmoke.RunAsync(connection);

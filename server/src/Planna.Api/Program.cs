@@ -26,6 +26,9 @@ using Planna.Api.Ai;
 using Planna.Api.Focus;
 using Planna.Api.Goals;
 using Planna.Api.Notes;
+using Planna.Infrastructure.Calendar;
+using Planna.Application.Calendar;
+using Planna.Api.Calendar;
 using Planna.Api.Reminders;
 using Planna.Api.Habits;
 using Planna.Api.Http;
@@ -132,6 +135,7 @@ builder.Services.AddScoped<IFocusSessionService, FocusSessionService>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IWorkdayOverrideService, WorkdayOverrideService>();
 builder.Services.AddScoped<IHabitLogQuery, HabitLogService>();
 builder.Services.AddScoped<IHabitStreakQuery, HabitLogService>();
 builder.Services.AddScoped<IAccountDeletionService>(sp => new AccountDeletionService(
@@ -231,6 +235,7 @@ app.MapFocusEndpoints();
 app.MapGoalEndpoints();
 app.MapReminderEndpoints();
 app.MapNoteEndpoints();
+app.MapCalendarEndpoints();
 app.MapMeEndpoints();
 app.Run();
 

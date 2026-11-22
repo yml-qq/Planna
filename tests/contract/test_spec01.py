@@ -683,6 +683,23 @@ class Spec01Contracts(unittest.TestCase):
                          {"id", "goal_id", "title", "due_date", "completed", "position", "version",
                           "created_at", "updated_at"})
 
+    def test_workday_override_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        collection = api["paths"]["/calendar/workday-overrides"]["get"]
+        self.assertEqual(set(collection["responses"]), {"200", "400", "401"})
+        params = {parameter["name"]: parameter for parameter in collection["parameters"]}
+        self.assertEqual(set(params), {"from", "to", "jurisdiction"})
+        self.assertEqual(params["jurisdiction"]["schema"]["default"], "CN")
+        upsert = api["paths"]["/calendar/workday-overrides/{date}"]["put"]
+        self.assertEqual(set(upsert["responses"]), {"200", "201", "400", "401", "422"})
+        self.assertEqual(upsert["requestBody"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/UpsertWorkdayOverrideRequest")
+        override = api["components"]["schemas"]["WorkdayOverride"]
+        self.assertEqual(override["properties"]["kind"]["enum"], ["holiday", "workday"])
+        self.assertEqual(override["properties"]["note"]["maxLength"], 200)
+        delete = api["paths"]["/calendar/workday-overrides/{date}"]["delete"]
+        self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404"})
+
     def test_goal_breakdown_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         operation = api["paths"]["/ai/goals/{goalId}/breakdowns/preview"]["post"]
