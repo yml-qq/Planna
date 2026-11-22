@@ -24,7 +24,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             1, 10L * 1024 * 1024 * 1024);
     private readonly int maxUploadsPerMinute =
         ParseInt(configuration["NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE"], 30, 1, 1000);
-    private readonly ConcurrentDictionary<Guid, UploadWindow> uploadWindows = new();
+    private static readonly ConcurrentDictionary<Guid, UploadWindow> UploadWindows = new();
 
     private static readonly Dictionary<string, string> Extensions = new()
     {
@@ -154,7 +154,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
     private bool TryConsumeUpload(Guid ownerId)
     {
         var now = clock.GetUtcNow();
-        var window = uploadWindows.GetOrAdd(ownerId, _ => new UploadWindow { Start = now });
+        var window = UploadWindows.GetOrAdd(ownerId, _ => new UploadWindow { Start = now });
         lock (window)
         {
             if (now - window.Start >= TimeSpan.FromMinutes(1))
