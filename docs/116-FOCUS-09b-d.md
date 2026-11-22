@@ -1,6 +1,6 @@
 # 116｜FOCUS-09b-d：专注报表导出到下载目录
 
-状态：代码已实现；本地前端 `pnpm test`（84 项）、`pnpm build`、Rust `cargo test`（3 项）通过，CI 见 `VALIDATION.md` 的 FOCUS-09b-d 小节。后台通知真机验证与独立详情页属 `FOCUS-09b-e`。
+状态：代码已实现；本地前端 `pnpm test`（84 项）、`pnpm build`、Rust `cargo test --lib`（3 项）通过；[Server integration 45005953461](https://github.com/yml-qq/Planna/actions/runs/45005953461) 与 [Desktop core 45005953541](https://github.com/yml-qq/Planna/actions/runs/45005953541) 均 **success**。后台通知真机验证与独立详情页属 `FOCUS-09b-e`。
 
 ## 范围与验收
 
