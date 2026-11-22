@@ -42,7 +42,7 @@ public sealed partial class SyncPushService
                 p.Add(new NpgsqlParameter("Content", content));
                 p.Add(new NpgsqlParameter("Task", NpgsqlDbType.Uuid)
                 {
-                    Value = payload.TaskId?.ToString() ?? (object)DBNull.Value
+                    Value = payload.TaskId is { } taskId ? taskId : (object)DBNull.Value
                 });
                 p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = now.UtcDateTime });
             }, ct);
@@ -93,7 +93,7 @@ public sealed partial class SyncPushService
             p.Add(new NpgsqlParameter("Content", mergedContent));
             p.Add(new NpgsqlParameter("Task", NpgsqlDbType.Uuid)
             {
-                Value = mergedTask?.ToString() ?? (object)DBNull.Value
+                Value = mergedTask is { } taskId ? taskId : (object)DBNull.Value
             });
             p.Add(new NpgsqlParameter("Version", newVersion));
             p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = updatedAt.UtcDateTime });
