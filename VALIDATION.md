@@ -757,4 +757,5 @@
 - 新增纯函数 `WorkdayCalendar`（覆盖优先、周末默认、Count/AddWorkdays 防死循环）与 `GET /calendar/workdays`；owner 作用域、默认 CN、范围 ≤366 天。
 - OpenAPI 新增 `WorkdayDays`/`WorkdayDay`；契约断言并入工作日覆盖测试（**35 项**）。
 - 冒烟断言 10/01 调休工作日、10/03 周六休息，并直接测试纯函数跨周末 `AddWorkdays`。
-- **仍不内置法定节假日数据**；legal_workday RRULE、occurrence/提醒重排、导入与 UI 留待 `TIME-01G-b-b`。本地 build/format/契约通过。
+- [Server integration 45016219386](https://github.com/yml-qq/Planna/actions/runs/45016219386) 与 [Desktop core 45016219390](https://github.com/yml-qq/Planna/actions/runs/45016219390) 均 **success**。
+- **仍不内置法定节假日数据**；legal_workday RRULE、occurrence/提醒重排、导入与 UI 留待 `TIME-01G-b-b`。

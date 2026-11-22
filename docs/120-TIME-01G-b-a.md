@@ -1,6 +1,6 @@
 # 120｜TIME-01G-b-a：工作日判定 API
 
-状态：代码已实现；本地 build/format/契约 **35 项**通过。CI 结果与推送状态见 `VALIDATION.md`。occurrence/提醒重排、可信日历导入与 UI 属 `TIME-01G-b-b`。
+状态：代码已实现；本地 build/format/契约 **35 项**通过；[Server integration 45016219386](https://github.com/yml-qq/Planna/actions/runs/45016219386) 与 [Desktop core 45016219390](https://github.com/yml-qq/Planna/actions/runs/45016219390) 均 **success**。occurrence/提醒重排、可信日历导入与 UI 属 `TIME-01G-b-b`。
 
 ## 范围与验收
 
