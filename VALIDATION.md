@@ -795,4 +795,5 @@
 - 新增原生 `<dialog>` 确认框（aria-modal/labelledby/describedby、默认焦点取消、Esc 取消），目标删除不再使用 `window.confirm`。
 - ≤520px 导航/偏好字号收紧；`prefers-reduced-motion` 关闭动画与平滑滚动。
 - 前端 **88 项**测试与 `pnpm build` 通过；未新增单测（依赖原生 dialog 焦点行为）。
+- [Server integration 45030878121](https://github.com/yml-qq/Planna/actions/runs/45030878121) 与 [Desktop core 45030878151](https://github.com/yml-qq/Planna/actions/runs/45030878151) 均 **success**。
 - 未接入 axe/屏幕阅读器；笔记删除等未使用该对话框，留待 `UX-05`。
