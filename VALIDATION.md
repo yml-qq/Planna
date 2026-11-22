@@ -834,3 +834,10 @@
 - 前端 89 项测试与 build 通过（更新/冲突已有 store 测试）；未新增组件测试。
 - 仅标题/正文可编辑；无删除/附件/草稿保护；删除仍在笔记卡片。
 - [Server integration 45040623373](https://github.com/yml-qq/Planna/actions/runs/45040623373) 与 [Desktop core 45040623384](https://github.com/yml-qq/Planna/actions/runs/45040623384) 均 **success**。
+
+## FOCUS-09b-e-a 另存为对话框检查（2026-11-22）
+
+- Tauri 新增 `focus_report_save_as`，使用 `tauri-plugin-dialog` 原生保存对话框；取消返回 null，写入失败返回错误；文件名复用净化函数。
+- Cargo.toml 增加 dialog 插件、builder 注册、capabilities 增加 `dialog:default`；桥接/store/UI 增加“另存为…”并显示路径/取消/失败。
+- 本地前端 89 项测试与 build、shell `cargo check/clippy/fmt` 通过；对话框无自动化真机测试。
+- 后台通知真机验证、独立详情页与导出格式扩展留待 `FOCUS-09b-e-b`。

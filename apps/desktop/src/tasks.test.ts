@@ -113,7 +113,8 @@ describe('task store', () => {
         throw new Error('offline')
       },
       focusPage: async () => ({ items: [], nextCursor: null }),
-      saveFocusReport: async () => 'downloads/report.csv' ,
+      saveFocusReport: async () => 'downloads/report.csv',
+      saveFocusReportAs: async () => 'chosen/report.csv' ,
       goalList: async () => [],
       goalCreate: async () => {
         throw new Error('offline')

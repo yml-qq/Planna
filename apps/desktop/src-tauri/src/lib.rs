@@ -7,6 +7,7 @@ use planna_desktop_core::{
 };
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
+use tauri_plugin_dialog::DialogExt;
 
 const KEYRING_SERVICE: &str = "app.planna.desktop";
 const KEYRING_USER: &str = "refresh-token";
@@ -1158,6 +1159,26 @@ fn focus_report_save(
 }
 
 #[tauri::command]
+fn focus_report_save_as(
+    app: tauri::AppHandle,
+    filename: String,
+    content: String,
+) -> Result<Option<String>, String> {
+    let selected = app
+        .dialog()
+        .file()
+        .set_file_name(sanitize_report_filename(&filename))
+        .add_filter("CSV", &["csv"])
+        .blocking_save_file();
+    let Some(path) = selected else {
+        return Ok(None);
+    };
+    let path = path.into_path().map_err(|error| error.to_string())?;
+    std::fs::write(&path, content).map_err(|error| error.to_string())?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let entries = store
@@ -1400,6 +1421,7 @@ fn sign_out_local() -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let directory = app
                 .path()
@@ -1444,6 +1466,7 @@ pub fn run() {
             goal_delete,
             goal_reorder_milestones,
             focus_report_save,
+            focus_report_save_as,
             focus_stats,
             focus_page,
             note_list,

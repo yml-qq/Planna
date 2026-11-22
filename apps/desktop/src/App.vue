@@ -589,6 +589,14 @@ async function exportFocusReport(): Promise<void> {
   reportStatus.value = path ? '已保存：' + path : '保存失败（' + (focus.error.value ?? 'UNKNOWN') + '）'
 }
 
+async function saveFocusReportAs(): Promise<void> {
+  reportStatus.value = ''
+  const stats = focus.stats.value
+  if (!stats) return
+  const path = await focus.saveReportAs(focusReportFilename(stats), focusStatsCsv(stats))
+  reportStatus.value = path ? '已保存：' + path : focus.error.value ? '保存失败：' + focus.error.value : '已取消'
+}
+
 async function copyFocusReport(): Promise<void> {
   reportStatus.value = ''
   const stats = focus.stats.value
@@ -1090,6 +1098,14 @@ onMounted(async () => {
             @click="exportFocusReport"
           >
             导出 CSV
+          </button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="!focus.stats.value"
+            @click="saveFocusReportAs"
+          >
+            另存为…
           </button>
           <span v-if="reportStatus" class="status">{{ reportStatus }}</span>
         </div>
