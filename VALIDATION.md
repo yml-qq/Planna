@@ -635,4 +635,4 @@
 
 - note store `update` 改为 `{title?, content?}` 部分更新，校验标题 ≤200/正文 ≤20000 且不能同时为空；UI 内联编辑新增标题输入，保存/取消同时处理两者。
 - 测试保持 **69 项**（原更新用例扩展为标题+正文与空值拒绝）；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
-- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。
+- 网络恢复后推送（`f0ca7a2`）并补 CI：[Server integration 44985431458](https://github.com/yml-qq/Planna/actions/runs/44985431458) 与 [Desktop core 44985431483](https://github.com/yml-qq/Planna/actions/runs/44985431483) 均 **success**。
