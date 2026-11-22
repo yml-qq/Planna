@@ -748,4 +748,5 @@
 - 新增迁移 `202611220001_WorkdayOverrides`（owner+jurisdiction+date 唯一、kind 检查、note ≤200）；API `GET/PUT/DELETE /calendar/workday-overrides`，owner 作用域、范围 ≤366 天、默认 CN。
 - OpenAPI 新增 3 个操作/3 个 schema；契约测试新增 `test_workday_override_contract`（**35 项**）。
 - 冒烟覆盖未认证、创建/替换/jurisdiction 过滤、跨 owner 隔离、非法日期/kind/note/范围、删除与重复删除。
-- **不内置法定节假日数据**；legal_workday 求值与提醒重排未实现（`TIME-01G-b`）。本地 build/format/契约通过；CI 结果见下方链接。
+- **不内置法定节假日数据**；legal_workday 求值与提醒重排未实现（`TIME-01G-b`）。本地 build/format/契约通过。
+- 首次 CI（`90fee1d`）Server **failure**：写操作前连接未打开（`Connection is not open`，[run 45011985647](https://github.com/yml-qq/Planna/actions/runs/45011985647)）；修复 `4ff0f8f`（执行前 `OpenAsync`）待推送后重跑 CI。

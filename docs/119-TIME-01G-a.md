@@ -1,6 +1,6 @@
 # 119｜TIME-01G-a：工作日覆盖 API（自定义节假日/调休）
 
-状态：代码已实现；本地 build/format/契约 **35 项**通过，CI 见 `VALIDATION.md` 的 TIME-01G-a 小节。`legal_workday` 规则与提醒重排属 `TIME-01G-b`。
+状态：代码已实现；本地 build/format/契约 **35 项**通过。首次 CI Server 失败（连接未打开），修复提交 `4ff0f8f` 待推送重跑，详见 `VALIDATION.md`。`legal_workday` 规则与提醒重排属 `TIME-01G-b`。
 
 ## 范围与验收
 
