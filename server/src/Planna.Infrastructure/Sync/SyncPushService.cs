@@ -14,7 +14,7 @@ using Planna.Infrastructure.Persistence;
 namespace Planna.Infrastructure.Sync;
 
 // Batch entry point for offline mutations. Each mutation is atomic on its own; the batch is not all-or-nothing.
-public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : ISyncPushCommand
+public sealed partial class SyncPushService(TaskWriteContext db, TimeProvider clock) : ISyncPushCommand
 {
     public async Task<SyncPushResponse> ExecuteAsync(Guid ownerId, SyncPushRequest request, CancellationToken ct)
     {
@@ -49,6 +49,8 @@ public sealed class SyncPushService(TaskWriteContext db, TimeProvider clock) : I
             ("habit", "upsert") => await UpsertHabitAsync(ownerId, mutation, ct),
             ("habit", "delete") => await DeleteHabitAsync(ownerId, mutation, ct),
             ("habit_log", "upsert") => await UpsertHabitLogAsync(ownerId, mutation, ct),
+            ("note", "upsert") => await UpsertNoteAsync(ownerId, mutation, ct),
+            ("note", "delete") => await DeleteNoteAsync(ownerId, mutation, ct),
             _ => Rejected(mutation.MutationId)
         };
     }

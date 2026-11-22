@@ -25,6 +25,7 @@ internal static class HttpSyncPushSmoke
         var tDel = Guid.NewGuid();
         var tNew = Guid.NewGuid();
         var tForeign = Guid.NewGuid();
+        var noteId = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,'http-push-one@example.test'),($2,'http-push-two@example.test')", owner, foreign);
         await Exec(db, "INSERT INTO owner_sync_clocks(owner_id) VALUES($1),($2)", owner, foreign);
         await Exec(db, "INSERT INTO task_lists(id,owner_id,name,kind) VALUES($1,$2,'A','custom'),($3,$2,'Del','custom'),($4,$5,'Foreign','custom')",
@@ -134,7 +135,57 @@ internal static class HttpSyncPushSmoke
             await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", foreign) != 1 ||
             await Scalar(db, "SELECT count(*) FROM tasks WHERE id=$1 AND version=2 AND title='Foreign updated'", tForeign) != 1)
             throw new InvalidOperationException("Sync push did not keep revision, changes and mutation records atomic.");
-        Console.WriteLine("PASS: sync push batch statuses, idempotent replay, conflict entities, owner isolation");
+
+        // Notes participate in push/pull with the same ledger and owner scoping.
+        var noteCreate = Guid.NewGuid();
+        var noteBatch = "[" + string.Join(",",
+            Mut(noteCreate, "note", noteId, "upsert", 0,
+                "{\"title\":\"Plan\",\"content\":\"Body\",\"task_id\":\"" + tNew + "\"}"),
+            Mut(noteCreate, "note", noteId, "upsert", 0,
+                "{\"title\":\"Plan\",\"content\":\"Body\",\"task_id\":\"" + tNew + "\"}"),
+            Mut(Guid.NewGuid(), "note", noteId, "upsert", 1, "{\"content\":\"Body 2\"}"),
+            Mut(Guid.NewGuid(), "note", noteId, "upsert", 0, "{\"content\":\"\"}"),
+            Mut(Guid.NewGuid(), "note", noteId, "upsert", 0, "{\"content\":\"x\",\"extra\":1}")) + "]";
+        var notePush = await Push(client, token, device, noteBatch);
+        Check(notePush, HttpStatusCode.OK);
+        var noteResults = (await notePush.Content.ReadFromJsonAsync<SyncPushResponse>()
+            ?? throw new InvalidOperationException("Note push response missing.")).Results;
+        if (noteResults.Count != 5)
+            throw new InvalidOperationException("Note push result count mismatch.");
+        AssertResult(noteResults[0], "accepted", 1);
+        AssertResult(noteResults[1], "duplicate", 1);
+        AssertResult(noteResults[2], "accepted", 2);
+        AssertResult(noteResults[3], "rejected", null);
+        AssertResult(noteResults[4], "rejected", null);
+
+        var foreignNote = await Push(client, foreignToken, Guid.NewGuid(),
+            "[" + Mut(Guid.NewGuid(), "note", noteId, "upsert", 1, "{\"title\":\"Hijack\"}") + "]");
+        Check(foreignNote, HttpStatusCode.OK);
+        AssertResult((await foreignNote.Content.ReadFromJsonAsync<SyncPushResponse>()
+            ?? throw new InvalidOperationException("Foreign note response missing.")).Results.Single(),
+            "rejected", null);
+
+        var noteDelete = await Push(client, token, device,
+            "[" + Mut(Guid.NewGuid(), "note", noteId, "delete", 2, "{}") + "]");
+        Check(noteDelete, HttpStatusCode.OK);
+        AssertResult((await noteDelete.Content.ReadFromJsonAsync<SyncPushResponse>()
+            ?? throw new InvalidOperationException("Note delete response missing.")).Results.Single(),
+            "accepted", 3);
+        if (await Scalar(db, "SELECT count(*) FROM notes WHERE id=$1 AND deleted_at IS NOT NULL AND version=3", noteId) != 1 ||
+            await Scalar(db, "SELECT revision FROM owner_sync_clocks WHERE owner_id=$1", owner) != 6 ||
+            await Scalar(db, "SELECT count(*) FROM sync_changes WHERE owner_id=$1 AND entity_type='note'", owner) != 3 ||
+            await Scalar(db, "SELECT count(*) FROM client_mutations WHERE owner_id=$1", owner) != 6)
+            throw new InvalidOperationException("Note sync ledger mismatch.");
+
+        using var pullRequest = new HttpRequestMessage(HttpMethod.Get, "/sync/pull?limit=100");
+        pullRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var pull = await client.SendAsync(pullRequest);
+        Check(pull, HttpStatusCode.OK);
+        var pullBody = await pull.Content.ReadAsStringAsync();
+        if (!pullBody.Contains(noteId.ToString()) || !pullBody.Contains("\"entity_type\":\"note\""))
+            throw new InvalidOperationException("Note changes missing from sync pull.");
+
+        Console.WriteLine("PASS: sync push batch statuses, idempotent replay, conflicts, owner isolation and note sync");
     }
 
     private static string Mut(Guid mutationId, string entityType, Guid entityId, string op, long baseVersion, string payload) =>

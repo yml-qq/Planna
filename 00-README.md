@@ -128,6 +128,7 @@
 | 115 | `docs/115-GOAL-03g-b.md` | 桌面批量排序接入 |
 | 116 | `docs/116-FOCUS-09b-d.md` | 专注报表导出到下载目录 |
 | 117 | `docs/117-GOAL-03g-c.md` | AI 拆解重试与限流退避 |
+| 118 | `docs/118-NOTE-04b-2a.md` | 笔记纳入同步推送/拉取（服务端） |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

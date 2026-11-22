@@ -566,7 +566,7 @@ class Spec01Contracts(unittest.TestCase):
                          {"mutation_id", "entity_type", "entity_id", "op", "base_version", "payload"})
         self.assertEqual(mutation["properties"]["op"]["enum"], ["upsert", "delete"])
         self.assertEqual(set(mutation["properties"]["entity_type"]["enum"]),
-                         {"task", "list", "tag", "step", "reminder", "time_block", "habit", "habit_log"})
+                         {"task", "list", "tag", "step", "reminder", "time_block", "habit", "habit_log", "note"})
         response = api["components"]["schemas"]["SyncPushResponse"]
         self.assertEqual(set(response["required"]), {"results"})
         result = response["properties"]["results"]["items"]
