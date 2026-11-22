@@ -34,7 +34,9 @@ export interface GoalStore {
   deleteGoal: (goal: Goal) => Promise<boolean>
   suggestions: Ref<Record<string, GoalBreakdownSuggestion[]>>
   breakdownLoading: Ref<boolean>
+  aiRetryAt: Ref<number | null>
   previewBreakdown: (goalId: string, guidance?: string) => Promise<boolean>
+  retryPreview: (goalId: string, guidance?: string) => Promise<boolean>
   addSuggestion: (goalId: string, suggestion: GoalBreakdownSuggestion) => Promise<boolean>
   addAllSuggestions: (goalId: string) => Promise<number>
 }
@@ -51,6 +53,7 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
   const error = ref<string | null>(null)
   const suggestions = ref<Record<string, GoalBreakdownSuggestion[]>>({})
   const breakdownLoading = ref(false)
+  const aiRetryAt = ref<number | null>(null)
 
   function tokenOrNull(): string | null {
     const token = options.token()
@@ -301,13 +304,25 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
         return true
       })
       suggestions.value = { ...suggestions.value, [goalId]: items }
+      aiRetryAt.value = null
       return true
     } catch (failure) {
       error.value = errorCode(failure)
+      aiRetryAt.value =
+        error.value === 'RATE_LIMITED'
+          ? Date.now() + 30_000
+          : error.value === 'AI_UNAVAILABLE'
+            ? Date.now() + 10_000
+            : null
       return false
     } finally {
       breakdownLoading.value = false
     }
+  }
+
+  async function retryPreview(goalId: string, guidance?: string): Promise<boolean> {
+    if (aiRetryAt.value !== null && Date.now() < aiRetryAt.value) return false
+    return previewBreakdown(goalId, guidance)
   }
 
   async function addSuggestion(goalId: string, suggestion: GoalBreakdownSuggestion): Promise<boolean> {
@@ -356,7 +371,9 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     deleteGoal,
     suggestions,
     breakdownLoading,
+    aiRetryAt,
     previewBreakdown,
+    retryPreview,
     addSuggestion,
     addAllSuggestions
   }

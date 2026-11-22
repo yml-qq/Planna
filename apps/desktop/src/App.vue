@@ -125,9 +125,11 @@ const conflicts = ref<ConflictIssue[]>([])
 const ledgerText = ref('')
 const ledgerStatus = ref('')
 const reportStatus = ref('')
+const nowTick = ref(Date.now())
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
+let aiTickTimer: ReturnType<typeof setInterval> | null = null
 let focusTimer: ReturnType<typeof setInterval> | null = null
 
 const email = ref('')
@@ -262,8 +264,17 @@ async function deleteGoal(goalId: string): Promise<void> {
   if (goal) await goals.deleteGoal(goal)
 }
 
+function aiRetryRemaining(): number {
+  if (goals.aiRetryAt.value === null) return 0
+  return Math.max(0, Math.ceil((goals.aiRetryAt.value - nowTick.value) / 1000))
+}
+
 async function previewGoalBreakdown(goalId: string): Promise<void> {
   await goals.previewBreakdown(goalId, goalGuidance.value[goalId] ?? '')
+}
+
+async function retryGoalBreakdown(goalId: string): Promise<void> {
+  await goals.retryPreview(goalId, goalGuidance.value[goalId] ?? '')
 }
 
 async function addGoalSuggestion(goalId: string, suggestion: GoalBreakdownSuggestion): Promise<void> {
@@ -631,6 +642,7 @@ watch([quietStart, quietEnd], ([start, end]) => {
 onUnmounted(() => {
   if (reminderTimer) clearInterval(reminderTimer)
   if (focusTimer) clearInterval(focusTimer)
+  if (aiTickTimer) clearInterval(aiTickTimer)
 })
 
 onMounted(async () => {
@@ -647,6 +659,9 @@ onMounted(async () => {
   reminderTimer = setInterval(() => {
     void tickReminders()
   }, 30_000)
+  aiTickTimer = setInterval(() => {
+    nowTick.value = Date.now()
+  }, 1000)
   focusTimer = setInterval(() => {
     focus.tick()
     focus.tickRest()
@@ -1036,6 +1051,19 @@ onMounted(async () => {
               </button>
             </li>
           </ul>
+          <div
+            v-if="['AI_UNAVAILABLE', 'RATE_LIMITED'].includes(goals.error.value ?? '')"
+            class="composer__row"
+          >
+            <button
+              class="button button--ghost"
+              type="button"
+              :disabled="aiRetryRemaining() > 0 || goals.breakdownLoading.value"
+              @click="retryGoalBreakdown(goal.id)"
+            >
+              重试<span v-if="aiRetryRemaining() > 0">（{{ aiRetryRemaining() }}s）</span>
+            </button>
+          </div>
           <div class="composer__row">
             <input
               v-model="milestoneDrafts[goal.id]"

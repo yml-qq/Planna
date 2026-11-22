@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
 import { createGoalStore, filterGoals } from './goals'
 
@@ -260,5 +260,41 @@ describe('goal deletion', () => {
     await store.refresh()
     expect(await store.deleteGoal(store.goals.value[0]!)).toBe(false)
     expect(store.error.value).toBe('VERSION_CONFLICT')
+  })
+})
+
+describe('AI retry backoff', () => {
+  it('backs off after rate limiting and retries after the cooldown', async () => {
+    const bridge = new MemoryBridge()
+    const goal = await bridge.goalCreate('', 'token', { title: 'Ship' })
+    let calls = 0
+    const flaky: DesktopBridge = new Proxy(bridge, {
+      get(target, property, receiver) {
+        if (property === 'goalBreakdownPreview') {
+          return async () => {
+            calls += 1
+            if (calls === 1) throw new Error('429:RATE_LIMITED')
+            return [{ title: 'One', estimateMinutes: null, position: 1 }]
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const store = createGoalStore(flaky, { baseUrl: () => '', token: () => 'token' })
+    await store.refresh()
+    const now = Date.now()
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(now)
+
+    expect(await store.previewBreakdown(goal.id)).toBe(false)
+    expect(store.error.value).toBe('RATE_LIMITED')
+    expect(store.aiRetryAt.value).toBe(now + 30_000)
+    expect(await store.retryPreview(goal.id)).toBe(false)
+    expect(calls).toBe(1)
+
+    spy.mockReturnValue(now + 30_000)
+    expect(await store.retryPreview(goal.id)).toBe(true)
+    expect(store.error.value).toBeNull()
+    expect(store.suggestions.value[goal.id]?.[0]?.title).toBe('One')
+    spy.mockRestore()
   })
 })

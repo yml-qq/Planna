@@ -726,3 +726,9 @@
 - 前端新增 2 项（导出成功/失败、文件名），合计 **84 项**；Rust 新增 3 项文件名净化测试（`cargo test --lib` 3 passed）；`pnpm build`、shell clippy/fmt 通过；服务端无变更。
 - [Server integration 45005953461](https://github.com/yml-qq/Planna/actions/runs/45005953461) 与 [Desktop core 45005953541](https://github.com/yml-qq/Planna/actions/runs/45005953541) 均 **success**。
 - 固定下载目录、同日覆盖、非原子写入；后台通知真机验证未执行，留待 `FOCUS-09b-e`。
+
+## GOAL-03g-c AI 重试/退避检查（2026-11-22）
+
+- goal store 新增 `aiRetryAt`/`retryPreview`：RATE_LIMITED 冷却 30s、AI_UNAVAILABLE 冷却 10s，冷却期内不发请求；成功后清空冷却。
+- UI 显示“重试（Ns）”倒计时按钮，`nowTick` 每秒刷新并随组件卸载清理。
+- 前端新增 1 项假时钟测试，合计 **85 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
