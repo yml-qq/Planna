@@ -115,6 +115,7 @@
 | 102 | `docs/102-FOCUS-08.md` | 任务详情专注历史与统计柱状图 |
 | 103 | `docs/103-FOCUS-09a.md` | 按任务的专注历史 |
 | 104 | `docs/104-NOTE-04b-1.md` | 笔记标题编辑 |
+| 105 | `docs/105-GOAL-03a.md` | AI 目标拆解预览 API |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

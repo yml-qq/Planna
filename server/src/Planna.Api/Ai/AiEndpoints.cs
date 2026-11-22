@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Planna.Application.Ai;
+using Planna.Application.Goals;
 
 namespace Planna.Api.Ai;
 
@@ -14,6 +15,8 @@ public static class AiEndpoints
         group.MapPost("/tasks/{taskId}/breakdowns", CreateBreakdown).WithName("CreateBreakdown");
         group.MapPut("/breakdowns/{draftId}", EditBreakdown).WithName("EditBreakdown");
         group.MapPost("/breakdowns/{draftId}/apply", ApplyBreakdown).WithName("ApplyBreakdown");
+        group.MapPost("/goals/{goalId}/breakdowns/preview", PreviewGoalBreakdown)
+            .WithName("PreviewGoalBreakdown");
         group.MapPost("/plans", ProposePlan).WithName("ProposeAiPlan");
         group.MapPost("/plans/{planId}/apply", ApplyPlan).WithName("ApplyAiPlan");
         return app;
@@ -76,6 +79,31 @@ public static class AiEndpoints
         return result.Status is BreakdownStatus.Created or BreakdownStatus.Replayed
             ? TypedResults.Created($"/ai/breakdowns/{result.Draft!.DraftId}", result.Draft)
             : MapBreakdownResult(http, result);
+    }
+
+    private static async Task<IResult> PreviewGoalBreakdown(HttpContext http, string goalId,
+        GoalBreakdownRequest request, IGoalService goals, CancellationToken ct)
+    {
+        if (!Guid.TryParse(goalId, out var id) || id == Guid.Empty)
+            return Error(http, 400, "INVALID_GOAL_ID");
+        if (!Guid.TryParse(http.User.FindFirstValue("sub"), out var owner) || owner == Guid.Empty)
+            return Error(http, 401, "UNAUTHORIZED");
+        if (request.Guidance?.Length > 2000)
+            return Error(http, 422, "INVALID_GUIDANCE");
+        if (http.RequestServices.GetService<IAiBreakdownProvider>() is not { } provider)
+            return Error(http, 503, "AI_UNAVAILABLE");
+        var goalResult = await goals.GetAsync(owner, id, ct);
+        if (goalResult.Status != GoalStatus.Ok || goalResult.Goal is null)
+            return Error(http, 404, "GOAL_NOT_FOUND");
+        var guidance = string.IsNullOrWhiteSpace(request.Guidance)
+            ? goalResult.Goal.Description
+            : request.Guidance;
+        var steps = provider.Generate(goalResult.Goal.Title, guidance);
+        var suggestions = steps
+            .Select(step => new GoalBreakdownSuggestion(step.Title, step.EstimateMinutes, step.Position))
+            .ToList();
+        return TypedResults.Ok(new GoalBreakdownPreview(id, suggestions,
+            ["preview only; no milestone is written until you add it"]));
     }
 
     private static async Task<IResult> EditBreakdown(HttpContext http, string draftId,

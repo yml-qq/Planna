@@ -1911,6 +1911,31 @@ paths:
         '404': {$ref: '#/components/responses/ErrorResponse'}
         '409': {$ref: '#/components/responses/ErrorResponse'}
         '429': {$ref: '#/components/responses/ErrorResponse'}
+  /ai/goals/{goalId}/breakdowns/preview:
+    post:
+      tags: [AI]
+      operationId: previewGoalBreakdown
+      description: Generate a read-only milestone preview for an owned goal from its title/description and optional guidance (max 2000 chars). This never writes goals or milestones; the client must add suggestions explicitly. Rate limited per owner like all /ai endpoints.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: goalId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GoalBreakdownRequest'}
+      responses:
+        '200':
+          description: Read-only milestone suggestions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GoalBreakdownPreview'}
+        '400': {$ref: '#/components/responses/ErrorResponse'}
+        '401': {$ref: '#/components/responses/ErrorResponse'}
+        '404': {$ref: '#/components/responses/ErrorResponse'}
+        '422': {$ref: '#/components/responses/ErrorResponse'}
+        '429': {$ref: '#/components/responses/ErrorResponse'}
+        '503': {$ref: '#/components/responses/ErrorResponse'}
   /ai/plans:
     post:
       tags: [AI]
@@ -2011,6 +2036,31 @@ components:
         application/json:
           schema: {$ref: '#/components/schemas/ErrorBody'}
   schemas:
+    GoalBreakdownRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        guidance: {type: [string, "null"], maxLength: 2000}
+    GoalBreakdownSuggestion:
+      type: object
+      additionalProperties: false
+      required: [title, estimate_minutes, position]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 500}
+        estimate_minutes: {type: [integer, "null"], minimum: 1, maximum: 1440}
+        position: {type: integer, minimum: 1}
+    GoalBreakdownPreview:
+      type: object
+      additionalProperties: false
+      required: [goal_id, suggestions, assumptions]
+      properties:
+        goal_id: {type: string, format: uuid}
+        suggestions:
+          type: array
+          items: {$ref: '#/components/schemas/GoalBreakdownSuggestion'}
+        assumptions:
+          type: array
+          items: {type: string}
     BreakdownStep:
       type: object
       additionalProperties: false

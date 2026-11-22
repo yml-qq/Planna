@@ -675,6 +675,20 @@ class Spec01Contracts(unittest.TestCase):
                          {"id", "goal_id", "title", "due_date", "completed", "position", "version",
                           "created_at", "updated_at"})
 
+    def test_goal_breakdown_contract(self):
+        api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        operation = api["paths"]["/ai/goals/{goalId}/breakdowns/preview"]["post"]
+        self.assertEqual(set(operation["responses"]), {"200", "400", "401", "404", "422", "429", "503"})
+        self.assertIn("never writes", operation["description"])
+        self.assertEqual(operation["requestBody"]["content"]["application/json"]["schema"]["$ref"],
+                         "#/components/schemas/GoalBreakdownRequest")
+        preview = api["components"]["schemas"]["GoalBreakdownPreview"]
+        self.assertEqual(set(preview["required"]), {"goal_id", "suggestions", "assumptions"})
+        suggestion = api["components"]["schemas"]["GoalBreakdownSuggestion"]
+        self.assertEqual(set(suggestion["required"]), {"title", "estimate_minutes", "position"})
+        self.assertEqual(api["components"]["schemas"]["GoalBreakdownRequest"]["properties"]
+                         ["guidance"]["maxLength"], 2000)
+
     def test_occurrence_patch_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         operation = api["paths"]["/tasks/{id}/occurrences/{occurrenceId}"]["patch"]

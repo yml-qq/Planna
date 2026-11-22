@@ -81,7 +81,8 @@
 | E10 | FOCUS-09b | 游标分页历史、周/月报表导出、独立详情页与后台通知真机验证 | FOCUS-09a | stats tests |
 | E10 | GOAL-01 | 目标/里程碑服务端 API（已交付，见 `88-GOAL-01.md`） | E04 | progress tests |
 | E10 | GOAL-02 | 目标/里程碑桌面 UI（已交付，见 `90-GOAL-02.md`） | GOAL-01 | progress tests |
-| E10 | GOAL-03 | AI 目标拆解接入、目标编辑与里程碑排序 | GOAL-02 | progress tests |
+| E10 | GOAL-03a | AI 目标拆解预览 API（只读，已交付，见 `105-GOAL-03a.md`） | GOAL-02 | no auto-write |
+| E10 | GOAL-03b | 桌面 AI 拆解 UI、逐条添加与目标编辑/排序 | GOAL-03a | progress tests |
 | E10 | NOTE-01 | 轻笔记服务端 API（已交付，见 `92-NOTE-01.md`） | E04 | search/privacy |
 | E10 | NOTE-02 | 账号导出 v3 纳入笔记（已交付，见 `94-NOTE-02.md`） | NOTE-01 | export tests |
 | E10 | NOTE-03 | 桌面笔记 UI（已交付，见 `96-NOTE-03.md`） | NOTE-02 | search/privacy |
