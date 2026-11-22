@@ -195,3 +195,40 @@ fn apply_pull_note_tombstone_hides_the_row() {
     store.apply_pull(&[upsert, delete]).expect("pulled");
     assert!(store.notes().expect("notes").is_empty());
 }
+
+#[test]
+fn force_apply_snapshot_accepts_note_conflicts() {
+    let mut store = Store::open_in_memory().expect("store");
+    let payload = serde_json::json!({
+        "id": "note-1",
+        "title": "Server plan",
+        "content": "Server body",
+        "task_id": null,
+        "version": 3,
+        "created_at": "2026-11-20T00:00:00+00:00",
+        "updated_at": "2026-11-22T00:00:00+00:00"
+    })
+    .to_string();
+    store
+        .force_apply_snapshot("note", "note-1", &payload, 3)
+        .expect("server snapshot applied");
+    let notes = store.notes().expect("notes");
+    assert_eq!(notes.len(), 1);
+    assert_eq!(notes[0].title, "Server plan");
+    assert_eq!(notes[0].version, 3);
+
+    let updated = serde_json::json!({
+        "id": "note-1",
+        "title": "Server plan v2",
+        "content": "Server body",
+        "task_id": null,
+        "version": 4,
+        "created_at": "2026-11-20T00:00:00+00:00",
+        "updated_at": "2026-11-22T01:00:00+00:00"
+    })
+    .to_string();
+    store
+        .force_apply_snapshot("note", "note-1", &updated, 4)
+        .expect("server snapshot replaced");
+    assert_eq!(store.notes().expect("notes")[0].version, 4);
+}

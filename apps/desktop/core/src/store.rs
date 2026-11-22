@@ -1435,6 +1435,33 @@ impl Store {
                     ],
                 )?;
             }
+            "note" => {
+                let stored: StoredNote = serde_json::from_value(value)
+                    .map_err(|_| StoreError::Validation("snapshot is not a note"))?;
+                let created_at = if stored.created_at.is_empty() {
+                    stored.updated_at.clone()
+                } else {
+                    stored.created_at.clone()
+                };
+                transaction.execute(
+                    "INSERT INTO notes(id, title, content, task_id, version, created_at, updated_at, deleted_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                     ON CONFLICT(id) DO UPDATE SET title = excluded.title,
+                        content = excluded.content, task_id = excluded.task_id,
+                        version = excluded.version, updated_at = excluded.updated_at,
+                        deleted_at = excluded.deleted_at",
+                    params![
+                        stored.id,
+                        stored.title,
+                        stored.content,
+                        stored.task_id,
+                        version,
+                        created_at,
+                        stored.updated_at,
+                        stored.deleted_at
+                    ],
+                )?;
+            }
             _ => return Err(StoreError::Validation("unsupported snapshot entity")),
         }
         transaction.commit()?;

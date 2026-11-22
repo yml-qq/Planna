@@ -136,6 +136,7 @@
 | 123 | `docs/123-NOTE-04b-2b-b-a.md` | 桌面拉取应用笔记变更 |
 | 124 | `docs/124-NOTE-04b-2b-b-b.md` | 桌面笔记 UI 切换到本地存储 |
 | 125 | `docs/125-UX-04.md` | 可访问确认对话框与响应式/动效偏好 |
+| 126 | `docs/126-NOTE-04b-2b-b-c-a.md` | 笔记冲突“以服务端为准”落库 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

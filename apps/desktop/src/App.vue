@@ -594,12 +594,14 @@ async function resolveConflictAction(mutationId: string, strategy: ConflictStrat
   await refreshOutbox()
   await tasks.refresh()
   await habits.refresh()
+  await notes.refresh()
 }
 
 async function discardIssue(mutationId: string): Promise<void> {
   await bridge.discardMutation(mutationId)
   await refreshOutbox()
   await habits.refresh()
+  await notes.refresh()
 }
 
 function quietHours(): QuietHours | null {

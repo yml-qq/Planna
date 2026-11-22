@@ -797,3 +797,10 @@
 - 前端 **88 项**测试与 `pnpm build` 通过；未新增单测（依赖原生 dialog 焦点行为）。
 - [Server integration 45030878121](https://github.com/yml-qq/Planna/actions/runs/45030878121) 与 [Desktop core 45030878151](https://github.com/yml-qq/Planna/actions/runs/45030878151) 均 **success**。
 - 未接入 axe/屏幕阅读器；笔记删除等未使用该对话框，留待 `UX-05`。
+
+## NOTE-04b-2b-b-c-a 笔记冲突快照检查（2026-11-22）
+
+- `force_apply_snapshot` 新增 note 分支（服务端视图 upsert、created_at 回退 updated_at），修复 note 冲突选择“以服务端为准”时的 unsupported entity。
+- 冲突解决/丢弃 mutation 后刷新笔记列表。
+- 新增 1 项 core 测试（快照 v3→v4），笔记测试合计 7 项；`cargo test`、fmt、clippy 与前端 88 项/build 通过。
+- 冲突列表仍为通用实体列表，无正文 diff；附件/模板/全文搜索留待 `NOTE-04b-2b-b-c-b`。
