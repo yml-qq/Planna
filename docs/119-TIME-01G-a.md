@@ -1,6 +1,6 @@
 # 119｜TIME-01G-a：工作日覆盖 API（自定义节假日/调休）
 
-状态：代码已实现；本地 build/format/契约 **35 项**通过。首次 CI Server 失败（连接未打开），修复提交 `4ff0f8f` 待推送重跑，详见 `VALIDATION.md`。`legal_workday` 规则与提醒重排属 `TIME-01G-b`。
+状态：代码已实现；本地 build/format/契约 **35 项**通过。首次 CI Server 失败（连接未打开），修复 `4ff0f8f` 后 [Server integration 45014243194](https://github.com/yml-qq/Planna/actions/runs/45014243194) 与 [Desktop core 45014243201](https://github.com/yml-qq/Planna/actions/runs/45014243201) 均 **success**。`legal_workday` 规则与提醒重排属 `TIME-01G-b`。
 
 ## 范围与验收
 
