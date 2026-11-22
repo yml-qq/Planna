@@ -59,6 +59,11 @@ export function monthRange(year: number, month: number): { from: string; to: str
   return { from, to }
 }
 
+export function moveFocusIndex(index: number, delta: number, length: number): number {
+  if (length <= 0) return 0
+  return Math.min(length - 1, Math.max(0, index + delta))
+}
+
 export function monthLeadingBlanks(year: number, month: number): number {
   const weekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay()
   return (weekday + 6) % 7

@@ -61,7 +61,8 @@
 | E09 | UX-05-a | 确认对话框 axe 自动化测试（已交付，见 `143-UX-05-a.md`） | UX-04 | a11y tests |
 | E09 | UX-05-b | 全应用 axe/对比度、键盘与屏幕阅读器验证、对话框复用 | UX-05-a | accessibility tests |
 | E09 | UX-06-a | 日历模块可见性与覆盖清除（已交付，见 `145-UX-06-a.md`） | UX-05-a | ui tests |
-| E09 | UX-06-b | 日历键盘导航/gridcell、批量清除与导入 UI | UX-06-a | accessibility tests |
+| E09 | UX-06-b-a | 日历键盘导航与 ARIA 语义（已交付，见 `148-UX-06-b-a.md`） | UX-06-a | ui tests |
+| E09 | UX-06-b-b | roving tabindex/Home/End、跨月导航与完整 ARIA grid | UX-06-b-a | accessibility tests |
 | E10 | HAB-01A | 习惯 CRUD（服务端，已交付，见 `68-HAB-01A.md`） | E04 | repeat tests |
 | E10 | HAB-01B | 打卡日志：同日唯一、补签与窗口查询（已交付，见 `69-HAB-01B.md`） | HAB-01A | repeat tests |
 | E10 | HAB-01C | 连续天数规则与 streak 查询（已交付，见 `70-HAB-01C.md`） | HAB-01B | repeat tests |

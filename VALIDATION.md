@@ -969,3 +969,9 @@
 - 首次 CI（`fa8149f`）失败：窗口为 scoped 服务实例字段，每请求重建导致第 3 次仍 201；改为进程级静态窗口（`cb9765d`）后通过。
 - [Server integration 45080910891](https://github.com/yml-qq/Planna/actions/runs/45080910891) 与 [Desktop core 45080910972](https://github.com/yml-qq/Planna/actions/runs/45080910972) 均 **success**。
 - 限流为进程内、固定窗口、无 Retry-After；重放/配额拒绝也计数；多实例不共享。
+
+## UX-06-b-a 日历键盘/ARIA 检查（2026-11-22）
+
+- 日期按钮支持方向键（±1/±7 天）移动焦点，`moveFocusIndex` 首尾钳制；容器由错误的 role=grid 改为 role=group。
+- 新增 moveFocusIndex 边界测试，前端合计 99 项；build 通过。
+- 全部日期按钮仍在 Tab 序列（无 roving tabindex）；未做 Home/End/跨月/屏幕阅读器验证。

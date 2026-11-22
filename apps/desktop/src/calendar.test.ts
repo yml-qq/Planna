@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge } from './api'
-import { createCalendarStore, monthLeadingBlanks, monthRange, parseOverrideLines } from './calendar'
+import {
+  createCalendarStore,
+  monthLeadingBlanks,
+  monthRange,
+  moveFocusIndex,
+  parseOverrideLines
+} from './calendar'
 
 function createStore(overrides: Record<string, unknown> = {}) {
   const bridge = new MemoryBridge()
@@ -35,6 +41,14 @@ describe('calendar store', () => {
     expect(store.days.value[0]?.kind).toBe('workday')
     await store.clear('2026-10-01')
     expect(store.days.value[0]?.kind).toBe('workday')
+  })
+
+  it('clamps keyboard focus movement inside the grid', () => {
+    expect(moveFocusIndex(0, -1, 31)).toBe(0)
+    expect(moveFocusIndex(0, 1, 31)).toBe(1)
+    expect(moveFocusIndex(30, 7, 31)).toBe(30)
+    expect(moveFocusIndex(5, -7, 31)).toBe(0)
+    expect(moveFocusIndex(3, 1, 0)).toBe(0)
   })
 
   it('computes Monday-first leading blanks', () => {

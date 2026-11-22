@@ -8,7 +8,7 @@ import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
 import { createNoteStore, notesForTask } from './notes'
-import { createCalendarStore, monthLeadingBlanks } from './calendar'
+import { createCalendarStore, monthLeadingBlanks, moveFocusIndex } from './calendar'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -142,6 +142,7 @@ const selectedCalendarDate = ref<string | null>(null)
 const calendarImportOpen = ref(false)
 const calendarImportText = ref('')
 const calendarImportStatus = ref('')
+const calendarGrid = ref<HTMLElement | null>(null)
 const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
@@ -378,6 +379,15 @@ async function clearCalendarOverride(): Promise<void> {
   if (!selectedCalendarDate.value) return
   await calendar.clear(selectedCalendarDate.value)
   selectedCalendarDate.value = null
+}
+
+function focusCalendarDay(date: string, delta: number): void {
+  const grid = calendarGrid.value
+  if (!grid) return
+  const buttons = Array.from(grid.querySelectorAll<HTMLButtonElement>('button[data-date]'))
+  const index = buttons.findIndex((button) => button.dataset.date === date)
+  if (index < 0) return
+  buttons[moveFocusIndex(index, delta, buttons.length)]?.focus()
 }
 
 async function importCalendarOverrides(): Promise<void> {
@@ -1253,7 +1263,7 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-      <p class="card__hint">点击日期切换“工作日/休息日”覆盖；默认周一至周五为工作日。</p>
+      <p class="card__hint">点击日期切换“工作日/休息日”覆盖；方向键移动；默认周一至周五为工作日。</p>
       <div class="composer__row">
         <button class="button button--ghost" type="button" @click="calendarImportOpen = !calendarImportOpen">
           批量导入
@@ -1271,7 +1281,7 @@ onMounted(async () => {
         <button class="button" type="button" @click="importCalendarOverrides">导入</button>
       </div>
       <p v-if="calendar.error.value" class="status status--error" role="alert">{{ calendar.error.value }}</p>
-      <div class="calendar-grid" role="grid" aria-label="工作日历">
+      <div ref="calendarGrid" class="calendar-grid" role="group" aria-label="工作日历">
         <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label" class="calendar-weekday">{{ label }}</span>
         <span
           v-for="blank in monthLeadingBlanks(calendar.year.value, calendar.month.value)"
@@ -1284,8 +1294,13 @@ onMounted(async () => {
           class="calendar-day"
           :class="'calendar-day--' + day.kind"
           type="button"
+          :data-date="day.date"
           :aria-label="day.date + (day.kind === 'workday' ? ' 工作日' : ' 休息日')"
           @click="toggleCalendarDay(day.date, day.kind)"
+          @keydown.left.prevent="focusCalendarDay(day.date, -1)"
+          @keydown.right.prevent="focusCalendarDay(day.date, 1)"
+          @keydown.up.prevent="focusCalendarDay(day.date, -7)"
+          @keydown.down.prevent="focusCalendarDay(day.date, 7)"
         >
           {{ Number(day.date.slice(8)) }}
         </button>
