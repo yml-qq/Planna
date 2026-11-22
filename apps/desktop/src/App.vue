@@ -952,6 +952,22 @@ onMounted(async () => {
               <button
                 class="button button--ghost"
                 type="button"
+                :disabled="goals.loading.value"
+                @click="goals.moveMilestone(goal.id, milestone, 'up')"
+              >
+                上移
+              </button>
+              <button
+                class="button button--ghost"
+                type="button"
+                :disabled="goals.loading.value"
+                @click="goals.moveMilestone(goal.id, milestone, 'down')"
+              >
+                下移
+              </button>
+              <button
+                class="button button--ghost"
+                type="button"
                 @click="goals.removeMilestone(goal.id, milestone)"
               >
                 删除

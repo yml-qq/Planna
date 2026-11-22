@@ -525,7 +525,10 @@ export class MemoryBridge implements DesktopBridge {
   }
 
   async goalList(_baseUrl: string, _accessToken: string): Promise<Goal[]> {
-    return [...this.goals.values()]
+    return [...this.goals.values()].map((goal) => ({
+      ...goal,
+      milestones: [...goal.milestones].sort((left, right) => left.position - right.position)
+    }))
   }
 
   async goalCreate(

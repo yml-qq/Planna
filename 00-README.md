@@ -118,6 +118,7 @@
 | 105 | `docs/105-GOAL-03a.md` | AI 目标拆解预览 API |
 | 106 | `docs/106-GOAL-03b.md` | 桌面 AI 目标拆解与逐条添加 |
 | 107 | `docs/107-GOAL-03c.md` | 目标编辑与里程碑删除 |
+| 108 | `docs/108-GOAL-03d.md` | 里程碑排序 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

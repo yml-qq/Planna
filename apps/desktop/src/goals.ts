@@ -26,6 +26,7 @@ export interface GoalStore {
     patch: { title?: string; description?: string; targetDate?: string | null }
   ) => Promise<boolean>
   removeMilestone: (goalId: string, milestone: Milestone) => Promise<boolean>
+  moveMilestone: (goalId: string, milestone: Milestone, direction: 'up' | 'down') => Promise<boolean>
   suggestions: Ref<Record<string, GoalBreakdownSuggestion[]>>
   breakdownLoading: Ref<boolean>
   previewBreakdown: (goalId: string, guidance?: string) => Promise<boolean>
@@ -174,6 +175,45 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     }
   }
 
+  async function moveMilestone(
+    goalId: string,
+    milestone: Milestone,
+    direction: 'up' | 'down'
+  ): Promise<boolean> {
+    const goal = goals.value.find((candidate) => candidate.id === goalId)
+    if (!goal) {
+      error.value = 'GOAL_NOT_FOUND'
+      return false
+    }
+    const ordered = [...goal.milestones].sort((left, right) => left.position - right.position)
+    const index = ordered.findIndex((candidate) => candidate.id === milestone.id)
+    if (index < 0) {
+      error.value = 'MILESTONE_NOT_FOUND'
+      return false
+    }
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= ordered.length) return false
+    const neighbor = ordered[targetIndex]!
+    const movingPosition = milestone.position
+    const token = tokenOrNull()
+    if (!token) return false
+    loading.value = true
+    error.value = null
+    try {
+      await bridge.goalUpdateMilestone(options.baseUrl(), token, goalId, milestone.id,
+        milestone.version, { position: neighbor.position })
+      await bridge.goalUpdateMilestone(options.baseUrl(), token, goalId, neighbor.id,
+        neighbor.version, { position: movingPosition })
+      await refresh()
+      return true
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function removeMilestone(goalId: string, milestone: Milestone): Promise<boolean> {
     const token = tokenOrNull()
     if (!token) return false
@@ -274,6 +314,7 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     toggleMilestone,
     updateDetails,
     removeMilestone,
+    moveMilestone,
     suggestions,
     breakdownLoading,
     previewBreakdown,

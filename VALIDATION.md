@@ -660,3 +660,10 @@
 - UI 目标行支持内联编辑标题/描述/日期（`goalUpdate` 版本校验），里程碑支持删除（`If-Match` 当前版本）。
 - 前端新增 2 项测试，合计 **73 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。
+
+## GOAL-03d 里程碑排序检查（2026-11-22）
+
+- goal store 新增 `moveMilestone`：与相邻项交换 `position`（两次 PATCH，各自版本），边界返回 false；Memory `goalList` 按 position 排序里程碑。
+- UI 每条里程碑新增“上移/下移”；刷新后按服务端顺序展示。
+- 前端新增 1 项排序测试，合计 **74 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。

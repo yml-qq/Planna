@@ -173,3 +173,24 @@ describe('goal editing and milestone removal', () => {
     })
   })
 })
+
+describe('milestone ordering', () => {
+  it('moves a milestone up and down by swapping positions', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship')
+    await store.addMilestone(goal!.id, 'Draft')
+    await store.addMilestone(goal!.id, 'Review')
+    await store.addMilestone(goal!.id, 'Ship')
+    let current = store.goals.value[0]!
+    expect(current.milestones.map((item) => item.title)).toEqual(['Draft', 'Review', 'Ship'])
+
+    const review = current.milestones[1]!
+    expect(await store.moveMilestone(current.id, review, 'up')).toBe(true)
+    current = store.goals.value[0]!
+    expect(current.milestones.map((item) => item.title)).toEqual(['Review', 'Draft', 'Ship'])
+
+    const moved = current.milestones[0]!
+    expect(await store.moveMilestone(current.id, moved, 'up')).toBe(false)
+    expect(await store.moveMilestone(current.id, current.milestones[2]!, 'down')).toBe(false)
+  })
+})
