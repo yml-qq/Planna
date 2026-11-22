@@ -276,3 +276,25 @@ describe('rest countdown', () => {
     expect(store.restRemaining.value).toBe(0)
   })
 })
+
+describe('focus history', () => {
+  it('loads recent sessions and exposes their task links', async () => {
+    let clock = 12_000_000
+    const { store } = createStore(() => clock)
+    await store.start(1500, 'task-1')
+    clock += 120_000
+    await store.complete()
+    await store.loadRecent(10)
+    expect(store.recent.value).toHaveLength(1)
+    expect(store.recent.value[0]?.taskId).toBe('task-1')
+    expect(store.recent.value[0]?.state).toBe('completed')
+    expect(store.recent.value[0]?.actualSeconds).toBe(120)
+  })
+
+  it('requires a token before loading history', async () => {
+    const { store } = createStore(() => 0, { token: () => null })
+    await store.loadRecent()
+    expect(store.recent.value).toHaveLength(0)
+    expect(store.error.value).toBe('FOCUS_SIGNED_OUT')
+  })
+})

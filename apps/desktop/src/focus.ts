@@ -80,6 +80,7 @@ export interface FocusStore {
   seconds: Ref<number>
   driftSeconds: Ref<number>
   stats: Ref<FocusStats | null>
+  recent: Ref<FocusSession[]>
   restHint: Ref<string | null>
   restRemaining: Ref<number>
   restEndsAt: Ref<number | null>
@@ -92,6 +93,7 @@ export interface FocusStore {
   abandon: () => Promise<boolean>
   recover: () => Promise<void>
   loadStats: (from: string, to: string, timeZone: string) => Promise<void>
+  loadRecent: (limit?: number) => Promise<void>
   skipRest: () => void
   tick: () => void
   tickRest: () => void
@@ -107,6 +109,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const error = ref<string | null>(null)
   const driftSeconds = ref(0)
   const stats = ref<FocusStats | null>(null)
+  const recent = ref<FocusSession[]>([])
   const restHint = ref<string | null>(null)
   const restRemaining = ref(0)
   const restEndsAt = ref<number | null>(null)
@@ -312,6 +315,16 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     restEndsAt.value = null
   }
 
+  async function loadRecent(limit = 20): Promise<void> {
+    const token = requireToken()
+    if (!token) return
+    try {
+      recent.value = await bridge.focusList(options.baseUrl(), token, limit)
+    } catch (failure) {
+      error.value = errorCode(failure)
+    }
+  }
+
   async function loadStats(from: string, to: string, timeZone: string): Promise<void> {
     const token = requireToken()
     if (!token) return
@@ -328,6 +341,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     seconds,
     driftSeconds,
     stats,
+    recent,
     restHint,
     restRemaining,
     restEndsAt,
@@ -340,6 +354,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     abandon: () => transition('abandoned'),
     recover,
     loadStats,
+    loadRecent,
     skipRest,
     tick,
     tickRest

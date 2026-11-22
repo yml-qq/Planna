@@ -67,6 +67,7 @@ const habits = createHabitStore(bridge, {
 })
 const focusTaskId = ref('')
 const focusMinutes = ref('')
+const expandedTask = ref<string | null>(null)
 const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
 const focusStatsDays = ref(7)
 const modules = createModuleStore()
@@ -198,6 +199,7 @@ async function submitLogin(): Promise<void> {
     await goals.refresh()
     await notes.refresh()
     await focus.recover()
+    await focus.loadRecent(30)
     await refreshFocusStats()
   }
 }
@@ -315,6 +317,21 @@ function toggleModule(key: ModuleKey): void {
 async function startTaskFocus(taskId: string): Promise<void> {
   focusTaskId.value = taskId
   await startFocus(1500)
+}
+
+function toggleTaskDetail(taskId: string): void {
+  expandedTask.value = expandedTask.value === taskId ? null : taskId
+  if (expandedTask.value) void focus.loadRecent(30)
+}
+
+function taskSessions(taskId: string) {
+  return focus.recent.value.filter((session) => session.taskId === taskId)
+}
+
+function barHeight(seconds: number): number {
+  const days = focus.stats.value?.days ?? []
+  const max = Math.max(1, ...days.map((day) => day.actualSeconds))
+  return Math.max(4, Math.round((seconds / max) * 48))
 }
 
 async function checkInHabit(habitId: string): Promise<void> {
@@ -539,6 +556,7 @@ onMounted(async () => {
     await goals.refresh()
     await notes.refresh()
     await focus.recover()
+    await focus.loadRecent(30)
     await refreshFocusStats()
     await refreshOutbox()
   }
@@ -624,11 +642,26 @@ onMounted(async () => {
 
       <ul v-if="tasks.tasks.value.length > 0" class="tasks" aria-label="任务列表">
         <li v-for="task in tasks.tasks.value" :key="task.id" class="tasks__item">
-          <span class="tasks__title">{{ task.title }}</span>
-          <span class="tasks__meta">v{{ task.version }}</span>
-          <button class="button button--ghost" type="button" @click="startTaskFocus(task.id)">
-            专注
-          </button>
+          <div class="tasks__row">
+            <span class="tasks__title">{{ task.title }}</span>
+            <span class="tasks__meta">v{{ task.version }}</span>
+            <button class="button button--ghost" type="button" @click="toggleTaskDetail(task.id)">
+              详情
+            </button>
+            <button class="button button--ghost" type="button" @click="startTaskFocus(task.id)">
+              专注
+            </button>
+          </div>
+          <div v-if="expandedTask === task.id" class="task-detail">
+            <p class="tasks__meta">状态：{{ task.status }} · 版本 v{{ task.version }}</p>
+            <ul v-if="taskSessions(task.id).length > 0" class="focus__days">
+              <li v-for="session in taskSessions(task.id)" :key="session.id" class="focus__day">
+                <span>{{ session.startedAt.slice(0, 10) }}</span>
+                <span>{{ Math.round(session.actualSeconds / 60) }} 分钟 · {{ session.state }}</span>
+              </li>
+            </ul>
+            <p v-else class="empty">该任务还没有专注记录。</p>
+          </div>
         </li>
       </ul>
       <p v-else-if="!tasks.loading.value" class="empty">还没有任务，先添加一条。</p>
@@ -785,6 +818,15 @@ onMounted(async () => {
             共 {{ Math.round(focus.stats.value.actualSeconds / 60) }} 分钟 · 完成
             {{ focus.stats.value.completedSessions }} 次
           </p>
+          <div class="focus__chart" aria-label="按日专注时长">
+            <div
+              v-for="day in focus.stats.value.days"
+              :key="'bar-' + day.date"
+              class="focus__bar"
+              :style="{ height: barHeight(day.actualSeconds) + 'px' }"
+              :title="day.date + ' · ' + Math.round(day.actualSeconds / 60) + ' 分钟'"
+            ></div>
+          </div>
           <ul class="focus__days">
             <li v-for="day in focus.stats.value.days" :key="day.date" class="focus__day">
               <span>{{ day.date.slice(5) }}</span>

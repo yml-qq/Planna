@@ -424,3 +424,34 @@ body {
   align-items: center;
   gap: 4px;
 }
+
+.tasks__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.task-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  width: 100%;
+}
+
+.focus__chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 56px;
+  margin: 8px 0;
+}
+
+.focus__bar {
+  flex: 1;
+  max-width: 24px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  opacity: 0.75;
+}
