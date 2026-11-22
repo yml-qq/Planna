@@ -894,4 +894,5 @@
 - migrations.yml 增加 NuGet `--vulnerable --include-transitive` 扫描；desktop.yml 增加 `pnpm audit --prod --audit-level=high`（显式 npmjs registry）。
 - 本地实测：NuGet 6 个项目均无易受攻击包；pnpm audit 输出 `No known vulnerabilities found`（本地默认镜像无 audit endpoint，改用 npmjs）。
 - 仅 NuGet/npm 生产依赖；不含 cargo audit/系统库/镜像/SBOM；高危阻塞，中低危需人工查看。
+- [Server integration 45058399373](https://github.com/yml-qq/Planna/actions/runs/45058399373) 与 [Desktop core 45058399351](https://github.com/yml-qq/Planna/actions/runs/45058399351) 均 **success**（含 NuGet/pnpm 审计步骤）。
 - 外部渗透测试、密钥审计与许可证/SBOM 留待 `SEC-02-b`。
