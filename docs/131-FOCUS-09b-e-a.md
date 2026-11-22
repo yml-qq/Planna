@@ -1,6 +1,6 @@
 # 131｜FOCUS-09b-e-a：报表“另存为”对话框
 
-状态：代码已实现；本地前端 89 项测试、build、shell `cargo check/clippy/fmt` 通过。CI 见 `VALIDATION.md`。后台通知真机验证与独立详情页属 `FOCUS-09b-e-b`。
+状态：代码已实现；本地前端 89 项测试、build、shell `cargo check/clippy/fmt` 通过；[Server integration 45042414372](https://github.com/yml-qq/Planna/actions/runs/45042414372) 与 [Desktop core 45042414289](https://github.com/yml-qq/Planna/actions/runs/45042414289) 均 **success**。后台通知真机验证与独立详情页属 `FOCUS-09b-e-b`。
 
 ## 范围与验收
 

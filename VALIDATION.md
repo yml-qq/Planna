@@ -840,4 +840,5 @@
 - Tauri 新增 `focus_report_save_as`，使用 `tauri-plugin-dialog` 原生保存对话框；取消返回 null，写入失败返回错误；文件名复用净化函数。
 - Cargo.toml 增加 dialog 插件、builder 注册、capabilities 增加 `dialog:default`；桥接/store/UI 增加“另存为…”并显示路径/取消/失败。
 - 本地前端 89 项测试与 build、shell `cargo check/clippy/fmt` 通过；对话框无自动化真机测试。
+- [Server integration 45042414372](https://github.com/yml-qq/Planna/actions/runs/45042414372) 与 [Desktop core 45042414289](https://github.com/yml-qq/Planna/actions/runs/45042414289) 均 **success**。
 - 后台通知真机验证、独立详情页与导出格式扩展留待 `FOCUS-09b-e-b`。
