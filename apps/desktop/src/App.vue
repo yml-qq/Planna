@@ -7,6 +7,7 @@ import { createGoalStore } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { createNoteStore } from './notes'
+import { focusStatsCsv, focusStatsSummary } from './report'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -122,6 +123,7 @@ const issues = ref<OutboxIssue[]>([])
 const conflicts = ref<ConflictIssue[]>([])
 const ledgerText = ref('')
 const ledgerStatus = ref('')
+const reportStatus = ref('')
 const sentReminders = new Set<string>()
 const notifierPromise = createNotifier()
 let reminderTimer: ReturnType<typeof setInterval> | null = null
@@ -514,6 +516,22 @@ async function refreshOutbox(): Promise<void> {
   }
 }
 
+async function copyFocusReport(): Promise<void> {
+  reportStatus.value = ''
+  const stats = focus.stats.value
+  if (!stats) return
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(focusStatsCsv(stats))
+      reportStatus.value = '已复制 CSV'
+    } else {
+      reportStatus.value = '剪贴板不可用'
+    }
+  } catch {
+    reportStatus.value = '复制失败，请重试'
+  }
+}
+
 async function exportLedger(): Promise<void> {
   ledgerStatus.value = ''
   try {
@@ -879,12 +897,18 @@ onMounted(async () => {
           <h3 class="focus__stats-title">近 {{ focusStatsDays }} 天专注</h3>
           <button class="button button--ghost" type="button" @click="setFocusStatsDays(7)">7 天</button>
           <button class="button button--ghost" type="button" @click="setFocusStatsDays(30)">30 天</button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="!focus.stats.value"
+            @click="copyFocusReport"
+          >
+            复制 CSV
+          </button>
+          <span v-if="reportStatus" class="status">{{ reportStatus }}</span>
         </div>
         <template v-if="focus.stats.value && focus.stats.value.days.length > 0">
-          <p class="status">
-            共 {{ Math.round(focus.stats.value.actualSeconds / 60) }} 分钟 · 完成
-            {{ focus.stats.value.completedSessions }} 次
-          </p>
+          <p class="status">{{ focusStatsSummary(focus.stats.value) }}</p>
           <div class="focus__chart" aria-label="按日专注时长">
             <div
               v-for="day in focus.stats.value.days"

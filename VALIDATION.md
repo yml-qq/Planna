@@ -683,3 +683,9 @@
 - UI 任务详情在存在 next_cursor 时显示“加载更多”，空页后隐藏。
 - 前端新增 1 项分页测试，合计 **75 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - 网络恢复后推送（`75c1752`）并补 CI：[Server integration 44996532155](https://github.com/yml-qq/Planna/actions/runs/44996532155) 与 [Desktop core 44996532135](https://github.com/yml-qq/Planna/actions/runs/44996532135) 均 **success**。
+
+## FOCUS-09b-c 报表复制检查（2026-11-22）
+
+- 新增 `focusStatsCsv`/`focusStatsSummary` 纯函数（表头、按日行、CRLF、空报表合法、摘要文案）；统计卡片显示摘要并提供“复制 CSV”（剪贴板成功/失败状态）。
+- 前端新增 3 项报表测试，合计 **78 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- 仅复制到剪贴板，不承诺文件下载；报表文件导出与后台通知真机验证留待 `FOCUS-09b-d`。

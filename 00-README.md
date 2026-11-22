@@ -121,6 +121,7 @@
 | 108 | `docs/108-GOAL-03d.md` | 里程碑排序 |
 | 109 | `docs/109-FOCUS-09b-a.md` | 专注历史游标分页 API |
 | 110 | `docs/110-FOCUS-09b-b.md` | 桌面专注历史分页消费 |
+| 111 | `docs/111-FOCUS-09b-c.md` | 专注统计报表复制（CSV） |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
