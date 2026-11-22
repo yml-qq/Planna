@@ -10,6 +10,7 @@ public static class CalendarEndpoints
     {
         var group = app.MapGroup("/calendar").WithTags("Calendar").RequireAuthorization();
         group.MapGet("/workday-overrides", List).WithName("ListWorkdayOverrides");
+        group.MapGet("/workdays", Evaluate).WithName("EvaluateWorkdays");
         group.MapPut("/workday-overrides/{date}", Upsert).WithName("UpsertWorkdayOverride");
         group.MapDelete("/workday-overrides/{date}", Delete).WithName("DeleteWorkdayOverride");
         return app;
@@ -26,6 +27,22 @@ public static class CalendarEndpoints
         return result.Status switch
         {
             WorkdayOverrideStatus.Ok => TypedResults.Ok(result.List),
+            WorkdayOverrideStatus.Invalid => Error(http, 400, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> Evaluate(HttpContext http, IWorkdayOverrideService service,
+        CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryDate(http.Request.Query["from"].ToString(), out var from) ||
+            !TryDate(http.Request.Query["to"].ToString(), out var to))
+            return Error(http, 400, "INVALID_RANGE");
+        var result = await service.EvaluateAsync(owner, http.Request.Query["jurisdiction"], from, to, ct);
+        return result.Status switch
+        {
+            WorkdayOverrideStatus.Ok => TypedResults.Ok(result.Days),
             WorkdayOverrideStatus.Invalid => Error(http, 400, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };

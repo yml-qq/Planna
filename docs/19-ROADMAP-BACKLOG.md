@@ -42,7 +42,8 @@
 | E07 | TIME-01E | 任务/occurrence 提醒调度 API（已交付，见 `89-TIME-01E.md`） | TIME-01D | policy tests |
 | E07 | TIME-01F | 单次 occurrence 编辑：跳过/改期（已交付，见 `98-TIME-01F.md`） | TIME-01E | state tests |
 | E07 | TIME-01G-a | 工作日覆盖 API（自定义节假日/调休，已交付，见 `119-TIME-01G-a.md`） | TIME-01F | policy tests |
-| E07 | TIME-01G-b | legal_workday 规则求值、可信日历导入与提醒/occurrence 重排 | TIME-01G-a | policy tests |
+| E07 | TIME-01G-b-a | 工作日判定 API（周末+覆盖，已交付，见 `120-TIME-01G-b-a.md`） | TIME-01G-a | policy tests |
+| E07 | TIME-01G-b-b | legal_workday RRULE 求值、可信日历导入与提醒/occurrence 重排 | TIME-01G-b-a | policy tests |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
 | E08 | AI-01 | Provider 抽象与结构化规则解析（已交付，见 `50-AI-01.md`） | E02,TASK-COMPLETE-01 | golden tests |

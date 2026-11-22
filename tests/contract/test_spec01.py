@@ -699,6 +699,12 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(override["properties"]["note"]["maxLength"], 200)
         delete = api["paths"]["/calendar/workday-overrides/{date}"]["delete"]
         self.assertEqual(set(delete["responses"]), {"204", "400", "401", "404"})
+        evaluated = api["paths"]["/calendar/workdays"]["get"]
+        self.assertEqual(set(evaluated["responses"]), {"200", "400", "401"})
+        days = api["components"]["schemas"]["WorkdayDays"]
+        self.assertEqual(set(days["required"]), {"from", "to", "jurisdiction", "days"})
+        self.assertEqual(api["components"]["schemas"]["WorkdayDay"]["properties"]["kind"]["enum"],
+                         ["holiday", "workday"])
 
     def test_goal_breakdown_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))

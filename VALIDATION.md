@@ -751,3 +751,10 @@
 - **不内置法定节假日数据**；legal_workday 求值与提醒重排未实现（`TIME-01G-b`）。本地 build/format/契约通过。
 - 首次 CI（`90fee1d`）Server **failure**：写操作前连接未打开（`Connection is not open`，[run 45011985647](https://github.com/yml-qq/Planna/actions/runs/45011985647)）；修复 `4ff0f8f`（执行前 `OpenAsync`）后通过。
 - [Server integration 45014243194](https://github.com/yml-qq/Planna/actions/runs/45014243194) 与 [Desktop core 45014243201](https://github.com/yml-qq/Planna/actions/runs/45014243201) 均 **success**。
+
+## TIME-01G-b-a 工作日判定检查（2026-11-22）
+
+- 新增纯函数 `WorkdayCalendar`（覆盖优先、周末默认、Count/AddWorkdays 防死循环）与 `GET /calendar/workdays`；owner 作用域、默认 CN、范围 ≤366 天。
+- OpenAPI 新增 `WorkdayDays`/`WorkdayDay`；契约断言并入工作日覆盖测试（**35 项**）。
+- 冒烟断言 10/01 调休工作日、10/03 周六休息，并直接测试纯函数跨周末 `AddWorkdays`。
+- **仍不内置法定节假日数据**；legal_workday RRULE、occurrence/提醒重排、导入与 UI 留待 `TIME-01G-b-b`。本地 build/format/契约通过。

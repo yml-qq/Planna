@@ -107,6 +107,33 @@ public sealed class WorkdayOverrideService(TaskWriteContext db, TimeProvider clo
             : new(WorkdayOverrideStatus.Ok);
     }
 
+    public async Task<WorkdayOverrideResult> EvaluateAsync(Guid ownerId, string? jurisdiction,
+        DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var zone = NormalizeJurisdiction(jurisdiction);
+        if (zone is null || from > to || to.DayNumber - from.DayNumber > 366)
+            return new(WorkdayOverrideStatus.Invalid, Code: "INVALID_RANGE");
+        var rows = await db.Database.GetDbConnection().QueryAsync<OverrideRow>(
+            new CommandDefinition("""
+                SELECT date AS "Date", jurisdiction AS "Jurisdiction", kind AS "Kind",
+                    note AS "Note", created_at AS "CreatedAt", updated_at AS "UpdatedAt"
+                FROM workday_overrides
+                WHERE owner_id=@Owner AND jurisdiction=@Jurisdiction
+                    AND date >= @From AND date <= @To
+                """, new { Owner = ownerId, Jurisdiction = zone, From = from, To = to },
+                db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+        var overrides = rows.ToDictionary(row => row.Date, row => row.Kind);
+        var days = new List<WorkdayDayView>();
+        for (var date = from; date <= to; date = date.AddDays(1))
+        {
+            var kind = WorkdayCalendar.IsWorkday(date, overrides)
+                ? WorkdayCalendar.Workday
+                : WorkdayCalendar.Holiday;
+            days.Add(new WorkdayDayView(Format(date), kind));
+        }
+        return new(WorkdayOverrideStatus.Ok, Days: new WorkdayDays(Format(from), Format(to), zone, days));
+    }
+
     private async Task<int> ExecuteAsync(string sql, Action<DbParameterCollection> addParameters,
         CancellationToken ct)
     {

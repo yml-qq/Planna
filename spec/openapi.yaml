@@ -1403,6 +1403,25 @@ paths:
         "401": {$ref: '#/components/responses/ErrorResponse'}
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "409": {$ref: '#/components/responses/ErrorResponse'}
+  /calendar/workdays:
+    get:
+      tags: [Calendar]
+      operationId: evaluateWorkdays
+      summary: Evaluate workday/holiday kinds for a date range
+      description: Uses owner overrides first, then Monday-Friday as workday and Saturday/Sunday as holiday. No legal holiday data is bundled. Range is limited to 366 days.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+        - {name: jurisdiction, in: query, required: false, schema: {type: string, minLength: 1, maxLength: 32, default: CN}}
+      responses:
+        "200":
+          description: Evaluated days in ascending order
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkdayDays'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
   /calendar/workday-overrides:
     get:
       tags: [Calendar]
@@ -2474,6 +2493,24 @@ components:
         unit: {type: string, minLength: 1, maxLength: 20}
         time_zone: {type: string, minLength: 1, maxLength: 128}
         paused: {type: boolean}
+    WorkdayDay:
+      type: object
+      additionalProperties: false
+      required: [date, kind]
+      properties:
+        date: {type: string, format: date}
+        kind: {type: string, enum: [holiday, workday]}
+    WorkdayDays:
+      type: object
+      additionalProperties: false
+      required: [from, to, jurisdiction, days]
+      properties:
+        from: {type: string, format: date}
+        to: {type: string, format: date}
+        jurisdiction: {type: string, minLength: 1, maxLength: 32}
+        days:
+          type: array
+          items: {$ref: '#/components/schemas/WorkdayDay'}
     WorkdayOverride:
       type: object
       additionalProperties: false

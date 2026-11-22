@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Planna.Api;
+using Planna.Application.Calendar;
 using Planna.Application.Identity;
 
 internal static class HttpWorkdayOverrideSmoke
@@ -78,6 +79,33 @@ internal static class HttpWorkdayOverrideSmoke
                 throw new InvalidOperationException("Workday override owner isolation failed.");
         }
 
+        var evaluated = await Evaluate(client, token, "2026-09-28", "2026-10-04", "CN");
+        Check(evaluated, HttpStatusCode.OK);
+        using (var document = JsonDocument.Parse(await evaluated.Content.ReadAsStringAsync()))
+        {
+            var days = document.RootElement.GetProperty("days");
+            if (days.GetArrayLength() != 7)
+                throw new InvalidOperationException("Workday evaluation length mismatch.");
+            var byDate = days.EnumerateArray().ToDictionary(
+                day => day.GetProperty("date").GetString()!,
+                day => day.GetProperty("kind").GetString()!);
+            if (byDate["2026-10-01"] != "workday" || byDate["2026-10-03"] != "holiday" ||
+                byDate["2026-09-28"] != "workday")
+                throw new InvalidOperationException("Workday evaluation kind mismatch.");
+        }
+        var overrides = new Dictionary<DateOnly, string>
+        {
+            [new DateOnly(2026, 10, 3)] = "workday",
+            [new DateOnly(2026, 10, 5)] = "holiday"
+        };
+        var saturday = new DateOnly(2026, 10, 3);
+        if (!WorkdayCalendar.IsWorkday(saturday, overrides) ||
+            WorkdayCalendar.IsWorkday(new DateOnly(2026, 10, 5), overrides) ||
+            WorkdayCalendar.CountWorkdays(saturday, new DateOnly(2026, 10, 5), overrides) != 1 ||
+            WorkdayCalendar.AddWorkdays(new DateOnly(2026, 10, 2), 2, overrides) !=
+            new DateOnly(2026, 10, 6))
+            throw new InvalidOperationException("Workday calendar helper mismatch.");
+
         Check(await Upsert(client, token, "2026-13-01", "{\"kind\":\"holiday\"}"),
             HttpStatusCode.BadRequest);
         Check(await Upsert(client, token, "2026-10-02", "{\"kind\":\"party\"}"),
@@ -100,6 +128,16 @@ internal static class HttpWorkdayOverrideSmoke
         if (await Scalar(db, "SELECT count(*) FROM workday_overrides WHERE owner_id=$1 AND jurisdiction='CN'", owner) != 0)
             throw new InvalidOperationException("Workday override row still present after delete.");
         Console.WriteLine("PASS: workday overrides isolate owners, default jurisdiction, upsert/delete and validation");
+    }
+
+    private static async Task<HttpResponseMessage> Evaluate(HttpClient client, string? token,
+        string from, string to, string? jurisdiction)
+    {
+        var query = "from=" + from + "&to=" + to;
+        if (jurisdiction is not null) query += "&jurisdiction=" + jurisdiction;
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/calendar/workdays?" + query);
+        if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await client.SendAsync(request);
     }
 
     private static async Task<HttpResponseMessage> List(HttpClient client, string? token, string from,

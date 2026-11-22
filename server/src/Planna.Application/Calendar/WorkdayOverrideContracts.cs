@@ -10,6 +10,16 @@ public sealed record WorkdayOverrideView(
     [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt,
     [property: JsonPropertyName("updated_at")] DateTimeOffset UpdatedAt);
 
+public sealed record WorkdayDayView(
+    [property: JsonPropertyName("date")] string Date,
+    [property: JsonPropertyName("kind")] string Kind);
+
+public sealed record WorkdayDays(
+    [property: JsonPropertyName("from")] string From,
+    [property: JsonPropertyName("to")] string To,
+    [property: JsonPropertyName("jurisdiction")] string Jurisdiction,
+    [property: JsonPropertyName("days")] IReadOnlyList<WorkdayDayView> Days);
+
 public sealed record WorkdayOverrideList(
     [property: JsonPropertyName("items")] IReadOnlyList<WorkdayOverrideView> Items);
 
@@ -25,7 +35,8 @@ public enum WorkdayOverrideStatus
 }
 
 public sealed record WorkdayOverrideResult(WorkdayOverrideStatus Status,
-    WorkdayOverrideView? Override = null, WorkdayOverrideList? List = null, string? Code = null);
+    WorkdayOverrideView? Override = null, WorkdayOverrideList? List = null,
+    WorkdayDays? Days = null, string? Code = null);
 
 public interface IWorkdayOverrideService
 {
@@ -37,4 +48,7 @@ public interface IWorkdayOverrideService
 
     Task<WorkdayOverrideResult> DeleteAsync(Guid ownerId, DateOnly date, string? jurisdiction,
         CancellationToken ct);
+
+    Task<WorkdayOverrideResult> EvaluateAsync(Guid ownerId, string? jurisdiction, DateOnly from,
+        DateOnly to, CancellationToken ct);
 }
