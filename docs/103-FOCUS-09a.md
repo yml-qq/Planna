@@ -1,6 +1,6 @@
 # 103｜FOCUS-09a：按任务的专注历史
 
-状态：代码已实现；本地 build/format/契约 **33 项**、前端 **69 项**与 `pnpm build` 通过，CI 见 `VALIDATION.md` 的 FOCUS-09a 小节。分页/报表/后台通知属 `FOCUS-09b`。
+状态：代码已实现；本地 build/format/契约 **33 项**、前端 **69 项**与 `pnpm build` 通过；[Server integration 44981202340](https://github.com/yml-qq/Planna/actions/runs/44981202340) 与 [Desktop core 44981202399](https://github.com/yml-qq/Planna/actions/runs/44981202399) 均 **success**。分页/报表/后台通知属 `FOCUS-09b`。
 
 ## 范围与验收
 

@@ -620,4 +620,13 @@
 - 限制：历史仅最近 30 条全局会话的客户端过滤，非完整分页/按任务查询；任务详情为内联面板。
 - [Server integration 44979891696](https://github.com/yml-qq/Planna/actions/runs/44979891696) 与 [Desktop core 44979891657](https://github.com/yml-qq/Planna/actions/runs/44979891657) 均 **success**。
 - 未连接生产库、未提交凭据；独立任务详情页、按任务分页历史、报表导出与后台通知真机验证留待 `FOCUS-09`。
+
+## FOCUS-09a 按任务专注历史检查（2026-11-22）
+
+- `GET /focus-sessions?task_id=` 支持按任务过滤（started_at DESC）；任务不存在/跨 owner/软删 404 `TASK_NOT_FOUND`，非法 task_id 400；OpenAPI 参数与 404 响应、契约断言同步（**33 项**）。
+- 冒烟 `HttpFocusSmoke` 增加任务夹具与 task-linked 会话，断言过滤命中、跨 owner/不存在 404、非法参数 400。
+- 桌面 `focus_list`/桥接/focus store 支持 taskId；任务详情展开按任务加载 50 条历史（`taskHistory`），移除“最近 30 条全局”限制。
+- 前端新增 1 项按任务过滤/缓存测试，合计 **69 项**；本地 build/format/契约 33 项、`pnpm build` 通过。
+- [Server integration 44981202340](https://github.com/yml-qq/Planna/actions/runs/44981202340) 与 [Desktop core 44981202399](https://github.com/yml-qq/Planna/actions/runs/44981202399) 均 **success**。
+- 未连接生产库、未提交凭据；游标分页、周/月报表、独立详情页与后台通知真机验证留待 `FOCUS-09b`。
 - 网络恢复后推送（`fbdefea`）并补 CI：[Server integration 44978693280](https://github.com/yml-qq/Planna/actions/runs/44978693280) 与 [Desktop core 44978693285](https://github.com/yml-qq/Planna/actions/runs/44978693285) 均 **success**。
