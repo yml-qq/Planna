@@ -161,6 +161,7 @@ await HttpGoalOrderSmoke.RunAsync(connection);
 await HttpWorkdayOverrideSmoke.RunAsync(connection);
 await HttpReminderSmoke.RunAsync(connection);
 await HttpNoteSmoke.RunAsync(connection);
+await HttpNoteAttachmentSmoke.RunAsync(connection);
 await HttpGoalBreakdownSmoke.RunAsync(connection);
 await HttpAuthMatrixSmoke.RunAsync(connection);
 await AccountCleanupSmoke.RunAsync(connection, value);

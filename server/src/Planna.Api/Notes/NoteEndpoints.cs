@@ -14,6 +14,12 @@ public static class NoteEndpoints
         group.MapGet("/{id}", Get).WithName("GetNote");
         group.MapPatch("/{id}", Update).WithName("UpdateNote");
         group.MapDelete("/{id}", Delete).WithName("DeleteNote");
+        group.MapPost("/{id}/attachments", UploadAttachment).WithName("UploadNoteAttachment");
+        group.MapGet("/{id}/attachments", ListAttachments).WithName("ListNoteAttachments");
+        group.MapGet("/{id}/attachments/{attachmentId}", DownloadAttachment)
+            .WithName("DownloadNoteAttachment");
+        group.MapDelete("/{id}/attachments/{attachmentId}", DeleteAttachment)
+            .WithName("DeleteNoteAttachment");
         return app;
     }
 
@@ -55,6 +61,83 @@ public static class NoteEndpoints
         return result.Status == NoteStatus.Ok
             ? TypedResults.Ok(result.Note)
             : Error(http, 404, result.Code!);
+    }
+
+    private static async Task<IResult> UploadAttachment(HttpContext http, string id,
+        INoteAttachmentService service, CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(id, out var noteId) || noteId == Guid.Empty)
+            return Error(http, 400, "INVALID_NOTE_ID");
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"], out var attachmentId) ||
+            attachmentId == Guid.Empty)
+            return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        if (!http.Request.HasFormContentType) return Error(http, 415, "UNSUPPORTED_MEDIA_TYPE");
+        var form = await http.Request.ReadFormAsync(ct);
+        var file = form.Files.GetFile("file");
+        if (file is null) return Error(http, 400, "INVALID_ATTACHMENT");
+        await using var stream = file.OpenReadStream();
+        var result = await service.UploadAsync(owner, noteId, attachmentId, file.FileName,
+            file.ContentType, file.Length, stream, ct);
+        return result.Status switch
+        {
+            NoteAttachmentStatus.Created => TypedResults.Created(
+                "/notes/" + noteId + "/attachments/" + attachmentId, result.Attachment),
+            NoteAttachmentStatus.Replayed => TypedResults.Ok(result.Attachment),
+            NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
+            NoteAttachmentStatus.TooLarge => Error(http, 413, result.Code!),
+            NoteAttachmentStatus.UnsupportedType => Error(http, 415, result.Code!),
+            NoteAttachmentStatus.Invalid => Error(http, 422, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> ListAttachments(HttpContext http, string id,
+        INoteAttachmentService service, CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(id, out var noteId) || noteId == Guid.Empty)
+            return Error(http, 400, "INVALID_NOTE_ID");
+        var result = await service.ListAsync(owner, noteId, ct);
+        return result.Status switch
+        {
+            NoteAttachmentStatus.Ok => TypedResults.Ok(result.List),
+            NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> DownloadAttachment(HttpContext http, string id,
+        string attachmentId, INoteAttachmentService service, CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(id, out var noteId) || noteId == Guid.Empty ||
+            !Guid.TryParse(attachmentId, out var attachment) || attachment == Guid.Empty)
+            return Error(http, 400, "INVALID_ATTACHMENT_ID");
+        var (result, download) = await service.OpenAsync(owner, noteId, attachment, ct);
+        return result.Status switch
+        {
+            NoteAttachmentStatus.Ok => TypedResults.Stream(download!.Content,
+                download.Attachment.ContentType, download.Attachment.Filename),
+            NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> DeleteAttachment(HttpContext http, string id,
+        string attachmentId, INoteAttachmentService service, CancellationToken ct)
+    {
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!Guid.TryParse(id, out var noteId) || noteId == Guid.Empty ||
+            !Guid.TryParse(attachmentId, out var attachment) || attachment == Guid.Empty)
+            return Error(http, 400, "INVALID_ATTACHMENT_ID");
+        var result = await service.DeleteAsync(owner, noteId, attachment, ct);
+        return result.Status switch
+        {
+            NoteAttachmentStatus.Ok => TypedResults.NoContent(),
+            NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
     }
 
     private static async Task<IResult> Create(HttpContext http, CreateNoteRequest request,

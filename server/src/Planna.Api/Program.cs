@@ -135,6 +135,7 @@ builder.Services.AddScoped<IFocusSessionService, FocusSessionService>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<INoteAttachmentService, NoteAttachmentService>();
 builder.Services.AddScoped<IWorkdayOverrideService, WorkdayOverrideService>();
 builder.Services.AddScoped<IHabitLogQuery, HabitLogService>();
 builder.Services.AddScoped<IHabitStreakQuery, HabitLogService>();

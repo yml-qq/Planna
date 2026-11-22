@@ -1546,6 +1546,88 @@ paths:
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "409": {$ref: '#/components/responses/ErrorResponse'}
         "422": {$ref: '#/components/responses/ErrorResponse'}
+  /notes/{id}/attachments:
+    post:
+      tags: [Notes]
+      operationId: uploadNoteAttachment
+      summary: Upload one attachment for an owned note
+      description: Multipart field `file`; allowlisted types (text/plain, text/markdown, image/png, image/jpeg, application/pdf) and 1 byte..5 MiB. The Idempotency-Key becomes the attachment id and replays return 200.
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+      responses:
+        "200":
+          description: Replayed upload
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NoteAttachment'}
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NoteAttachment'}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+        "413": {$ref: '#/components/responses/ErrorResponse'}
+        "415": {$ref: '#/components/responses/ErrorResponse'}
+    get:
+      tags: [Notes]
+      operationId: listNoteAttachments
+      summary: List attachments for an owned note
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "200":
+          description: Attachments ordered by creation
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NoteAttachmentList'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+  /notes/{id}/attachments/{attachmentId}:
+    get:
+      tags: [Notes]
+      operationId: downloadNoteAttachment
+      summary: Download an owned attachment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: attachmentId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "200":
+          description: Raw attachment bytes
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
+    delete:
+      tags: [Notes]
+      operationId: deleteNoteAttachment
+      summary: Soft-delete an owned attachment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: attachmentId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "204": {description: Deleted}
+        "400": {$ref: '#/components/responses/ErrorResponse'}
+        "401": {$ref: '#/components/responses/ErrorResponse'}
+        "404": {$ref: '#/components/responses/ErrorResponse'}
   /notes/{id}:
     get:
       tags: [Notes]
@@ -2583,6 +2665,25 @@ components:
         jurisdiction: {type: [string, "null"], minLength: 1, maxLength: 32}
         kind: {type: string, enum: [holiday, workday]}
         note: {type: [string, "null"], maxLength: 200}
+    NoteAttachment:
+      type: object
+      additionalProperties: false
+      required: [id, note_id, filename, content_type, size_bytes, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        note_id: {type: string, format: uuid}
+        filename: {type: string, minLength: 1, maxLength: 255}
+        content_type: {type: string, enum: [text/plain, text/markdown, image/png, image/jpeg, application/pdf]}
+        size_bytes: {type: integer, minimum: 1, maximum: 5242880}
+        created_at: {type: string, format: date-time}
+    NoteAttachmentList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/NoteAttachment'}
     Note:
       type: object
       additionalProperties: false

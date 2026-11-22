@@ -856,3 +856,10 @@
 - 脚本**未在本机执行**（Windows 无可用 bash/Linux Docker）；以 CI 运行结果为准。
 - **CI 实际执行通过**：[Server integration 45045904340](https://github.com/yml-qq/Planna/actions/runs/45045904340)（含 pg_dump/restore 与核心表行数对比）与 [Desktop core 45045904488](https://github.com/yml-qq/Planna/actions/runs/45045904488) 均 **success**。
 - 仅隔离库/CI；不覆盖 PITR/RTO/RPO/生产回滚。生产部署/签名/灰度留待 `REL-02-b`。
+
+## NOTE-05a 笔记附件检查（2026-11-22）
+
+- 新增迁移 `202611230001_NoteAttachments`（白名单类型、1B..5MiB、storage_key 唯一、软删）；附件文件写入 `NOTE_ATTACHMENT_DIR`（默认临时目录），路径由 UUID 构建。
+- `POST/GET/DELETE /notes/{id}/attachments[/{attachmentId}]`：multipart 上传、Idempotency-Key 即附件 id、列表、原字节下载、软删；owner/note 校验。
+- OpenAPI 3 操作 + 2 schema；契约测试新增（**36 项**）；冒烟覆盖上传/重放/列表/下载/跨 owner/类型/空文件/软删。
+- 附件不进入同步；删除不删磁盘文件；无配额/病毒扫描；默认临时目录，生产需配置持久化。桌面 UI 留待 `NOTE-05b`。
