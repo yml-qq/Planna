@@ -426,9 +426,13 @@ async function syncNow(): Promise<void> {
   syncing.value = true
   try {
     if (await session.sync()) {
-    await tasks.refresh()
-    await refreshOutbox()
-  }
+      await tasks.refresh()
+      await habits.refresh()
+      await goals.refresh()
+      await notes.refresh()
+      await focus.loadRecent(30)
+      await refreshOutbox()
+    }
   } finally {
     syncing.value = false
   }

@@ -134,6 +134,7 @@
 | 121 | `docs/121-UX-03.md` | 导航入口、主题/密度与无障碍基础 |
 | 122 | `docs/122-NOTE-04b-2b-a.md` | 桌面本地笔记存储与同步 outbox |
 | 123 | `docs/123-NOTE-04b-2b-b-a.md` | 桌面拉取应用笔记变更 |
+| 124 | `docs/124-NOTE-04b-2b-b-b.md` | 桌面笔记 UI 切换到本地存储 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

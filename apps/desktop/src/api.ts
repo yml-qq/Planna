@@ -1392,28 +1392,31 @@ export class TauriBridge implements DesktopBridge {
   }
 
   async noteList(
-    baseUrl: string,
-    accessToken: string,
+    _baseUrl: string,
+    _accessToken: string,
     input: { query?: string; taskId?: string | null; limit?: number } = {}
   ): Promise<Note[]> {
-    const rows = await this.invoke<RawNote[]>('note_list', {
-      baseUrl,
-      accessToken,
-      query: input.query ?? null,
-      taskId: input.taskId ?? null,
-      limit: input.limit ?? 50
-    })
-    return rows.map(toNote)
+    const query = (input.query ?? '').trim().toLowerCase()
+    const limit = input.limit ?? 50
+    const rows = await this.invoke<RawNote[]>('notes_local')
+    return rows
+      .map(toNote)
+      .filter(
+        (note) =>
+          (!query ||
+            note.title.toLowerCase().includes(query) ||
+            note.content.toLowerCase().includes(query)) &&
+          (!input.taskId || note.taskId === input.taskId)
+      )
+      .slice(0, limit)
   }
 
   async noteCreate(
-    baseUrl: string,
-    accessToken: string,
+    _baseUrl: string,
+    _accessToken: string,
     input: { title?: string; content: string; taskId?: string | null }
   ): Promise<Note> {
-    const row = await this.invoke<RawNote>('note_create', {
-      baseUrl,
-      accessToken,
+    const row = await this.invoke<RawNote>('note_local_create', {
       title: input.title ?? '',
       content: input.content,
       taskId: input.taskId ?? null
@@ -1422,15 +1425,13 @@ export class TauriBridge implements DesktopBridge {
   }
 
   async noteUpdate(
-    baseUrl: string,
-    accessToken: string,
+    _baseUrl: string,
+    _accessToken: string,
     noteId: string,
     expectedVersion: number,
     patch: { title?: string; content?: string }
   ): Promise<Note> {
-    const row = await this.invoke<RawNote>('note_update', {
-      baseUrl,
-      accessToken,
+    const row = await this.invoke<RawNote>('note_local_update', {
       noteId,
       expectedVersion,
       title: patch.title ?? null,
@@ -1440,12 +1441,12 @@ export class TauriBridge implements DesktopBridge {
   }
 
   async noteDelete(
-    baseUrl: string,
-    accessToken: string,
+    _baseUrl: string,
+    _accessToken: string,
     noteId: string,
     expectedVersion: number
   ): Promise<void> {
-    await this.invoke<void>('note_delete', { baseUrl, accessToken, noteId, expectedVersion })
+    await this.invoke<void>('note_local_delete', { noteId, expectedVersion })
   }
 
   async goalBreakdownPreview(

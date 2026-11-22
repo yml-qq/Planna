@@ -781,3 +781,10 @@
 - `StoredNote` 增加 created_at 并为 task_id/created_at/deleted_at 提供 serde 默认值。
 - 新增 2 项 core 测试（upsert+stale、upsert→delete），笔记测试合计 6 项；`cargo test`、`cargo fmt --check`、`cargo clippy -D warnings` 通过。
 - 桌面笔记 UI 仍走在线 API；切换本地读写留待 `NOTE-04b-2b-b-b`。
+
+## NOTE-04b-2b-b-b 笔记 UI 本地化检查（2026-11-22）
+
+- Tauri 新增 `notes_local`/`note_local_create`/`note_local_update`/`note_local_delete`；桥接 note 方法改为本地命令，搜索/任务过滤在本地列表完成。
+- `syncNow` 成功后刷新任务/习惯/目标/笔记/专注历史；拉取 note 变更由 NOTE-04b-2b-b-a 的 `apply_note_pull` 应用。
+- 前端 **88 项**测试与 `pnpm build` 通过；shell `cargo check/clippy/fmt` 通过；core 笔记 6 项测试通过。
+- 边界：仍要求登录；无 note 专用冲突 UI；附件/模板/全文搜索未实现。CI 待网络恢复。

@@ -1,9 +1,9 @@
 use std::sync::Mutex;
 
 use planna_desktop_core::{
-    HabitPatchLocal, NewHabit, NewTask, OutboxEntry, PullResponse, PushRequest, PushResponse,
-    Store, StoredHabit, StoredHabitLog, StoredTask, SyncOutcome, SyncTransport, TransportError,
-    sync_with_retry,
+    HabitPatchLocal, NewHabit, NewNote, NewTask, NotePatch, OutboxEntry, PullResponse, PushRequest,
+    PushResponse, Store, StoredHabit, StoredHabitLog, StoredNote, StoredTask, SyncOutcome,
+    SyncTransport, TransportError, sync_with_retry,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
@@ -113,6 +113,105 @@ impl From<StoredHabitLog> for HabitLogDto {
             updated_at: log.updated_at,
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct NoteDto {
+    id: String,
+    title: String,
+    content: String,
+    task_id: Option<String>,
+    version: i64,
+    created_at: String,
+    updated_at: String,
+}
+
+impl From<StoredNote> for NoteDto {
+    fn from(note: StoredNote) -> Self {
+        NoteDto {
+            id: note.id,
+            title: note.title,
+            content: note.content,
+            task_id: note.task_id,
+            version: note.version,
+            created_at: note.created_at,
+            updated_at: note.updated_at,
+        }
+    }
+}
+
+#[tauri::command]
+fn notes_local(state: State<'_, AppState>) -> Result<Vec<NoteDto>, String> {
+    let store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .notes()
+        .map(|notes| notes.into_iter().map(NoteDto::from).collect())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn note_local_create(
+    state: State<'_, AppState>,
+    title: String,
+    content: String,
+    task_id: Option<String>,
+) -> Result<NoteDto, String> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    let note = NewNote {
+        id: id.clone(),
+        title,
+        content,
+        task_id,
+    };
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .create_note(&note, &mutation_id, &now())
+        .map_err(|error| error.to_string())?;
+    store
+        .notes()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|stored| stored.id == id)
+        .map(NoteDto::from)
+        .ok_or_else(|| "NOTE_NOT_FOUND_AFTER_CREATE".to_string())
+}
+
+#[tauri::command]
+fn note_local_update(
+    state: State<'_, AppState>,
+    note_id: String,
+    title: Option<String>,
+    content: Option<String>,
+    expected_version: i64,
+) -> Result<NoteDto, String> {
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    let patch = NotePatch { title, content };
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .update_note(&note_id, &patch, expected_version, &mutation_id, &now())
+        .map_err(|error| error.to_string())?;
+    store
+        .notes()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .find(|stored| stored.id == note_id)
+        .map(NoteDto::from)
+        .ok_or_else(|| "NOTE_NOT_FOUND_AFTER_UPDATE".to_string())
+}
+
+#[tauri::command]
+fn note_local_delete(
+    state: State<'_, AppState>,
+    note_id: String,
+    expected_version: i64,
+) -> Result<(), String> {
+    let mutation_id = uuid::Uuid::new_v4().to_string();
+    let mut store = state.store.lock().map_err(|_| "store lock poisoned")?;
+    store
+        .delete_note(&note_id, expected_version, &mutation_id, &now())
+        .map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -768,17 +867,6 @@ fn focus_stats(
     response.json().map_err(|error| error.to_string())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct NoteDto {
-    id: String,
-    title: String,
-    content: String,
-    task_id: Option<String>,
-    version: i64,
-    created_at: String,
-    updated_at: String,
-}
-
 #[derive(Deserialize)]
 struct NoteListResponse {
     items: Vec<NoteDto>,
@@ -1334,6 +1422,10 @@ pub fn run() {
             create_task,
             pending_mutations,
             list_habits,
+            notes_local,
+            note_local_create,
+            note_local_update,
+            note_local_delete,
             create_habit,
             update_habit,
             upsert_habit_log,
