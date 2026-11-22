@@ -693,11 +693,13 @@ class Spec01Contracts(unittest.TestCase):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         collection = api["paths"]["/focus-sessions"]
         list_op = collection["get"]
-        self.assertEqual(set(list_op["responses"]), {"200", "400", "401"})
+        self.assertEqual(set(list_op["responses"]), {"200", "400", "401", "404"})
         self.assertEqual(list_op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"],
                          "#/components/schemas/FocusSessionList")
-        limit = {parameter["name"]: parameter for parameter in list_op["parameters"]}["limit"]
-        self.assertEqual(limit["schema"], {"type": "integer", "minimum": 1, "maximum": 100, "default": 20})
+        params = {parameter["name"]: parameter for parameter in list_op["parameters"]}
+        self.assertEqual(params["limit"]["schema"],
+                         {"type": "integer", "minimum": 1, "maximum": 100, "default": 20})
+        self.assertEqual(params["task_id"]["schema"], {"type": "string", "format": "uuid"})
         create = collection["post"]
         self.assertEqual(set(create["responses"]), {"200", "201", "400", "401", "404", "409", "422"})
         self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])

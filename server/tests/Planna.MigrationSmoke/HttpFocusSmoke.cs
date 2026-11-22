@@ -21,6 +21,16 @@ internal static class HttpFocusSmoke
         var foreignSession = Guid.NewGuid();
         await AddSession(db, owner, ownerSession);
         await AddSession(db, foreign, foreignSession);
+        var ownerList = Guid.NewGuid();
+        var ownerTask = Guid.NewGuid();
+        await Exec(db, "INSERT INTO task_lists(id,owner_id,name) VALUES($1,$2,'Inbox')", ownerList, owner);
+        await Exec(db, "INSERT INTO tasks(id,owner_id,list_id,title) VALUES($1,$2,$3,'Focus task')",
+            ownerTask, owner, ownerList);
+        var foreignList = Guid.NewGuid();
+        var foreignTask = Guid.NewGuid();
+        await Exec(db, "INSERT INTO task_lists(id,owner_id,name) VALUES($1,$2,'Inbox')", foreignList, foreign);
+        await Exec(db, "INSERT INTO tasks(id,owner_id,list_id,title) VALUES($1,$2,$3,'Foreign task')",
+            foreignTask, foreign, foreignList);
 
         Environment.SetEnvironmentVariable("JWT_ISSUER", "planna-http-test");
         Environment.SetEnvironmentVariable("JWT_AUDIENCE", "planna-http-test-client");
@@ -114,6 +124,24 @@ internal static class HttpFocusSmoke
         var again = await Send(client, token, HttpMethod.Post, "/focus-sessions", "{}", Guid.NewGuid(), null);
         Check(again, HttpStatusCode.Created);
 
+        await Exec(db, """
+            INSERT INTO focus_sessions(owner_id, task_id, started_at, planned_seconds,
+                actual_seconds, state, version)
+            VALUES($1, $2, now() - interval '1 hour', 1500, 60, 'completed', 1)
+            """, owner, ownerTask);
+        var filtered = await List(client, token, null, ownerTask);
+        Check(filtered, HttpStatusCode.OK);
+        using (var document = JsonDocument.Parse(await filtered.Content.ReadAsStringAsync()))
+        {
+            var items = document.RootElement.GetProperty("items");
+            if (items.GetArrayLength() != 1 ||
+                items[0].GetProperty("task_id").GetString() != ownerTask.ToString())
+                throw new InvalidOperationException("Focus task filter mismatch.");
+        }
+        Check(await List(client, token, null, foreignTask), HttpStatusCode.NotFound);
+        Check(await List(client, token, null, Guid.NewGuid()), HttpStatusCode.NotFound);
+        Check(await List(client, token, "abc"), HttpStatusCode.BadRequest);
+
         await AssertStatus(client, token, HttpMethod.Post, "/focus-sessions",
             "{\"planned_seconds\":30}", Guid.NewGuid(), null, HttpStatusCode.UnprocessableEntity);
         await AssertStatus(client, token, HttpMethod.Post, "/focus-sessions",
@@ -138,10 +166,13 @@ internal static class HttpFocusSmoke
         return await client.SendAsync(request);
     }
 
-    private static async Task<HttpResponseMessage> List(HttpClient client, string? token, string? limit = null)
+    private static async Task<HttpResponseMessage> List(HttpClient client, string? token,
+        string? limit = null, Guid? taskId = null)
     {
-        var path = "/focus-sessions" + (limit is null ? "" : "?limit=" + limit);
-        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        var path = "/focus-sessions?";
+        if (limit is not null) path += "limit=" + limit + "&";
+        if (taskId is { } value) path += "task_id=" + value;
+        using var request = new HttpRequestMessage(HttpMethod.Get, path.TrimEnd('&', '?'));
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await client.SendAsync(request);
     }

@@ -59,7 +59,7 @@ public interface IFocusSessionService
     Task<FocusResult> CreateAsync(Guid ownerId, Guid mutationId, CreateFocusSessionRequest request,
         CancellationToken ct);
 
-    Task<FocusResult> ListAsync(Guid ownerId, int limit, CancellationToken ct);
+    Task<FocusResult> ListAsync(Guid ownerId, int limit, Guid? taskId, CancellationToken ct);
 
     Task<FocusResult> GetAsync(Guid ownerId, Guid sessionId, CancellationToken ct);
 

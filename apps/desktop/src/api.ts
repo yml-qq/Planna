@@ -211,7 +211,12 @@ export interface DesktopBridge {
   listConflicts(): Promise<ConflictIssue[]>
   resolveConflict(mutationId: string, strategy: ConflictStrategy): Promise<boolean>
   exportConflicts(): Promise<string>
-  focusList(baseUrl: string, accessToken: string, limit?: number): Promise<FocusSession[]>
+  focusList(
+    baseUrl: string,
+    accessToken: string,
+    limit?: number,
+    taskId?: string | null
+  ): Promise<FocusSession[]>
   focusStart(baseUrl: string, accessToken: string, plannedSeconds: number, taskId?: string | null): Promise<FocusSession>
   focusUpdate(
     baseUrl: string,
@@ -416,8 +421,14 @@ export class MemoryBridge implements DesktopBridge {
 
   private readonly focusSessions = new Map<string, FocusSession>()
 
-  async focusList(_baseUrl: string, _accessToken: string, limit = 20): Promise<FocusSession[]> {
+  async focusList(
+    _baseUrl: string,
+    _accessToken: string,
+    limit = 20,
+    taskId: string | null = null
+  ): Promise<FocusSession[]> {
     return [...this.focusSessions.values()]
+      .filter((session) => taskId === null || session.taskId === taskId)
       .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
       .slice(0, limit)
   }
@@ -1078,11 +1089,17 @@ export class TauriBridge implements DesktopBridge {
     return rows.map(toHabitLog)
   }
 
-  async focusList(baseUrl: string, accessToken: string, limit = 20): Promise<FocusSession[]> {
+  async focusList(
+    baseUrl: string,
+    accessToken: string,
+    limit = 20,
+    taskId: string | null = null
+  ): Promise<FocusSession[]> {
     const rows = await this.invoke<RawFocusSession[]>('focus_list', {
       baseUrl,
       accessToken,
-      limit
+      limit,
+      taskId
     })
     return rows.map(toFocusSession)
   }

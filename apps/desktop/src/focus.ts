@@ -81,6 +81,7 @@ export interface FocusStore {
   driftSeconds: Ref<number>
   stats: Ref<FocusStats | null>
   recent: Ref<FocusSession[]>
+  taskHistory: Ref<Record<string, FocusSession[]>>
   restHint: Ref<string | null>
   restRemaining: Ref<number>
   restEndsAt: Ref<number | null>
@@ -94,6 +95,7 @@ export interface FocusStore {
   recover: () => Promise<void>
   loadStats: (from: string, to: string, timeZone: string) => Promise<void>
   loadRecent: (limit?: number) => Promise<void>
+  loadTaskHistory: (taskId: string, limit?: number) => Promise<void>
   skipRest: () => void
   tick: () => void
   tickRest: () => void
@@ -110,6 +112,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const driftSeconds = ref(0)
   const stats = ref<FocusStats | null>(null)
   const recent = ref<FocusSession[]>([])
+  const taskHistory = ref<Record<string, FocusSession[]>>({})
   const restHint = ref<string | null>(null)
   const restRemaining = ref(0)
   const restEndsAt = ref<number | null>(null)
@@ -325,6 +328,17 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     }
   }
 
+  async function loadTaskHistory(taskId: string, limit = 50): Promise<void> {
+    const token = requireToken()
+    if (!token) return
+    try {
+      const sessions = await bridge.focusList(options.baseUrl(), token, limit, taskId)
+      taskHistory.value = { ...taskHistory.value, [taskId]: sessions }
+    } catch (failure) {
+      error.value = errorCode(failure)
+    }
+  }
+
   async function loadStats(from: string, to: string, timeZone: string): Promise<void> {
     const token = requireToken()
     if (!token) return
@@ -342,6 +356,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     driftSeconds,
     stats,
     recent,
+    taskHistory,
     restHint,
     restRemaining,
     restEndsAt,
@@ -355,6 +370,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     recover,
     loadStats,
     loadRecent,
+    loadTaskHistory,
     skipRest,
     tick,
     tickRest

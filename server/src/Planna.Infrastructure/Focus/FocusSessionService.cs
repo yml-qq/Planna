@@ -90,21 +90,33 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
         return new(FocusStatus.Created, view);
     }
 
-    public async Task<FocusResult> ListAsync(Guid ownerId, int limit, CancellationToken ct)
+    public async Task<FocusResult> ListAsync(Guid ownerId, int limit, Guid? taskId,
+        CancellationToken ct)
     {
         if (limit is < 1 or > 100) return new(FocusStatus.Invalid, Code: "INVALID_LIMIT");
-        var rows = await db.Database.GetDbConnection().QueryAsync<FocusRow>(new CommandDefinition("""
+        if (taskId is { } filterTask && filterTask != Guid.Empty &&
+            !await TaskOwnedAsync(ownerId, filterTask, ct))
+            return new(FocusStatus.NotFound, Code: "TASK_NOT_FOUND");
+        var sql = """
             SELECT id AS "Id", task_id AS "TaskId", started_at AS "StartedAt", ended_at AS "EndedAt",
                 planned_seconds AS "PlannedSeconds", actual_seconds AS "ActualSeconds",
                 break_seconds AS "BreakSeconds", state AS "State", version AS "Version",
                 created_at AS "CreatedAt", updated_at AS "UpdatedAt"
             FROM focus_sessions WHERE owner_id=@Owner
-            ORDER BY started_at DESC, id DESC LIMIT @Limit
-            """, new { Owner = ownerId, Limit = limit },
+            """;
+        if (taskId is { } value && value != Guid.Empty) sql += " AND task_id=@TaskId";
+        sql += " ORDER BY started_at DESC, id DESC LIMIT @Limit";
+        var rows = await db.Database.GetDbConnection().QueryAsync<FocusRow>(new CommandDefinition(sql,
+            new { Owner = ownerId, TaskId = taskId, Limit = limit },
             db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
         return new(FocusStatus.Ok,
             Sessions: new FocusSessionList(rows.Select(ToView).ToList()));
     }
+
+    private async Task<bool> TaskOwnedAsync(Guid ownerId, Guid taskId, CancellationToken ct) =>
+        await db.Database.SqlQuery<long>(
+            $"SELECT count(*) AS \"Value\" FROM tasks WHERE id={taskId} AND owner_id={ownerId} AND deleted_at IS NULL")
+            .SingleAsync(ct) == 1;
 
     public async Task<FocusResult> GetAsync(Guid ownerId, Guid sessionId, CancellationToken ct)
     {

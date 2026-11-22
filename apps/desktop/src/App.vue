@@ -321,11 +321,11 @@ async function startTaskFocus(taskId: string): Promise<void> {
 
 function toggleTaskDetail(taskId: string): void {
   expandedTask.value = expandedTask.value === taskId ? null : taskId
-  if (expandedTask.value) void focus.loadRecent(30)
+  if (expandedTask.value) void focus.loadTaskHistory(taskId)
 }
 
 function taskSessions(taskId: string) {
-  return focus.recent.value.filter((session) => session.taskId === taskId)
+  return focus.taskHistory.value[taskId] ?? []
 }
 
 function barHeight(seconds: number): number {

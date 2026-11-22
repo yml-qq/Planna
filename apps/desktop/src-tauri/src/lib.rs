@@ -492,13 +492,19 @@ fn focus_list(
     base_url: String,
     access_token: String,
     limit: Option<i64>,
+    task_id: Option<String>,
 ) -> Result<Vec<FocusSessionDto>, String> {
+    let mut url = format!(
+        "{}/focus-sessions?limit={}",
+        base(&base_url),
+        limit.unwrap_or(20)
+    );
+    if let Some(task_id) = task_id.filter(|value| !value.is_empty()) {
+        url.push_str("&task_id=");
+        url.push_str(&urlencoding::encode(&task_id));
+    }
     let response = http_client()
-        .get(format!(
-            "{}/focus-sessions?limit={}",
-            base(&base_url),
-            limit.unwrap_or(20)
-        ))
+        .get(url)
         .bearer_auth(&access_token)
         .send()
         .map_err(|error| error.to_string())?;

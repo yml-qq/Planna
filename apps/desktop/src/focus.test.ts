@@ -298,3 +298,25 @@ describe('focus history', () => {
     expect(store.error.value).toBe('FOCUS_SIGNED_OUT')
   })
 })
+
+describe('task focus history', () => {
+  it('filters sessions by task and stores per-task history', async () => {
+    let clock = 13_000_000
+    const { store, bridge } = createStore(() => clock)
+    await store.start(1500, 'task-1')
+    clock += 60_000
+    await store.complete()
+    await store.start(1500)
+    clock += 30_000
+    await store.complete()
+
+    const filtered = await bridge.focusList('', 'token', 20, 'task-1')
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0]?.taskId).toBe('task-1')
+
+    await store.loadTaskHistory('task-1')
+    expect(store.taskHistory.value['task-1']).toHaveLength(1)
+    await store.loadTaskHistory('missing')
+    expect(store.taskHistory.value['missing']).toEqual([])
+  })
+})

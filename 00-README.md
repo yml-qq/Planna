@@ -113,6 +113,7 @@
 | 100 | `docs/100-UX-02.md` | 功能入口可见性（卡片级） |
 | 101 | `docs/101-NOTE-04a.md` | 笔记关联任务 UI |
 | 102 | `docs/102-FOCUS-08.md` | 任务详情专注历史与统计柱状图 |
+| 103 | `docs/103-FOCUS-09a.md` | 按任务的专注历史 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

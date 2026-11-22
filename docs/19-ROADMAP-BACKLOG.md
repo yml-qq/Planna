@@ -77,7 +77,8 @@
 | E10 | FOCUS-06 | 休息倒计时与结束通知（已交付，见 `97-FOCUS-06.md`） | FOCUS-05 | device tests |
 | E10 | FOCUS-07 | 任务专注入口、休息时长配置与 7/30 天统计（已交付，见 `99-FOCUS-07.md`） | FOCUS-06 | ui tests |
 | E10 | FOCUS-08 | 任务详情专注历史与统计柱状图（已交付，见 `102-FOCUS-08.md`） | FOCUS-07 | ui tests |
-| E10 | FOCUS-09 | 独立任务详情页、按任务分页历史、报表导出与后台通知真机验证 | FOCUS-08 | stats tests |
+| E10 | FOCUS-09a | 按任务过滤的专注历史（已交付，见 `103-FOCUS-09a.md`） | FOCUS-08 | filter tests |
+| E10 | FOCUS-09b | 游标分页历史、周/月报表导出、独立详情页与后台通知真机验证 | FOCUS-09a | stats tests |
 | E10 | GOAL-01 | 目标/里程碑服务端 API（已交付，见 `88-GOAL-01.md`） | E04 | progress tests |
 | E10 | GOAL-02 | 目标/里程碑桌面 UI（已交付，见 `90-GOAL-02.md`） | GOAL-01 | progress tests |
 | E10 | GOAL-03 | AI 目标拆解接入、目标编辑与里程碑排序 | GOAL-02 | progress tests |

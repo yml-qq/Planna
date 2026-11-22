@@ -27,11 +27,20 @@ public static class FocusEndpoints
             (!int.TryParse(raw, NumberStyles.None, CultureInfo.InvariantCulture, out limit) ||
              limit is < 1 or > 100))
             return Error(http, 400, "INVALID_LIMIT");
-        var result = await service.ListAsync(owner, limit, ct);
+        Guid? taskId = null;
+        var rawTask = http.Request.Query["task_id"].ToString();
+        if (rawTask.Length > 0)
+        {
+            if (!Guid.TryParse(rawTask, out var parsedTask) || parsedTask == Guid.Empty)
+                return Error(http, 400, "INVALID_TASK_ID");
+            taskId = parsedTask;
+        }
+        var result = await service.ListAsync(owner, limit, taskId, ct);
         return result.Status switch
         {
             FocusStatus.Ok => TypedResults.Ok(result.Sessions),
             FocusStatus.Invalid => Error(http, 400, result.Code!),
+            FocusStatus.NotFound => Error(http, 404, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
     }
