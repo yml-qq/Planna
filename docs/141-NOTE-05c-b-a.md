@@ -1,6 +1,6 @@
 # 141｜NOTE-05c-b-a：附件配额并发安全与可配置
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；CI 见 `VALIDATION.md`。并发竞态与配置解析未做自动化测试。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45066039013](https://github.com/yml-qq/Planna/actions/runs/45066039013) 与 [Desktop core 45066039173](https://github.com/yml-qq/Planna/actions/runs/45066039173) 均 **success**。并发竞态与配置解析未做自动化测试。
 
 ## 范围与验收
 

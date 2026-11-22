@@ -919,4 +919,5 @@
 - 上传事务内 `pg_advisory_xact_lock(hashtext(owner))` 后检查重放/配额再插入，串行化同一 owner 的并发上传；文件写入失败回滚并删文件。
 - 配额改为 `NOTE_ATTACHMENT_MAX_PER_NOTE`（默认 20）/`NOTE_ATTACHMENT_MAX_OWNER_BYTES`（默认 200 MiB）可配，非法值回退默认。
 - 原有配额冒烟（20 条/200 MiB）继续通过；本地 build/format/契约 36 项通过。
+- [Server integration 45066039013](https://github.com/yml-qq/Planna/actions/runs/45066039013) 与 [Desktop core 45066039173](https://github.com/yml-qq/Planna/actions/runs/45066039173) 均 **success**。
 - 未做并发竞态自动化测试；配置解析回退不告警；锁持有含文件写入。
