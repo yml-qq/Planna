@@ -8,6 +8,7 @@ import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
 import { createNoteStore, notesForTask } from './notes'
+import { createCalendarStore, monthLeadingBlanks } from './calendar'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -80,6 +81,10 @@ const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
 const focusStatsDays = ref(7)
 const modules = createModuleStore()
 const notes = createNoteStore(bridge, {
+  baseUrl: () => baseUrl.value,
+  token: () => session.token.value
+})
+const calendar = createCalendarStore(bridge, {
   baseUrl: () => baseUrl.value,
   token: () => session.token.value
 })
@@ -224,6 +229,7 @@ async function submitLogin(): Promise<void> {
     await habits.refresh()
     await goals.refresh()
     await notes.refresh()
+    await calendar.load()
     await focus.recover()
     await focus.loadRecent(30)
     await refreshFocusStats()
@@ -504,6 +510,7 @@ async function syncNow(): Promise<void> {
       await habits.refresh()
       await goals.refresh()
       await notes.refresh()
+      await calendar.load()
       await focus.loadRecent(30)
       await refreshOutbox()
     }
@@ -752,6 +759,7 @@ onMounted(async () => {
     await habits.refresh()
     await goals.refresh()
     await notes.refresh()
+    await calendar.load()
     await focus.recover()
     await focus.loadRecent(30)
     await refreshFocusStats()
@@ -1195,6 +1203,38 @@ onMounted(async () => {
           </ul>
         </template>
         <p v-else class="empty">完成一次专注后这里会显示统计。</p>
+      </div>
+    </section>
+
+    <section v-if="signedIn" id="calendar" class="card" aria-labelledby="calendar-title">
+      <div class="card__row">
+        <h2 id="calendar-title" class="card__title">工作日历</h2>
+        <div class="composer__row">
+          <button class="button button--ghost" type="button" @click="calendar.previousMonth()">上一月</button>
+          <span class="habits__meta">{{ calendar.year.value }} 年 {{ calendar.month.value }} 月</span>
+          <button class="button button--ghost" type="button" @click="calendar.nextMonth()">下一月</button>
+        </div>
+      </div>
+      <p class="card__hint">点击日期切换“工作日/休息日”覆盖；默认周一至周五为工作日。</p>
+      <p v-if="calendar.error.value" class="status status--error" role="alert">{{ calendar.error.value }}</p>
+      <div class="calendar-grid" role="grid" aria-label="工作日历">
+        <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label" class="calendar-weekday">{{ label }}</span>
+        <span
+          v-for="blank in monthLeadingBlanks(calendar.year.value, calendar.month.value)"
+          :key="'blank-' + blank"
+          class="calendar-blank"
+        ></span>
+        <button
+          v-for="day in calendar.days.value"
+          :key="day.date"
+          class="calendar-day"
+          :class="'calendar-day--' + day.kind"
+          type="button"
+          :aria-label="day.date + (day.kind === 'workday' ? ' 工作日' : ' 休息日')"
+          @click="calendar.toggle(day.date, day.kind)"
+        >
+          {{ Number(day.date.slice(8)) }}
+        </button>
       </div>
     </section>
 

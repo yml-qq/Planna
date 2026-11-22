@@ -154,6 +154,7 @@
 | 141 | `docs/141-NOTE-05c-b-a.md` | 附件配额并发安全与可配置 |
 | 142 | `docs/142-NOTE-05c-b-b-a.md` | 并发上传配额验证与单文件上限配置 |
 | 143 | `docs/143-UX-05-a.md` | axe 无障碍自动化测试（确认对话框） |
+| 144 | `docs/144-TIME-01G-b-b-b-a.md` | 工作日历客户端与月视图 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

@@ -27,6 +27,11 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export interface WorkdayDay {
+  date: string
+  kind: 'holiday' | 'workday'
+}
+
 export interface NoteAttachment {
   id: string
   noteId: string
@@ -359,6 +364,26 @@ export interface DesktopBridge {
     attachmentId: string
   ): Promise<void>
   pickNoteAttachment(): Promise<string | null>
+  workdayDays(
+    baseUrl: string,
+    accessToken: string,
+    from: string,
+    to: string,
+    jurisdiction?: string
+  ): Promise<WorkdayDay[]>
+  workdayOverrideSet(
+    baseUrl: string,
+    accessToken: string,
+    date: string,
+    kind: 'holiday' | 'workday',
+    jurisdiction?: string
+  ): Promise<void>
+  workdayOverrideClear(
+    baseUrl: string,
+    accessToken: string,
+    date: string,
+    jurisdiction?: string
+  ): Promise<void>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
 
@@ -973,6 +998,42 @@ export class MemoryBridge implements DesktopBridge {
 
   async pickNoteAttachment(): Promise<string | null> {
     return '/tmp/note.txt'
+  }
+
+  private readonly workdayOverrides = new Map<string, 'holiday' | 'workday'>()
+
+  async workdayDays(
+    _baseUrl: string,
+    _accessToken: string,
+    from: string,
+    to: string
+  ): Promise<WorkdayDay[]> {
+    const days: WorkdayDay[] = []
+    const last = new Date(to + 'T00:00:00Z')
+    for (let cursor = new Date(from + 'T00:00:00Z'); cursor <= last; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+      const date = cursor.toISOString().slice(0, 10)
+      const override = this.workdayOverrides.get(date)
+      const weekend = cursor.getUTCDay() === 0 || cursor.getUTCDay() === 6
+      days.push({ date, kind: override ?? (weekend ? 'holiday' : 'workday') })
+    }
+    return days
+  }
+
+  async workdayOverrideSet(
+    _baseUrl: string,
+    _accessToken: string,
+    date: string,
+    kind: 'holiday' | 'workday'
+  ): Promise<void> {
+    this.workdayOverrides.set(date, kind)
+  }
+
+  async workdayOverrideClear(
+    _baseUrl: string,
+    _accessToken: string,
+    date: string
+  ): Promise<void> {
+    this.workdayOverrides.delete(date)
   }
 
   async exportConflicts(): Promise<string> {
@@ -1626,6 +1687,52 @@ export class TauriBridge implements DesktopBridge {
 
   async pickNoteAttachment(): Promise<string | null> {
     return this.invoke<string | null>('note_attachment_pick')
+  }
+
+  async workdayDays(
+    baseUrl: string,
+    accessToken: string,
+    from: string,
+    to: string,
+    jurisdiction?: string
+  ): Promise<WorkdayDay[]> {
+    return this.invoke<WorkdayDay[]>('workday_days', {
+      baseUrl,
+      accessToken,
+      from,
+      to,
+      jurisdiction: jurisdiction ?? null
+    })
+  }
+
+  async workdayOverrideSet(
+    baseUrl: string,
+    accessToken: string,
+    date: string,
+    kind: 'holiday' | 'workday',
+    jurisdiction?: string
+  ): Promise<void> {
+    await this.invoke<void>('workday_override_set', {
+      baseUrl,
+      accessToken,
+      date,
+      kind,
+      jurisdiction: jurisdiction ?? null
+    })
+  }
+
+  async workdayOverrideClear(
+    baseUrl: string,
+    accessToken: string,
+    date: string,
+    jurisdiction?: string
+  ): Promise<void> {
+    await this.invoke<void>('workday_override_clear', {
+      baseUrl,
+      accessToken,
+      date,
+      jurisdiction: jurisdiction ?? null
+    })
   }
 
   async goalBreakdownPreview(

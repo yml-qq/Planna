@@ -158,7 +158,14 @@ describe('task store', () => {
       noteAttachmentDelete: async () => {
         throw new Error('offline')
       },
-      pickNoteAttachment: async () => null
+      pickNoteAttachment: async () => null,
+      workdayDays: async () => [],
+      workdayOverrideSet: async () => {
+        throw new Error('offline')
+      },
+      workdayOverrideClear: async () => {
+        throw new Error('offline')
+      }
     }
     const store = createTaskStore(failing, 'inbox')
     await store.refresh()

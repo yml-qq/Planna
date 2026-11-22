@@ -1356,6 +1356,91 @@ fn note_attachment_pick(app: tauri::AppHandle) -> Result<Option<String>, String>
     Ok(Some(path.to_string_lossy().into_owned()))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct WorkdayDayDto {
+    date: String,
+    kind: String,
+}
+
+#[derive(Deserialize)]
+struct WorkdayDaysDto {
+    days: Vec<WorkdayDayDto>,
+}
+
+#[tauri::command]
+fn workday_days(
+    base_url: String,
+    access_token: String,
+    from: String,
+    to: String,
+    jurisdiction: Option<String>,
+) -> Result<Vec<WorkdayDayDto>, String> {
+    let mut url = format!("{}/calendar/workdays?from={from}&to={to}", base(&base_url));
+    if let Some(jurisdiction) = jurisdiction.filter(|value| !value.is_empty()) {
+        url.push_str("&jurisdiction=");
+        url.push_str(&urlencoding::encode(&jurisdiction));
+    }
+    let response = http_client()
+        .get(url)
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let body: WorkdayDaysDto = response.json().map_err(|error| error.to_string())?;
+    Ok(body.days)
+}
+
+#[tauri::command]
+fn workday_override_set(
+    base_url: String,
+    access_token: String,
+    date: String,
+    kind: String,
+    jurisdiction: Option<String>,
+) -> Result<(), String> {
+    let response = http_client()
+        .put(format!(
+            "{}/calendar/workday-overrides/{date}",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .json(&serde_json::json!({
+            "jurisdiction": jurisdiction,
+            "kind": kind,
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn workday_override_clear(
+    base_url: String,
+    access_token: String,
+    date: String,
+    jurisdiction: Option<String>,
+) -> Result<(), String> {
+    let mut url = format!("{}/calendar/workday-overrides/{date}", base(&base_url));
+    if let Some(jurisdiction) = jurisdiction.filter(|value| !value.is_empty()) {
+        url.push_str("?jurisdiction=");
+        url.push_str(&urlencoding::encode(&jurisdiction));
+    }
+    let response = http_client()
+        .delete(url)
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1631,6 +1716,9 @@ pub fn run() {
             note_attachment_download,
             note_attachment_delete,
             note_attachment_pick,
+            workday_days,
+            workday_override_set,
+            workday_override_clear,
             create_habit,
             update_habit,
             upsert_habit_log,

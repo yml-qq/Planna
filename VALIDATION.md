@@ -937,3 +937,10 @@
 - 仅单组件/三条规则；jsdom 无真实 dialog 焦点/布局，不验证对比度/键盘/屏幕阅读器；不代表 WCAG 合规。
 - [Server integration 45070182040](https://github.com/yml-qq/Planna/actions/runs/45070182040) 与 [Desktop core 45070182031](https://github.com/yml-qq/Planna/actions/runs/45070182031) 均 **success**。
 - 全应用 axe/对比度与人工验证留待 `UX-05-b`。
+
+## TIME-01G-b-b-b-a 工作日历 UI 检查（2026-11-22）
+
+- Tauri 新增 workday_days/override_set/override_clear；桥接与 Memory 模拟；calendar store（月边界/前导空白/加载/切换/清除/跨年）。
+- UI 新增工作日历卡片：月导航、7 列网格、工作日/休息日样式、点击切换覆盖。
+- 前端新增 4 项测试，合计 96 项；build、shell clippy/fmt 通过。
+- 不内置法定数据；未纳入模块可见性；无备注输入/清除按钮；role=grid 子项非 gridcell。
