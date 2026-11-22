@@ -15,7 +15,9 @@ public sealed record FocusSessionView(
     [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt,
     [property: JsonPropertyName("updated_at")] DateTimeOffset UpdatedAt);
 
-public sealed record FocusSessionList([property: JsonPropertyName("items")] IReadOnlyList<FocusSessionView> Items);
+public sealed record FocusSessionList(
+    [property: JsonPropertyName("items")] IReadOnlyList<FocusSessionView> Items,
+    [property: JsonPropertyName("next_cursor")] string? NextCursor = null);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CreateFocusSessionRequest(
@@ -59,7 +61,8 @@ public interface IFocusSessionService
     Task<FocusResult> CreateAsync(Guid ownerId, Guid mutationId, CreateFocusSessionRequest request,
         CancellationToken ct);
 
-    Task<FocusResult> ListAsync(Guid ownerId, int limit, Guid? taskId, CancellationToken ct);
+    Task<FocusResult> ListAsync(Guid ownerId, int limit, Guid? taskId, string? cursor,
+        CancellationToken ct);
 
     Task<FocusResult> GetAsync(Guid ownerId, Guid sessionId, CancellationToken ct);
 

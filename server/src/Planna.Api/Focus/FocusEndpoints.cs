@@ -35,7 +35,9 @@ public static class FocusEndpoints
                 return Error(http, 400, "INVALID_TASK_ID");
             taskId = parsedTask;
         }
-        var result = await service.ListAsync(owner, limit, taskId, ct);
+        var cursor = http.Request.Query["cursor"].ToString();
+        var result = await service.ListAsync(owner, limit, taskId,
+            cursor.Length == 0 ? null : cursor, ct);
         return result.Status switch
         {
             FocusStatus.Ok => TypedResults.Ok(result.Sessions),

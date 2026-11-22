@@ -1588,6 +1588,7 @@ paths:
       parameters:
         - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
         - {name: task_id, in: query, required: false, schema: {type: string, format: uuid}}
+        - {name: cursor, in: query, required: false, description: Opaque cursor from next_cursor; do not parse client-side., schema: {type: string, maxLength: 256}}
       responses:
         "200":
           description: Focus sessions
@@ -2617,6 +2618,7 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/FocusSession'}
+        next_cursor: {type: [string, "null"], maxLength: 256}
     CreateFocusSessionRequest:
       type: object
       additionalProperties: false

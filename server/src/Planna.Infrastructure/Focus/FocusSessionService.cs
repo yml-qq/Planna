@@ -91,12 +91,21 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
     }
 
     public async Task<FocusResult> ListAsync(Guid ownerId, int limit, Guid? taskId,
-        CancellationToken ct)
+        string? cursor, CancellationToken ct)
     {
         if (limit is < 1 or > 100) return new(FocusStatus.Invalid, Code: "INVALID_LIMIT");
         if (taskId is { } filterTask && filterTask != Guid.Empty &&
             !await TaskOwnedAsync(ownerId, filterTask, ct))
             return new(FocusStatus.NotFound, Code: "TASK_NOT_FOUND");
+        DateTime? cursorStarted = null;
+        Guid? cursorId = null;
+        if (!string.IsNullOrEmpty(cursor))
+        {
+            if (!TryDecodeCursor(cursor, out var started, out var id))
+                return new(FocusStatus.Invalid, Code: "INVALID_CURSOR");
+            cursorStarted = started;
+            cursorId = id;
+        }
         var sql = """
             SELECT id AS "Id", task_id AS "TaskId", started_at AS "StartedAt", ended_at AS "EndedAt",
                 planned_seconds AS "PlannedSeconds", actual_seconds AS "ActualSeconds",
@@ -105,12 +114,55 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
             FROM focus_sessions WHERE owner_id=@Owner
             """;
         if (taskId is { } value && value != Guid.Empty) sql += " AND task_id=@TaskId";
+        if (cursorStarted is not null) sql += " AND (started_at, id) < (@CursorStarted, @CursorId)";
         sql += " ORDER BY started_at DESC, id DESC LIMIT @Limit";
-        var rows = await db.Database.GetDbConnection().QueryAsync<FocusRow>(new CommandDefinition(sql,
-            new { Owner = ownerId, TaskId = taskId, Limit = limit },
-            db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+        var rows = (await db.Database.GetDbConnection().QueryAsync<FocusRow>(new CommandDefinition(sql,
+            new
+            {
+                Owner = ownerId,
+                TaskId = taskId,
+                Limit = limit,
+                CursorStarted = cursorStarted,
+                CursorId = cursorId
+            }, db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct))).ToList();
+        var next = rows.Count == limit ? EncodeCursor(rows[^1]) : null;
         return new(FocusStatus.Ok,
-            Sessions: new FocusSessionList(rows.Select(ToView).ToList()));
+            Sessions: new FocusSessionList(rows.Select(ToView).ToList(), next));
+    }
+
+    private static string EncodeCursor(FocusRow row) =>
+        Base64UrlEncode(Encoding.UTF8.GetBytes(
+            $"{AsInstant(row.StartedAt):O}|{row.Id}"));
+
+    private static bool TryDecodeCursor(string cursor, out DateTime startedAt, out Guid id)
+    {
+        startedAt = default;
+        id = default;
+        try
+        {
+            var raw = Encoding.UTF8.GetString(Base64UrlDecode(cursor));
+            var separator = raw.IndexOf('|');
+            if (separator <= 0) return false;
+            if (!DateTimeOffset.TryParse(raw[..separator], null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var parsed)) return false;
+            if (!Guid.TryParse(raw[(separator + 1)..], out id) || id == Guid.Empty) return false;
+            startedAt = parsed.UtcDateTime;
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private static string Base64UrlEncode(byte[] value) =>
+        Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static byte[] Base64UrlDecode(string value)
+    {
+        var padded = value.Replace('-', '+').Replace('_', '/');
+        padded += new string('=', (4 - padded.Length % 4) % 4);
+        return Convert.FromBase64String(padded);
     }
 
     private async Task<bool> TaskOwnedAsync(Guid ownerId, Guid taskId, CancellationToken ct) =>
@@ -259,6 +311,9 @@ public sealed class FocusSessionService(TaskWriteContext db, TimeProvider clock)
             return new(FocusStatus.Conflict, Code: "IDEMPOTENCY_KEY_REUSED");
         return new(FocusStatus.Replayed, JsonSerializer.Deserialize<FocusSessionView>(previous.Response));
     }
+
+    private static DateTimeOffset AsInstant(DateTime value) =>
+        new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
     private static FocusSessionView ToView(FocusRow row) => new(row.Id, row.TaskId,
         Instant(row.StartedAt), row.EndedAt is { } ended ? Instant(ended) : null, row.PlannedSeconds,

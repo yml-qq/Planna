@@ -714,6 +714,10 @@ class Spec01Contracts(unittest.TestCase):
         self.assertEqual(params["limit"]["schema"],
                          {"type": "integer", "minimum": 1, "maximum": 100, "default": 20})
         self.assertEqual(params["task_id"]["schema"], {"type": "string", "format": "uuid"})
+        self.assertEqual(params["cursor"]["schema"], {"type": "string", "maxLength": 256})
+        session_list = api["components"]["schemas"]["FocusSessionList"]
+        self.assertEqual(set(session_list["required"]), {"items"})
+        self.assertEqual(session_list["properties"]["next_cursor"]["type"], ["string", "null"])
         create = collection["post"]
         self.assertEqual(set(create["responses"]), {"200", "201", "400", "401", "404", "409", "422"})
         self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, create["parameters"])
