@@ -759,3 +759,10 @@
 - 冒烟断言 10/01 调休工作日、10/03 周六休息，并直接测试纯函数跨周末 `AddWorkdays`。
 - [Server integration 45016219386](https://github.com/yml-qq/Planna/actions/runs/45016219386) 与 [Desktop core 45016219390](https://github.com/yml-qq/Planna/actions/runs/45016219390) 均 **success**。
 - **仍不内置法定节假日数据**；legal_workday RRULE、occurrence/提醒重排、导入与 UI 留待 `TIME-01G-b-b`。
+
+## UX-03 导航/主题/无障碍基础检查（2026-11-22）
+
+- 登录后导航按模块可见性生成锚点（任务/专注/目标/习惯/笔记）；隐藏模块不生成链接；各区块加 `scroll-margin-top`。
+- 主题 auto/light/dark 持久化并以 `data-theme` 覆盖 CSS 变量；紧凑密度开关持久化；跳转主内容链接与 `:focus-visible` 轮廓。
+- 前端新增 3 项纯函数测试（主题归一化、导航链接、密度 class），合计 **88 项**；`pnpm build` 通过；服务端无变更。
+- 未接入 axe/Lighthouse 或屏幕阅读器真机测试；导航为页内锚点而非路由。

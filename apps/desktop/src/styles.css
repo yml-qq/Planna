@@ -461,3 +461,105 @@ body {
   padding-top: 8px;
   border-top: 1px dashed var(--border);
 }
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --surface: #f7f5f2;
+  --surface-raised: #ffffff;
+  --text: #1f1c18;
+  --text-muted: #6b645c;
+  --accent: #2f6f4f;
+  --danger: #a4342a;
+  --border: #ded8d0;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #1c1a17;
+  --surface-raised: #262320;
+  --text: #f2eee8;
+  --text-muted: #b3aaa0;
+  --accent: #6fc79a;
+  --danger: #f08a7d;
+  --border: #3a352f;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: var(--surface-raised);
+  border-radius: 6px;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: 12px;
+}
+
+.app__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.app__nav a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app__nav a:hover,
+.app__nav a:focus-visible {
+  text-decoration: underline;
+}
+
+.app__prefs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.app__compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app--compact {
+  padding-top: 24px;
+}
+
+.app--compact .card,
+.app--compact .composer {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.app--compact .card__title {
+  margin-bottom: 4px;
+}
+
+#tasks,
+#focus,
+#goals,
+#habits,
+#notes {
+  scroll-margin-top: 16px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
