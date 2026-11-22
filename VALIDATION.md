@@ -774,3 +774,10 @@
 - 新增 4 项 core 测试（原子/幂等、版本冲突与 base_version、删除、校验），`cargo test` 全量通过；`cargo fmt --check`、`cargo clippy -D warnings` 通过。
 - [Server integration 45026244524](https://github.com/yml-qq/Planna/actions/runs/45026244524) 与 [Desktop core 45026244527](https://github.com/yml-qq/Planna/actions/runs/45026244527) 均 **success**。
 - 本地笔记尚未接入 UI；拉取仍忽略 note，留待 `NOTE-04b-2b-b`。
+
+## NOTE-04b-2b-b-a 桌面拉取笔记检查（2026-11-22）
+
+- `sync.rs` pull 过滤加入 `note`；`apply_note_pull` 处理 upsert/tombstone、缺失行 tombstone 与版本单调（旧版本 skipped_stale）。
+- `StoredNote` 增加 created_at 并为 task_id/created_at/deleted_at 提供 serde 默认值。
+- 新增 2 项 core 测试（upsert+stale、upsert→delete），笔记测试合计 6 项；`cargo test`、`cargo fmt --check`、`cargo clippy -D warnings` 通过。
+- 桌面笔记 UI 仍走在线 API；切换本地读写留待 `NOTE-04b-2b-b-b`。

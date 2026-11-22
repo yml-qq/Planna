@@ -181,9 +181,13 @@ pub struct StoredNote {
     pub id: String,
     pub title: String,
     pub content: String,
+    #[serde(default)]
     pub task_id: Option<String>,
     pub version: i64,
+    #[serde(default)]
+    pub created_at: String,
     pub updated_at: String,
+    #[serde(default)]
     pub deleted_at: Option<String>,
 }
 
@@ -682,7 +686,7 @@ impl Store {
 
     pub fn notes(&self) -> StoreResult<Vec<StoredNote>> {
         let mut statement = self.connection.prepare(
-            "SELECT id, title, content, task_id, version, updated_at, deleted_at
+            "SELECT id, title, content, task_id, version, created_at, updated_at, deleted_at
              FROM notes WHERE deleted_at IS NULL ORDER BY updated_at DESC, id",
         )?;
         let rows = statement.query_map([], |row| {
@@ -692,8 +696,9 @@ impl Store {
                 content: row.get(2)?,
                 task_id: row.get(3)?,
                 version: row.get(4)?,
-                updated_at: row.get(5)?,
-                deleted_at: row.get(6)?,
+                created_at: row.get(5)?,
+                updated_at: row.get(6)?,
+                deleted_at: row.get(7)?,
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()
@@ -771,6 +776,10 @@ impl Store {
                     continue;
                 }
                 "task" => {}
+                "note" => {
+                    apply_note_pull(&transaction, change, &mut outcome)?;
+                    continue;
+                }
                 _ => {
                     outcome.skipped_stale += 1;
                     continue;
@@ -1540,6 +1549,70 @@ fn load_task(transaction: &Transaction<'_>, task_id: &str) -> StoreResult<Option
         )
         .optional()
         .map_err(StoreError::from)
+}
+
+fn apply_note_pull(
+    transaction: &rusqlite::Transaction<'_>,
+    change: &Change,
+    outcome: &mut PullOutcome,
+) -> StoreResult<()> {
+    let local: Option<(i64,)> = transaction
+        .query_row(
+            "SELECT version FROM notes WHERE id = ?1",
+            params![change.entity_id],
+            |row| Ok((row.get(0)?,)),
+        )
+        .optional()?;
+    if let Some((version,)) = local
+        && version >= change.entity_version
+    {
+        outcome.skipped_stale += 1;
+        return Ok(());
+    }
+    let payload: serde_json::Value = serde_json::from_str(&change.payload)
+        .map_err(|_| StoreError::Validation("pull payload is not JSON"))?;
+    if change.operation == "delete" {
+        let deleted_at = payload
+            .get("deleted_at")
+            .or_else(|| payload.get("updated_at"))
+            .and_then(|value| value.as_str())
+            .unwrap_or_default();
+        transaction.execute(
+            "INSERT INTO notes(id, title, content, version, created_at, updated_at, deleted_at)
+             VALUES (?1, '', '', ?2, ?3, ?3, ?3)
+             ON CONFLICT(id) DO UPDATE SET deleted_at = excluded.deleted_at,
+                version = excluded.version, updated_at = excluded.updated_at",
+            params![change.entity_id, change.entity_version, deleted_at],
+        )?;
+        outcome.applied += 1;
+        return Ok(());
+    }
+    let stored: StoredNote = serde_json::from_value(payload)
+        .map_err(|_| StoreError::Validation("pull payload is not a note"))?;
+    let created_at = if stored.created_at.is_empty() {
+        stored.updated_at.clone()
+    } else {
+        stored.created_at.clone()
+    };
+    transaction.execute(
+        "INSERT INTO notes(id, title, content, task_id, version, created_at, updated_at, deleted_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+         ON CONFLICT(id) DO UPDATE SET title = excluded.title, content = excluded.content,
+            task_id = excluded.task_id, version = excluded.version,
+            updated_at = excluded.updated_at, deleted_at = excluded.deleted_at",
+        params![
+            change.entity_id,
+            stored.title,
+            stored.content,
+            stored.task_id,
+            change.entity_version,
+            created_at,
+            stored.updated_at,
+            stored.deleted_at
+        ],
+    )?;
+    outcome.applied += 1;
+    Ok(())
 }
 
 fn apply_habit_pull(

@@ -1,4 +1,4 @@
-use planna_desktop_core::{NewNote, NotePatch, Store, StoreError};
+use planna_desktop_core::{Change, NewNote, NotePatch, Store, StoreError};
 
 fn note() -> NewNote {
     NewNote {
@@ -130,4 +130,68 @@ fn note_validation_rejects_empty_and_oversized_values() {
     ));
     assert!(store.notes().expect("notes").is_empty());
     assert!(store.pending_mutations(10).expect("pending").is_empty());
+}
+
+#[test]
+fn apply_pull_upserts_notes_and_skips_stale_versions() {
+    let mut store = Store::open_in_memory().expect("store");
+    let change = Change {
+        entity_type: "note".to_string(),
+        entity_id: "note-remote".to_string(),
+        operation: "upsert".to_string(),
+        entity_version: 2,
+        payload: serde_json::json!({
+            "id": "note-remote",
+            "title": "Remote",
+            "content": "From server",
+            "task_id": null,
+            "version": 2,
+            "created_at": "2026-11-20T00:00:00+00:00",
+            "updated_at": "2026-11-22T00:00:00+00:00"
+        })
+        .to_string(),
+    };
+    let outcome = store
+        .apply_pull(std::slice::from_ref(&change))
+        .expect("pulled");
+    assert_eq!(outcome.applied, 1);
+    assert_eq!(store.notes().expect("notes")[0].title, "Remote");
+
+    let stale = store.apply_pull(&[change]).expect("stale");
+    assert_eq!(stale.applied, 0);
+    assert_eq!(stale.skipped_stale, 1);
+}
+
+#[test]
+fn apply_pull_note_tombstone_hides_the_row() {
+    let mut store = Store::open_in_memory().expect("store");
+    let upsert = Change {
+        entity_type: "note".to_string(),
+        entity_id: "note-remote".to_string(),
+        operation: "upsert".to_string(),
+        entity_version: 1,
+        payload: serde_json::json!({
+            "id": "note-remote",
+            "title": "Remote",
+            "content": "From server",
+            "version": 1,
+            "created_at": "2026-11-20T00:00:00+00:00",
+            "updated_at": "2026-11-22T00:00:00+00:00"
+        })
+        .to_string(),
+    };
+    let delete = Change {
+        entity_type: "note".to_string(),
+        entity_id: "note-remote".to_string(),
+        operation: "delete".to_string(),
+        entity_version: 2,
+        payload: serde_json::json!({
+            "id": "note-remote",
+            "version": 2,
+            "deleted_at": "2026-11-22T01:00:00+00:00"
+        })
+        .to_string(),
+    };
+    store.apply_pull(&[upsert, delete]).expect("pulled");
+    assert!(store.notes().expect("notes").is_empty());
 }
