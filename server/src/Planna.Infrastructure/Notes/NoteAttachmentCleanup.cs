@@ -24,9 +24,11 @@ public sealed class NoteAttachmentCleanup(string connection, IConfiguration conf
                 """, new { Cutoff = olderThan.UtcDateTime }, cancellationToken: ct))).ToList();
         var root = NoteAttachmentStorage.Root(configuration);
         var removedFiles = 0;
+        var purged = 0;
         foreach (var row in rows)
         {
-            var path = NoteAttachmentStorage.PathFor(root, row.StorageKey);
+            var path = NoteAttachmentStorage.PathWithinRoot(root, row.StorageKey);
+            if (path is null) continue;
             try
             {
                 if (File.Exists(path))
@@ -42,7 +44,8 @@ public sealed class NoteAttachmentCleanup(string connection, IConfiguration conf
             }
             await db.ExecuteAsync(new CommandDefinition(
                 "DELETE FROM note_attachments WHERE id=@Id", new { row.Id }, cancellationToken: ct));
+            purged++;
         }
-        return new AttachmentCleanupReport(rows.Count, removedFiles);
+        return new AttachmentCleanupReport(purged, removedFiles);
     }
 }

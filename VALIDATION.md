@@ -896,3 +896,10 @@
 - 仅 NuGet/npm 生产依赖；不含 cargo audit/系统库/镜像/SBOM；高危阻塞，中低危需人工查看。
 - [Server integration 45058399373](https://github.com/yml-qq/Planna/actions/runs/45058399373) 与 [Desktop core 45058399351](https://github.com/yml-qq/Planna/actions/runs/45058399351) 均 **success**（含 NuGet/pnpm 审计步骤）。
 - 外部渗透测试、密钥审计与许可证/SBOM 留待 `SEC-02-b`。
+
+## NOTE-05a-c 附件路径校验检查（2026-11-22）
+
+- 新增 `PathWithinRoot`（GetFullPath + 根目录前缀校验）；下载/清理使用；篡改 storage_key 返回 404 且不越界读取。
+- 清理计数改为实际删除数；篡改行跳过、不删文件/行。
+- 冒烟：根目录外文件 + `../` storage_key → 下载 404 不含内容；软删后清理 `{0,0}`，外部文件与行保留；正常路径仍 `{1,1}`。
+- 不防御符号链接；无契约变更/迁移。CI 见链接。

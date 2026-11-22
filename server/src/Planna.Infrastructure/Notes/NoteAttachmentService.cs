@@ -96,8 +96,8 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             return (new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND"), null);
         var row = await LoadAsync(ownerId, noteId, attachmentId, ct);
         if (row is null) return (new(NoteAttachmentStatus.NotFound, Code: "ATTACHMENT_NOT_FOUND"), null);
-        var path = Path.Combine(root, row.StorageKey.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(path))
+        var path = NoteAttachmentStorage.PathWithinRoot(root, row.StorageKey);
+        if (path is null || !File.Exists(path))
             return (new(NoteAttachmentStatus.NotFound, Code: "ATTACHMENT_FILE_MISSING"), null);
         return (new(NoteAttachmentStatus.Ok),
             new NoteAttachmentDownload(ToView(row), File.OpenRead(path)));

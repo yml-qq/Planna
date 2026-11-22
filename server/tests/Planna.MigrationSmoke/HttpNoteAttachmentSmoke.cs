@@ -105,6 +105,28 @@ internal static class HttpNoteAttachmentSmoke
         if (report.PurgedAttachments != 1 || report.RemovedFiles != 1 || File.Exists(filePath) ||
             await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1", note) != 0)
             throw new InvalidOperationException("Attachment cleanup mismatch.");
+
+        // A tampered storage key must never escape the configured root.
+        var outsideName = "escape-" + Guid.NewGuid() + ".txt";
+        var outsidePath = Path.GetFullPath(Path.Combine(attachmentRoot, "..", outsideName));
+        await File.WriteAllTextAsync(outsidePath, "secret");
+        var tamperedId = Guid.NewGuid();
+        await Exec(db, """
+            INSERT INTO note_attachments(id,owner_id,note_id,filename,content_type,size_bytes,
+                storage_key,version,created_at)
+            VALUES($1,$2,$3,'escape.txt','text/plain',6,$4,1,now())
+            """, tamperedId, owner, note, "../" + outsideName);
+        var tampered = await Download(client, token, note, tamperedId);
+        Check(tampered, HttpStatusCode.NotFound);
+        if ((await tampered.Content.ReadAsStringAsync()).Contains("secret"))
+            throw new InvalidOperationException("Attachment path traversal leaked a file.");
+        await Exec(db, "UPDATE note_attachments SET deleted_at=now() WHERE id=$1", tamperedId);
+        var tamperedCleanup = await cleanup.PurgeDeletedAsync(
+            DateTimeOffset.UtcNow.AddMinutes(1), CancellationToken.None);
+        if (tamperedCleanup.PurgedAttachments != 0 || !File.Exists(outsidePath) ||
+            await Scalar(db, "SELECT count(*) FROM note_attachments WHERE id=$1", tamperedId) != 1)
+            throw new InvalidOperationException("Attachment cleanup followed a tampered path.");
+        File.Delete(outsidePath);
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
     }
 
