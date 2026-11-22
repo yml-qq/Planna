@@ -14,6 +14,8 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
     IConfiguration configuration) : INoteAttachmentService
 {
     private const long MaxBytes = 5 * 1024 * 1024;
+    private const long MaxOwnerBytes = 200L * 1024 * 1024;
+    private const int MaxPerNote = 20;
 
     private static readonly Dictionary<string, string> Extensions = new()
     {
@@ -63,6 +65,11 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
         var existing = await LoadAsync(ownerId, noteId, attachmentId, ct);
         if (existing is not null)
             return new(NoteAttachmentStatus.Replayed, ToView(existing));
+        var usage = await UsageAsync(ownerId, noteId, ct);
+        if (usage.NoteCount >= MaxPerNote)
+            return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_NOTE_QUOTA");
+        if (usage.OwnerBytes + length > MaxOwnerBytes)
+            return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_OWNER_QUOTA");
 
         var extension = Extensions[type];
         var storageKey = $"{ownerId}/{noteId}/{attachmentId}{extension}";
@@ -120,6 +127,18 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
         return exists is null
             ? new(NoteAttachmentStatus.NotFound, Code: "ATTACHMENT_NOT_FOUND")
             : new(NoteAttachmentStatus.Ok);
+    }
+
+    private async Task<(long NoteCount, long OwnerBytes)> UsageAsync(Guid ownerId, Guid noteId,
+        CancellationToken ct)
+    {
+        var noteCount = await db.Database.SqlQuery<long>(
+            $"SELECT count(*) AS \"Value\" FROM note_attachments WHERE owner_id={ownerId} AND note_id={noteId} AND deleted_at IS NULL")
+            .SingleAsync(ct);
+        var ownerBytes = await db.Database.SqlQuery<long>(
+            $"SELECT coalesce(sum(size_bytes),0)::bigint AS \"Value\" FROM note_attachments WHERE owner_id={ownerId} AND deleted_at IS NULL")
+            .SingleAsync(ct);
+        return (noteCount, ownerBytes);
     }
 
     private async Task<bool> NoteOwnedAsync(Guid ownerId, Guid noteId, CancellationToken ct) =>

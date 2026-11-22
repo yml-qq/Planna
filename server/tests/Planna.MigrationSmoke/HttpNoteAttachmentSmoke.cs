@@ -19,9 +19,13 @@ internal static class HttpNoteAttachmentSmoke
         var foreign = Guid.NewGuid();
         var note = Guid.NewGuid();
         var foreignNote = Guid.NewGuid();
+        var quotaNote = Guid.NewGuid();
+        var ownerQuotaNote = Guid.NewGuid();
         await Exec(db, "INSERT INTO users(id,email) VALUES($1,'attach-one@example.test'),($2,'attach-two@example.test')", owner, foreign);
         await Exec(db, "INSERT INTO notes(id,owner_id,title,content) VALUES($1,$2,'Attachment note','Body')", note, owner);
         await Exec(db, "INSERT INTO notes(id,owner_id,title,content) VALUES($1,$2,'Foreign note','Body')", foreignNote, foreign);
+        await Exec(db, "INSERT INTO notes(id,owner_id,title,content) VALUES($1,$2,'Quota note','Body'),($3,$2,'Owner quota note','Body')",
+            quotaNote, owner, ownerQuotaNote);
         var ownerSession = Guid.NewGuid();
         var foreignSession = Guid.NewGuid();
         await AddSession(db, owner, ownerSession);
@@ -127,6 +131,26 @@ internal static class HttpNoteAttachmentSmoke
             await Scalar(db, "SELECT count(*) FROM note_attachments WHERE id=$1", tamperedId) != 1)
             throw new InvalidOperationException("Attachment cleanup followed a tampered path.");
         File.Delete(outsidePath);
+
+        await Exec(db, """
+            INSERT INTO note_attachments(id,owner_id,note_id,filename,content_type,size_bytes,
+                storage_key,version,created_at)
+            SELECT gen_random_uuid(), $2, $1, 'q.txt', 'text/plain', 5242880,
+                'quota/' || g || '/' || $1, 1, now()
+            FROM generate_series(1, 20) AS g
+            """, quotaNote, owner);
+        Check(await Upload(client, token, quotaNote, Guid.NewGuid(), "hello.txt", "text/plain", "hello"),
+            HttpStatusCode.UnprocessableEntity);
+        await Exec(db, """
+            INSERT INTO note_attachments(id,owner_id,note_id,filename,content_type,size_bytes,
+                storage_key,version,created_at)
+            SELECT gen_random_uuid(), $2, $1, 'q.txt', 'text/plain', 5242880,
+                'quota/' || g || '/' || $1, 1, now()
+            FROM generate_series(21, 40) AS g
+            """, quotaNote, owner);
+        Check(await Upload(client, token, ownerQuotaNote, Guid.NewGuid(), "hello.txt", "text/plain", "hello"),
+            HttpStatusCode.UnprocessableEntity);
+        Console.WriteLine("PASS: attachment quota rejects excessive per-note count and owner bytes");
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
     }
 

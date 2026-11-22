@@ -904,3 +904,10 @@
 - 冒烟：根目录外文件 + `../` storage_key → 下载 404 不含内容；软删后清理 `{0,0}`，外部文件与行保留；正常路径仍 `{1,1}`。
 - 不防御符号链接；无契约变更/迁移。
 - [Server integration 45060935234](https://github.com/yml-qq/Planna/actions/runs/45060935234) 与 [Desktop core 45060935186](https://github.com/yml-qq/Planna/actions/runs/45060935186) 均 **success**。
+
+## NOTE-05c-a 附件配额检查（2026-11-22）
+
+- 上传前检查单笔记活跃附件 ≤20、单 owner 活跃总字节 ≤200 MiB；超限 422 `ATTACHMENT_NOTE_QUOTA`/`ATTACHMENT_OWNER_QUOTA`；软删不计入，重放先于配额。
+- OpenAPI 上传描述补充配额；无迁移/契约结构变更（契约仍 36 项）。
+- 冒烟插入 20 条/40 条 5 MiB 记录，验证数量与 owner 字节两条路径均 422。
+- 应用层检查，并发可超额；配额硬编码；不计磁盘实际占用。

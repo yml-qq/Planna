@@ -150,6 +150,7 @@
 | 137 | `docs/137-NOTE-05b-b.md` | 笔记附件面板 |
 | 138 | `docs/138-SEC-02-a.md` | 依赖漏洞审计接入 CI |
 | 139 | `docs/139-NOTE-05a-c.md` | 附件存储路径校验 |
+| 140 | `docs/140-NOTE-05c-a.md` | 附件配额（单笔记数量 + owner 总字节） |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
