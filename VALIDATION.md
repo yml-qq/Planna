@@ -832,4 +832,5 @@
 
 - 任务详情关联笔记支持内联编辑标题/正文并保存（notes.update 版本守卫），取消不写本地。
 - 前端 89 项测试与 build 通过（更新/冲突已有 store 测试）；未新增组件测试。
-- 仅标题/正文可编辑；无删除/附件/草稿保护；删除仍在笔记卡片。CI 见链接。
+- 仅标题/正文可编辑；无删除/附件/草稿保护；删除仍在笔记卡片。
+- [Server integration 45040623373](https://github.com/yml-qq/Planna/actions/runs/45040623373) 与 [Desktop core 45040623384](https://github.com/yml-qq/Planna/actions/runs/45040623384) 均 **success**。
