@@ -86,7 +86,8 @@
 | E10 | NOTE-02 | 账号导出 v3 纳入笔记（已交付，见 `94-NOTE-02.md`） | NOTE-01 | export tests |
 | E10 | NOTE-03 | 桌面笔记 UI（已交付，见 `96-NOTE-03.md`） | NOTE-02 | search/privacy |
 | E10 | NOTE-04a | 笔记关联任务 UI（已交付，见 `101-NOTE-04a.md`） | NOTE-03 | search/privacy |
-| E10 | NOTE-04b | 笔记同步/离线编辑、附件/模板与改关联 | NOTE-04a | search/privacy |
+| E10 | NOTE-04b-1 | 笔记标题编辑（已交付，见 `104-NOTE-04b-1.md`） | NOTE-04a | edit tests |
+| E10 | NOTE-04b-2 | 笔记同步/离线编辑、附件/模板与改关联 | NOTE-04b-1 | search/privacy |
 | E11 | PRIV-EXPORT-01 | 云端数据导出（快照/下载/24h，已交付，见 `53-PRIV-EXPORT-01.md`） | SYNC-PULL-01 | 导出测试 |
 | E11 | PRIV-STEPUP-01 | 敏感操作邮件复核（挑战/验码/短期 token，已交付，见 `55-PRIV-STEPUP-01.md`） | AUTH-06 | 重放/限流测试 |
 | E11 | PRIV-DELETE-01 | 账号删除请求、step-up 校验与离线设备（已交付，见 `56-PRIV-DELETE-01.md`） | PRIV-STEPUP-01 | 删除/回连测试 |

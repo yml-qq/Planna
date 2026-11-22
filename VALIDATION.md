@@ -630,3 +630,9 @@
 - [Server integration 44981202340](https://github.com/yml-qq/Planna/actions/runs/44981202340) 与 [Desktop core 44981202399](https://github.com/yml-qq/Planna/actions/runs/44981202399) 均 **success**。
 - 未连接生产库、未提交凭据；游标分页、周/月报表、独立详情页与后台通知真机验证留待 `FOCUS-09b`。
 - 网络恢复后推送（`fbdefea`）并补 CI：[Server integration 44978693280](https://github.com/yml-qq/Planna/actions/runs/44978693280) 与 [Desktop core 44978693285](https://github.com/yml-qq/Planna/actions/runs/44978693285) 均 **success**。
+
+## NOTE-04b-1 笔记标题编辑检查（2026-11-22）
+
+- note store `update` 改为 `{title?, content?}` 部分更新，校验标题 ≤200/正文 ≤20000 且不能同时为空；UI 内联编辑新增标题输入，保存/取消同时处理两者。
+- 测试保持 **69 项**（原更新用例扩展为标题+正文与空值拒绝）；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。

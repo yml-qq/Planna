@@ -13,7 +13,11 @@ export interface NoteStore {
   error: Ref<string | null>
   refresh: () => Promise<void>
   create: (title: string, content: string, taskId?: string | null) => Promise<Note | null>
-  update: (noteId: string, expectedVersion: number, content: string) => Promise<boolean>
+  update: (
+    noteId: string,
+    expectedVersion: number,
+    patch: { title?: string; content?: string }
+  ) => Promise<boolean>
   remove: (note: Note) => Promise<boolean>
 }
 
@@ -83,8 +87,16 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
     }
   }
 
-  async function update(noteId: string, expectedVersion: number, content: string): Promise<boolean> {
-    if (content.length > 20000) {
+  async function update(
+    noteId: string,
+    expectedVersion: number,
+    patch: { title?: string; content?: string }
+  ): Promise<boolean> {
+    const note = notes.value.find((candidate) => candidate.id === noteId)
+    const title = patch.title === undefined ? note?.title ?? '' : patch.title.trim()
+    const content = patch.content === undefined ? note?.content ?? '' : patch.content
+    if (title.length > 200 || content.length > 20000 ||
+        (title.length === 0 && content.trim().length === 0)) {
       error.value = 'INVALID_NOTE'
       return false
     }
@@ -94,6 +106,7 @@ export function createNoteStore(bridge: DesktopBridge, options: NoteStoreOptions
     error.value = null
     try {
       const updated = await bridge.noteUpdate(options.baseUrl(), token, noteId, expectedVersion, {
+        title,
         content
       })
       notes.value = notes.value.map((note) => (note.id === noteId ? updated : note))

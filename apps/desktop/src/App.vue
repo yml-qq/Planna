@@ -79,6 +79,7 @@ const noteTitle = ref('')
 const noteContent = ref('')
 const noteTaskId = ref('')
 const editingNote = ref<string | null>(null)
+const editNoteTitle = ref('')
 const editNoteContent = ref('')
 const goals = createGoalStore(bridge, {
   baseUrl: () => baseUrl.value,
@@ -253,19 +254,22 @@ function taskTitle(taskId: string | null): string | null {
   return tasks.tasks.value.find((task) => task.id === taskId)?.title ?? null
 }
 
-function startEditNote(noteId: string, content: string): void {
+function startEditNote(noteId: string, title: string, content: string): void {
   editingNote.value = noteId
+  editNoteTitle.value = title
   editNoteContent.value = content
 }
 
 function cancelEditNote(): void {
   editingNote.value = null
+  editNoteTitle.value = ''
   editNoteContent.value = ''
 }
 
 async function saveEditNote(noteId: string, version: number): Promise<void> {
-  if (await notes.update(noteId, version, editNoteContent.value)) {
+  if (await notes.update(noteId, version, { title: editNoteTitle.value, content: editNoteContent.value })) {
     editingNote.value = null
+    editNoteTitle.value = ''
     editNoteContent.value = ''
   }
 }
@@ -713,6 +717,14 @@ onMounted(async () => {
       <ul v-if="notes.notes.value.length > 0" class="notes">
         <li v-for="note in notes.notes.value" :key="note.id" class="notes__item">
           <template v-if="editingNote === note.id">
+            <input
+              v-model="editNoteTitle"
+              class="input"
+              type="text"
+              maxlength="200"
+              placeholder="标题（可选）"
+              aria-label="编辑笔记标题"
+            />
             <textarea
               v-model="editNoteContent"
               class="input input--multiline"
@@ -735,7 +747,7 @@ onMounted(async () => {
             </div>
             <p class="notes__content">{{ note.content }}</p>
             <div class="composer__row">
-              <button class="button button--ghost" type="button" @click="startEditNote(note.id, note.content)">
+              <button class="button button--ghost" type="button" @click="startEditNote(note.id, note.title, note.content)">
                 编辑
               </button>
               <button class="button button--ghost" type="button" @click="removeNote(note.id, note.version)">

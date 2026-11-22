@@ -54,12 +54,15 @@ describe('note store', () => {
     expect(store.notes.value).toHaveLength(2)
   })
 
-  it('updates content with the current version and deletes by version', async () => {
+  it('updates title and content with the current version and deletes by version', async () => {
     const { store } = createStore()
     const note = await store.create('Draft', 'v1')
-    expect(await store.update(note!.id, note!.version, 'v2 content')).toBe(true)
+    expect(await store.update(note!.id, note!.version, { title: 'Final', content: 'v2 content' })).toBe(true)
+    expect(store.notes.value[0]?.title).toBe('Final')
     expect(store.notes.value[0]?.content).toBe('v2 content')
     expect(store.notes.value[0]?.version).toBe(2)
+    expect(await store.update(note!.id, 2, { title: '   ', content: '' })).toBe(false)
+    expect(store.error.value).toBe('INVALID_NOTE')
 
     expect(await store.remove(store.notes.value[0]!)).toBe(true)
     expect(store.notes.value).toHaveLength(0)
@@ -68,8 +71,8 @@ describe('note store', () => {
   it('maps version conflicts and invalid updates', async () => {
     const { store } = createStore()
     const note = await store.create('Draft', 'v1')
-    await store.update(note!.id, note!.version, 'v2')
-    expect(await store.update(note!.id, note!.version, 'stale')).toBe(false)
+    await store.update(note!.id, note!.version, { content: 'v2' })
+    expect(await store.update(note!.id, note!.version, { content: 'stale' })).toBe(false)
     expect(store.error.value).toBe('VERSION_CONFLICT')
 
     const bridge = new MemoryBridge()
