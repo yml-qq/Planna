@@ -697,3 +697,10 @@
 - 前端新增 2 项测试，合计 **80 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44999821604](https://github.com/yml-qq/Planna/actions/runs/44999821604) 与 [Desktop core 44999821662](https://github.com/yml-qq/Planna/actions/runs/44999821662) 均 **success**。
 - 去重仅标题字符串；AI 建议仍只读；目标删除/批量排序/限流退避留待 `GOAL-03f`。
+
+## GOAL-03f 目标删除检查（2026-11-22）
+
+- Tauri 新增 `goal_delete`（DELETE + Idempotency-Key + If-Match）；桥接 `goalDelete`；goal store `deleteGoal` 删除后清理列表与 AI 建议缓存。
+- UI 目标行新增“删除”（二次确认）。
+- 前端新增 2 项测试（按版本删除/清理建议、版本冲突），合计 **82 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。

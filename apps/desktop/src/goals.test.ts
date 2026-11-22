@@ -228,3 +228,34 @@ describe('goal suggestions and archive filter', () => {
     expect(filterGoals(goals, true)).toHaveLength(3)
   })
 })
+
+describe('goal deletion', () => {
+  it('deletes a goal by version and clears its suggestions', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship')
+    await store.previewBreakdown(goal!.id, '调研, 上线')
+    expect(await store.deleteGoal(goal!)).toBe(true)
+    expect(store.goals.value).toHaveLength(0)
+    expect(store.suggestions.value[goal!.id]).toBeUndefined()
+  })
+
+  it('maps delete conflicts', async () => {
+    const bridge = new MemoryBridge()
+    const goal = await bridge.goalCreate('', 'token', { title: 'Ship' })
+    await bridge.goalUpdate('', 'token', goal.id, goal.version, { title: 'Renamed' })
+    const failing: DesktopBridge = new Proxy(bridge, {
+      get(target, property, receiver) {
+        if (property === 'goalDelete') {
+          return async () => {
+            throw new Error('409:VERSION_CONFLICT')
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      }
+    })
+    const store = createGoalStore(failing, { baseUrl: () => '', token: () => 'token' })
+    await store.refresh()
+    expect(await store.deleteGoal(store.goals.value[0]!)).toBe(false)
+    expect(store.error.value).toBe('VERSION_CONFLICT')
+  })
+})

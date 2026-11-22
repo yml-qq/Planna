@@ -276,6 +276,12 @@ export interface DesktopBridge {
     milestoneId: string,
     expectedVersion: number
   ): Promise<void>
+  goalDelete(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number
+  ): Promise<void>
   focusStats(
     baseUrl: string,
     accessToken: string,
@@ -810,6 +816,18 @@ export class MemoryBridge implements DesktopBridge {
     const items = filtered.slice(offset, offset + limit)
     const nextCursor = offset + limit < filtered.length ? String(offset + limit) : null
     return { items, nextCursor }
+  }
+
+  async goalDelete(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    if (goal.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    this.goals.delete(goalId)
   }
 
   async exportConflicts(): Promise<string> {
@@ -1445,6 +1463,15 @@ export class TauriBridge implements DesktopBridge {
       }
     )
     return { items: page.items.map(toFocusSession), nextCursor: page.next_cursor }
+  }
+
+  async goalDelete(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    await this.invoke<void>('goal_delete', { baseUrl, accessToken, goalId, expectedVersion })
   }
 
   async exportConflicts(): Promise<string> {

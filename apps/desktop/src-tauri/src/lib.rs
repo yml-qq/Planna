@@ -988,6 +988,26 @@ fn focus_page(
 }
 
 #[tauri::command]
+fn goal_delete(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    expected_version: i64,
+) -> Result<(), String> {
+    let response = http_client()
+        .delete(format!("{}/goals/{goal_id}", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .header("If-Match", format!("\"v{expected_version}\""))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let entries = store
@@ -1267,6 +1287,7 @@ pub fn run() {
             goal_update_milestone,
             goal_breakdown_preview,
             goal_delete_milestone,
+            goal_delete,
             focus_stats,
             focus_page,
             note_list,

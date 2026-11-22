@@ -256,6 +256,12 @@ async function saveEditGoal(goalId: string): Promise<void> {
   if (saved) editingGoal.value = null
 }
 
+async function deleteGoal(goalId: string): Promise<void> {
+  if (typeof window !== 'undefined' && !window.confirm('删除该目标？')) return
+  const goal = goals.goals.value.find((candidate) => candidate.id === goalId)
+  if (goal) await goals.deleteGoal(goal)
+}
+
 async function previewGoalBreakdown(goalId: string): Promise<void> {
   await goals.previewBreakdown(goalId, goalGuidance.value[goalId] ?? '')
 }
@@ -974,6 +980,7 @@ onMounted(async () => {
               <template v-if="goal.targetDate"> · {{ goal.targetDate }}</template>
             </span>
             <button class="button button--ghost" type="button" @click="startEditGoal(goal.id)">编辑</button>
+            <button class="button button--ghost" type="button" @click="deleteGoal(goal.id)">删除</button>
           </div>
           <div class="goals__progress" :aria-label="`完成 ${goal.progress.percent}%`">
             <div class="goals__bar" :style="{ width: `${goal.progress.percent}%` }"></div>

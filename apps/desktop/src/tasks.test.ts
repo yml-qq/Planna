@@ -132,6 +132,9 @@ describe('task store', () => {
       goalDeleteMilestone: async () => {
         throw new Error('offline')
       },
+      goalDelete: async () => {
+        throw new Error('offline')
+      },
       noteList: async () => [],
       noteCreate: async () => {
         throw new Error('offline')

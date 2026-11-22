@@ -31,6 +31,7 @@ export interface GoalStore {
   ) => Promise<boolean>
   removeMilestone: (goalId: string, milestone: Milestone) => Promise<boolean>
   moveMilestone: (goalId: string, milestone: Milestone, direction: 'up' | 'down') => Promise<boolean>
+  deleteGoal: (goal: Goal) => Promise<boolean>
   suggestions: Ref<Record<string, GoalBreakdownSuggestion[]>>
   breakdownLoading: Ref<boolean>
   previewBreakdown: (goalId: string, guidance?: string) => Promise<boolean>
@@ -170,6 +171,26 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
         targetDate: patch.targetDate === undefined ? goal.targetDate : patch.targetDate
       })
       goals.value = goals.value.map((candidate) => (candidate.id === goalId ? updated : candidate))
+      return true
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteGoal(goal: Goal): Promise<boolean> {
+    const token = tokenOrNull()
+    if (!token) return false
+    loading.value = true
+    error.value = null
+    try {
+      await bridge.goalDelete(options.baseUrl(), token, goal.id, goal.version)
+      goals.value = goals.value.filter((candidate) => candidate.id !== goal.id)
+      const nextSuggestions = { ...suggestions.value }
+      delete nextSuggestions[goal.id]
+      suggestions.value = nextSuggestions
       return true
     } catch (failure) {
       error.value = errorCode(failure)
@@ -334,6 +355,7 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     updateDetails,
     removeMilestone,
     moveMilestone,
+    deleteGoal,
     suggestions,
     breakdownLoading,
     previewBreakdown,
