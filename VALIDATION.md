@@ -951,4 +951,5 @@
 - `ModuleKey` 增加 calendar（默认 true、标签“日历”），导航与设置自动包含；关闭后卡片隐藏，不删数据。
 - 日历卡片新增选中日期与“清除选中覆盖”，未选中时禁用；点击日期仍切换覆盖。
 - modules/prefs 测试更新，前端合计 96 项；build/shell clippy/fmt 通过。
+- [Server integration 45074332295](https://github.com/yml-qq/Planna/actions/runs/45074332295) 与 [Desktop core 45074332281](https://github.com/yml-qq/Planna/actions/runs/45074332281) 均 **success**。
 - 未做批量清除/键盘方向键/gridcell 语义；默认 CN、无内置法定数据。
