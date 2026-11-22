@@ -921,3 +921,10 @@
 - 原有配额冒烟（20 条/200 MiB）继续通过；本地 build/format/契约 36 项通过。
 - [Server integration 45066039013](https://github.com/yml-qq/Planna/actions/runs/45066039013) 与 [Desktop core 45066039173](https://github.com/yml-qq/Planna/actions/runs/45066039173) 均 **success**。
 - 未做并发竞态自动化测试；配置解析回退不告警；锁持有含文件写入。
+
+## NOTE-05c-b-b-a 并发配额/大小配置检查（2026-11-22）
+
+- 单文件上限改为 `NOTE_ATTACHMENT_MAX_BYTES`（默认 5 MiB，1..100 MiB）；原有 20/200 MiB 配额不变。
+- 冒烟新增：`NOTE_ATTACHMENT_MAX_PER_NOTE=5` 时并发 10 个上传恰好 5 个 201、5 个 422，DB 活跃 5 条；`NOTE_ATTACHMENT_MAX_BYTES=3` 时 5 字节上传 413。
+- 本地 build/format/契约通过；并发行为在 CI 的 PostgreSQL 18 服务上执行。
+- 未覆盖多实例/多进程；无速率限制/病毒扫描/预览。

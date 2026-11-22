@@ -151,6 +151,45 @@ internal static class HttpNoteAttachmentSmoke
         Check(await Upload(client, token, ownerQuotaNote, Guid.NewGuid(), "hello.txt", "text/plain", "hello"),
             HttpStatusCode.UnprocessableEntity);
         Console.WriteLine("PASS: attachment quota rejects excessive per-note count and owner bytes");
+
+        var concurrencyOwner = Guid.NewGuid();
+        var concurrencyNote = Guid.NewGuid();
+        var concurrencySession = Guid.NewGuid();
+        await Exec(db, "INSERT INTO users(id,email) VALUES($1,'attach-concurrent@example.test')", concurrencyOwner);
+        await Exec(db, "INSERT INTO notes(id,owner_id,title,content) VALUES($1,$2,'Concurrent note','Body')",
+            concurrencyNote, concurrencyOwner);
+        await AddSession(db, concurrencyOwner, concurrencySession);
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_PER_NOTE", "5");
+        await using (var quotaFactory = new AttachmentFactory())
+        {
+            using var quotaClient = quotaFactory.CreateClient();
+            var quotaToken = quotaFactory.Services.GetRequiredService<IAccessTokenIssuer>()
+                .Issue(concurrencyOwner, concurrencySession);
+            var uploads = Enumerable.Range(0, 10).Select(index =>
+                Upload(quotaClient, quotaToken, concurrencyNote, Guid.NewGuid(),
+                    "c" + index + ".txt", "text/plain", "hello")).ToArray();
+            var statuses = await Task.WhenAll(uploads);
+            var created = statuses.Count(status => status.StatusCode == HttpStatusCode.Created);
+            var rejected = statuses.Count(status =>
+                status.StatusCode == HttpStatusCode.UnprocessableEntity);
+            if (created != 5 || rejected != 5 ||
+                await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1 AND deleted_at IS NULL",
+                    concurrencyNote) != 5)
+                throw new InvalidOperationException("Concurrent attachment quota was not enforced.");
+        }
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_PER_NOTE", null);
+
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_BYTES", "3");
+        await using (var sizeFactory = new AttachmentFactory())
+        {
+            using var sizeClient = sizeFactory.CreateClient();
+            var sizeToken = sizeFactory.Services.GetRequiredService<IAccessTokenIssuer>()
+                .Issue(concurrencyOwner, concurrencySession);
+            Check(await Upload(sizeClient, sizeToken, concurrencyNote, Guid.NewGuid(),
+                "big.txt", "text/plain", "hello"), HttpStatusCode.RequestEntityTooLarge);
+        }
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_MAX_BYTES", null);
+        Console.WriteLine("PASS: attachment quotas serialize concurrent uploads and honor configured size limits");
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
     }
 

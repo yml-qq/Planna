@@ -13,7 +13,9 @@ namespace Planna.Infrastructure.Notes;
 public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider clock,
     IConfiguration configuration) : INoteAttachmentService
 {
-    private const long MaxBytes = 5 * 1024 * 1024;
+    private readonly long maxBytes =
+        ParseLong(configuration["NOTE_ATTACHMENT_MAX_BYTES"], 5L * 1024 * 1024,
+            1, 100L * 1024 * 1024);
     private readonly int maxPerNote =
         ParseInt(configuration["NOTE_ATTACHMENT_MAX_PER_NOTE"], 20, 1, 1000);
     private readonly long maxOwnerBytes =
@@ -61,7 +63,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             !Extensions.ContainsKey(type))
             return new(NoteAttachmentStatus.UnsupportedType, Code: "UNSUPPORTED_ATTACHMENT_TYPE");
         if (length < 1) return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_EMPTY");
-        if (length > MaxBytes)
+        if (length > maxBytes)
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
