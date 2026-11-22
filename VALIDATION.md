@@ -704,3 +704,12 @@
 - UI 目标行新增“删除”（二次确认）。
 - 前端新增 2 项测试（按版本删除/清理建议、版本冲突），合计 **82 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - 网络恢复后推送（`ef36c2d`）并补 CI：[Server integration 45001279869](https://github.com/yml-qq/Planna/actions/runs/45001279869) 与 [Desktop core 45001279839](https://github.com/yml-qq/Planna/actions/runs/45001279839) 均 **success**。
+
+## GOAL-03g-a 里程碑批量排序检查（2026-11-22）
+
+- `PUT /goals/{id}/milestones/order` 原子全量重排：事务内 position=1..N、里程碑/目标版本递增，返回更新后的 Goal；旧版本 409，缺项/重复/未知 id 422，跨 owner 404，Idempotency-Key 回放 200。
+- OpenAPI 新增路径与 `ReorderMilestonesRequest`；契约测试断言（**34 项**）。
+- 冒烟 `HttpGoalOrderSmoke`：重排顺序/版本、同 key 回放、旧版本 409、非法集合 422、跨 owner/不存在 404、缺 key 400、未认证 401。
+- 本地 build/format/契约 34 项通过；服务端无迁移。
+- [Server integration 45003054761](https://github.com/yml-qq/Planna/actions/runs/45003054761) 与 [Desktop core 45003054744](https://github.com/yml-qq/Planna/actions/runs/45003054744) 均 **success**。
+- 未连接生产库、未提交凭据；桌面批量排序接入、AI 重试/退避与删除审计留待 `GOAL-03g-b`。

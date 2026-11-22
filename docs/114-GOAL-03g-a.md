@@ -1,6 +1,6 @@
 # 114｜GOAL-03g-a：里程碑批量排序 API（原子）
 
-状态：代码已实现；本地 build/format/契约 **34 项**通过，CI 见 `VALIDATION.md` 的 GOAL-03g-a 小节。桌面改用该接口与 AI 重试/退避属 `GOAL-03g-b`。
+状态：代码已实现；本地 build/format/契约 **34 项**通过；[Server integration 45003054761](https://github.com/yml-qq/Planna/actions/runs/45003054761) 与 [Desktop core 45003054744](https://github.com/yml-qq/Planna/actions/runs/45003054744) 均 **success**。桌面改用该接口与 AI 重试/退避属 `GOAL-03g-b`。
 
 ## 范围与验收
 
