@@ -902,4 +902,5 @@
 - 新增 `PathWithinRoot`（GetFullPath + 根目录前缀校验）；下载/清理使用；篡改 storage_key 返回 404 且不越界读取。
 - 清理计数改为实际删除数；篡改行跳过、不删文件/行。
 - 冒烟：根目录外文件 + `../` storage_key → 下载 404 不含内容；软删后清理 `{0,0}`，外部文件与行保留；正常路径仍 `{1,1}`。
-- 不防御符号链接；无契约变更/迁移。CI 见链接。
+- 不防御符号链接；无契约变更/迁移。
+- [Server integration 45060935234](https://github.com/yml-qq/Planna/actions/runs/45060935234) 与 [Desktop core 45060935186](https://github.com/yml-qq/Planna/actions/runs/45060935186) 均 **success**。

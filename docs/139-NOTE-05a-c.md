@@ -1,6 +1,6 @@
 # 139｜NOTE-05a-c：附件存储路径校验
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过，CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45060935234](https://github.com/yml-qq/Planna/actions/runs/45060935234) 与 [Desktop core 45060935186](https://github.com/yml-qq/Planna/actions/runs/45060935186) 均 **success**。
 
 ## 范围与验收
 
