@@ -36,6 +36,8 @@ jobs:
         run: |
           dotnet restore server/Planna.slnx
           dotnet build server/Planna.slnx --no-restore --warnaserror
+      - name: NuGet vulnerability scan
+        run: dotnet list server/Planna.slnx package --vulnerable --include-transitive
       - name: Format
         run: dotnet format server/Planna.slnx --verify-no-changes --no-restore
       - name: OpenAPI and shared contract checks
