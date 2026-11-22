@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Mutex;
 
 use planna_desktop_core::{
@@ -1189,6 +1190,158 @@ fn focus_report_save_as(
     Ok(Some(path.to_string_lossy().into_owned()))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct NoteAttachmentDto {
+    id: String,
+    note_id: String,
+    filename: String,
+    content_type: String,
+    size_bytes: i64,
+    created_at: String,
+}
+
+#[derive(Deserialize)]
+struct NoteAttachmentListDto {
+    items: Vec<NoteAttachmentDto>,
+}
+
+fn attachment_mime(path: &Path) -> Option<&'static str> {
+    match path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "txt" => Some("text/plain"),
+        "md" | "markdown" => Some("text/markdown"),
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "pdf" => Some("application/pdf"),
+        _ => None,
+    }
+}
+
+#[tauri::command]
+fn note_attachment_list(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+) -> Result<Vec<NoteAttachmentDto>, String> {
+    let response = http_client()
+        .get(format!("{}/notes/{note_id}/attachments", base(&base_url)))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let list: NoteAttachmentListDto = response.json().map_err(|error| error.to_string())?;
+    Ok(list.items)
+}
+
+#[tauri::command]
+fn note_attachment_upload(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    path: String,
+) -> Result<NoteAttachmentDto, String> {
+    let file_path = Path::new(&path);
+    let mime =
+        attachment_mime(file_path).ok_or_else(|| "UNSUPPORTED_ATTACHMENT_TYPE".to_string())?;
+    let filename = file_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "INVALID_ATTACHMENT".to_string())?
+        .to_string();
+    let bytes = std::fs::read(file_path).map_err(|error| error.to_string())?;
+    let part = reqwest::blocking::multipart::Part::bytes(bytes)
+        .file_name(filename)
+        .mime_str(mime)
+        .map_err(|error| error.to_string())?;
+    let form = reqwest::blocking::multipart::Form::new().part("file", part);
+    let response = http_client()
+        .post(format!("{}/notes/{note_id}/attachments", base(&base_url)))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .multipart(form)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn note_attachment_download(
+    app: tauri::AppHandle,
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    attachment_id: String,
+) -> Result<Option<String>, String> {
+    let response = http_client()
+        .get(format!(
+            "{}/notes/{note_id}/attachments/{attachment_id}",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("application/octet-stream")
+        .to_string();
+    let extension = match content_type.as_str() {
+        "text/plain" => ".txt",
+        "text/markdown" => ".md",
+        "image/png" => ".png",
+        "image/jpeg" => ".jpg",
+        "application/pdf" => ".pdf",
+        _ => "",
+    };
+    let bytes = response.bytes().map_err(|error| error.to_string())?;
+    let selected = app
+        .dialog()
+        .file()
+        .set_file_name(format!("attachment{extension}"))
+        .blocking_save_file();
+    let Some(path) = selected else {
+        return Ok(None);
+    };
+    let path = path.into_path().map_err(|error| error.to_string())?;
+    std::fs::write(&path, bytes).map_err(|error| error.to_string())?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+fn note_attachment_delete(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    attachment_id: String,
+) -> Result<(), String> {
+    let response = http_client()
+        .delete(format!(
+            "{}/notes/{note_id}/attachments/{attachment_id}",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1459,6 +1612,10 @@ pub fn run() {
             note_local_create,
             note_local_update,
             note_local_delete,
+            note_attachment_list,
+            note_attachment_upload,
+            note_attachment_download,
+            note_attachment_delete,
             create_habit,
             update_habit,
             upsert_habit_log,

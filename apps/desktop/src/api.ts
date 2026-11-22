@@ -27,6 +27,15 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export interface NoteAttachment {
+  id: string
+  noteId: string
+  filename: string
+  contentType: string
+  sizeBytes: number
+  createdAt: string
+}
+
 export interface Note {
   id: string
   title: string
@@ -325,6 +334,29 @@ export interface DesktopBridge {
     accessToken: string,
     noteId: string,
     expectedVersion: number
+  ): Promise<void>
+  noteAttachmentList(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string
+  ): Promise<NoteAttachment[]>
+  noteAttachmentUpload(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    path: string
+  ): Promise<NoteAttachment>
+  noteAttachmentDownload(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<string | null>
+  noteAttachmentDelete(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
   ): Promise<void>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
 }
@@ -872,6 +904,70 @@ export class MemoryBridge implements DesktopBridge {
   async saveFocusReportAs(filename: string, content: string): Promise<string | null> {
     if (content.length === 0) throw new Error('400:EMPTY_REPORT')
     return 'chosen/' + filename
+  }
+
+  private readonly noteAttachments = new Map<string, NoteAttachment[]>()
+
+  async noteAttachmentList(
+    _baseUrl: string,
+    _accessToken: string,
+    noteId: string
+  ): Promise<NoteAttachment[]> {
+    return [...(this.noteAttachments.get(noteId) ?? [])]
+  }
+
+  async noteAttachmentUpload(
+    _baseUrl: string,
+    _accessToken: string,
+    noteId: string,
+    path: string
+  ): Promise<NoteAttachment> {
+    const filename = path.split(/[\\/]/).pop() ?? 'attachment'
+    const extension = filename.toLowerCase().split('.').pop() ?? ''
+    const type =
+      extension === 'txt'
+        ? 'text/plain'
+        : extension === 'md'
+          ? 'text/markdown'
+          : extension === 'png'
+            ? 'image/png'
+            : extension === 'jpg' || extension === 'jpeg'
+              ? 'image/jpeg'
+              : extension === 'pdf'
+                ? 'application/pdf'
+                : ''
+    if (!type) throw new Error('415:UNSUPPORTED_ATTACHMENT_TYPE')
+    const attachment: NoteAttachment = {
+      id: crypto.randomUUID(),
+      noteId,
+      filename,
+      contentType: type,
+      sizeBytes: 1024,
+      createdAt: new Date().toISOString()
+    }
+    this.noteAttachments.set(noteId, [...(this.noteAttachments.get(noteId) ?? []), attachment])
+    return attachment
+  }
+
+  async noteAttachmentDownload(
+    _baseUrl: string,
+    _accessToken: string,
+    _noteId: string,
+    attachmentId: string
+  ): Promise<string | null> {
+    return 'downloads/' + attachmentId
+  }
+
+  async noteAttachmentDelete(
+    _baseUrl: string,
+    _accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<void> {
+    this.noteAttachments.set(
+      noteId,
+      (this.noteAttachments.get(noteId) ?? []).filter((item) => item.id !== attachmentId)
+    )
   }
 
   async exportConflicts(): Promise<string> {
@@ -1446,6 +1542,81 @@ export class TauriBridge implements DesktopBridge {
     expectedVersion: number
   ): Promise<void> {
     await this.invoke<void>('note_local_delete', { noteId, expectedVersion })
+  }
+
+  async noteAttachmentList(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string
+  ): Promise<NoteAttachment[]> {
+    const rows = await this.invoke<Array<{
+      id: string
+      note_id: string
+      filename: string
+      content_type: string
+      size_bytes: number
+      created_at: string
+    }>>('note_attachment_list', { baseUrl, accessToken, noteId })
+    return rows.map((row) => ({
+      id: row.id,
+      noteId: row.note_id,
+      filename: row.filename,
+      contentType: row.content_type,
+      sizeBytes: row.size_bytes,
+      createdAt: row.created_at
+    }))
+  }
+
+  async noteAttachmentUpload(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    path: string
+  ): Promise<NoteAttachment> {
+    const row = await this.invoke<{
+      id: string
+      note_id: string
+      filename: string
+      content_type: string
+      size_bytes: number
+      created_at: string
+    }>('note_attachment_upload', { baseUrl, accessToken, noteId, path })
+    return {
+      id: row.id,
+      noteId: row.note_id,
+      filename: row.filename,
+      contentType: row.content_type,
+      sizeBytes: row.size_bytes,
+      createdAt: row.created_at
+    }
+  }
+
+  async noteAttachmentDownload(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<string | null> {
+    return this.invoke<string | null>('note_attachment_download', {
+      baseUrl,
+      accessToken,
+      noteId,
+      attachmentId
+    })
+  }
+
+  async noteAttachmentDelete(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<void> {
+    await this.invoke<void>('note_attachment_delete', {
+      baseUrl,
+      accessToken,
+      noteId,
+      attachmentId
+    })
   }
 
   async goalBreakdownPreview(

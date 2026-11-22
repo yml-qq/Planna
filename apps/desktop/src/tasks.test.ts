@@ -149,6 +149,14 @@ describe('task store', () => {
       },
       noteDelete: async () => {
         throw new Error('offline')
+      },
+      noteAttachmentList: async () => [],
+      noteAttachmentUpload: async () => {
+        throw new Error('offline')
+      },
+      noteAttachmentDownload: async () => null,
+      noteAttachmentDelete: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')

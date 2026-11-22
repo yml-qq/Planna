@@ -105,3 +105,21 @@ describe('notes for task', () => {
     expect(notesForTask(notes, 'missing')).toEqual([])
   })
 })
+
+describe('note attachments bridge', () => {
+  it('lists, uploads, downloads and deletes attachments', async () => {
+    const { bridge } = createStore()
+    const attachment = await bridge.noteAttachmentUpload('', 'token', 'note-1', '/tmp/report.pdf')
+    expect(attachment.contentType).toBe('application/pdf')
+    expect(attachment.noteId).toBe('note-1')
+    expect(await bridge.noteAttachmentList('', 'token', 'note-1')).toHaveLength(1)
+    expect(await bridge.noteAttachmentDownload('', 'token', 'note-1', attachment.id)).toBe(
+      'downloads/' + attachment.id
+    )
+    await bridge.noteAttachmentDelete('', 'token', 'note-1', attachment.id)
+    expect(await bridge.noteAttachmentList('', 'token', 'note-1')).toEqual([])
+    await expect(
+      bridge.noteAttachmentUpload('', 'token', 'note-1', '/tmp/bad.exe')
+    ).rejects.toThrow('UNSUPPORTED_ATTACHMENT_TYPE')
+  })
+})
