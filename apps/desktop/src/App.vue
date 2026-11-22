@@ -73,6 +73,9 @@ const focusTaskId = ref('')
 const focusMinutes = ref('')
 const expandedTask = ref<string | null>(null)
 const taskNoteDrafts = ref<Record<string, string>>({})
+const editingTaskNote = ref<string | null>(null)
+const editTaskNoteTitle = ref('')
+const editTaskNoteContent = ref('')
 const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
 const focusStatsDays = ref(7)
 const modules = createModuleStore()
@@ -406,6 +409,26 @@ async function startTaskFocus(taskId: string): Promise<void> {
 function toggleTaskDetail(taskId: string): void {
   expandedTask.value = expandedTask.value === taskId ? null : taskId
   if (expandedTask.value) void focus.loadTaskHistory(taskId)
+}
+
+function startEditTaskNote(noteId: string, title: string, content: string): void {
+  editingTaskNote.value = noteId
+  editTaskNoteTitle.value = title
+  editTaskNoteContent.value = content
+}
+
+function cancelEditTaskNote(): void {
+  editingTaskNote.value = null
+  editTaskNoteTitle.value = ''
+  editTaskNoteContent.value = ''
+}
+
+async function saveEditTaskNote(noteId: string, version: number): Promise<void> {
+  const saved = await notes.update(noteId, version, {
+    title: editTaskNoteTitle.value,
+    content: editTaskNoteContent.value
+  })
+  if (saved) cancelEditTaskNote()
 }
 
 async function addTaskNote(taskId: string): Promise<void> {
@@ -854,8 +877,42 @@ onMounted(async () => {
                   :key="note.id"
                   class="goals__milestone"
                 >
-                  <span>{{ note.title || '无标题' }}</span>
-                  <span class="habits__meta">{{ note.content.slice(0, 80) }}</span>
+                  <template v-if="editingTaskNote === note.id">
+                    <div class="composer__row">
+                      <input
+                        v-model="editTaskNoteTitle"
+                        class="input"
+                        type="text"
+                        maxlength="200"
+                        placeholder="标题（可选）"
+                        aria-label="笔记标题"
+                      />
+                      <button class="button" type="button" @click="saveEditTaskNote(note.id, note.version)">
+                        保存
+                      </button>
+                      <button class="button button--ghost" type="button" @click="cancelEditTaskNote">
+                        取消
+                      </button>
+                    </div>
+                    <textarea
+                      v-model="editTaskNoteContent"
+                      class="input"
+                      rows="3"
+                      maxlength="20000"
+                      aria-label="笔记正文"
+                    ></textarea>
+                  </template>
+                  <template v-else>
+                    <span>{{ note.title || '无标题' }}</span>
+                    <span class="habits__meta">{{ note.content.slice(0, 80) }}</span>
+                    <button
+                      class="button button--ghost"
+                      type="button"
+                      @click="startEditTaskNote(note.id, note.title, note.content)"
+                    >
+                      编辑
+                    </button>
+                  </template>
                 </li>
               </ul>
             </template>

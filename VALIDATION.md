@@ -827,3 +827,9 @@
 - 前端 89 项测试与 build 通过（关联创建已有 store 测试覆盖）；未新增组件测试。
 - 仅新增，不支持详情内编辑/删除；标题留空；无附件/多行。
 - [Server integration 45038967441](https://github.com/yml-qq/Planna/actions/runs/45038967441) 与 [Desktop core 45038967545](https://github.com/yml-qq/Planna/actions/runs/45038967545) 均 **success**。
+
+## NOTE-04b-2b-b-c-b-b-b-a 任务详情编辑笔记检查（2026-11-22）
+
+- 任务详情关联笔记支持内联编辑标题/正文并保存（notes.update 版本守卫），取消不写本地。
+- 前端 89 项测试与 build 通过（更新/冲突已有 store 测试）；未新增组件测试。
+- 仅标题/正文可编辑；无删除/附件/草稿保护；删除仍在笔记卡片。CI 见链接。
