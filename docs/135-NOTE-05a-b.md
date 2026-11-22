@@ -1,6 +1,6 @@
 # 135｜NOTE-05a-b：附件保留期清理（服务 + Worker）
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过，CI 见 `VALIDATION.md`。清理逻辑由冒烟直接调用验证；Worker 定时循环未做集成测试。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45052218579](https://github.com/yml-qq/Planna/actions/runs/45052218579) 与 [Desktop core 45052218620](https://github.com/yml-qq/Planna/actions/runs/45052218620) 均 **success**。清理逻辑由冒烟直接调用验证；Worker 定时循环未做集成测试。
 
 ## 范围与验收
 

@@ -871,4 +871,5 @@
 - 新增 `NoteAttachmentCleanup.PurgeDeletedAsync`（软删且超保留期：删文件→删行，文件失败跳过）与 API 单例注册。
 - Worker 新增 `NoteAttachmentCleanupWorker`：默认保留 30 天、每 60 分钟，环境变量可配；异常记录后继续。
 - 冒烟在上传→软删后解析清理服务，断言行/文件删除与报告 `{1,1}`。
+- [Server integration 45052218579](https://github.com/yml-qq/Planna/actions/runs/45052218579) 与 [Desktop core 45052218620](https://github.com/yml-qq/Planna/actions/runs/45052218620) 均 **success**。
 - 本地 build/format/契约通过；Worker 定时循环/配置未集成测试；未做配额/病毒扫描。
