@@ -820,3 +820,9 @@
 - 冒烟覆盖导入/重复导入/列表/重复日期/空数组/非法 kind/367 条。
 - [Server integration 45036660571](https://github.com/yml-qq/Planna/actions/runs/45036660571) 与 [Desktop core 45036660566](https://github.com/yml-qq/Planna/actions/runs/45036660566) 均 **success**。
 - 服务端仍不内置法定数据；导入来源授权与 legal_workday RRULE、提醒重排留待 `TIME-01G-b-b-b`。
+
+## NOTE-04b-2b-b-c-b-b-a 任务详情新建笔记检查（2026-11-22）
+
+- 任务详情新增单行笔记输入与“添加笔记”，复用 notes.create(title='', content, taskId)；成功后清空并刷新本地列表。
+- 前端 89 项测试与 build 通过（关联创建已有 store 测试覆盖）；未新增组件测试。
+- 仅新增，不支持详情内编辑/删除；标题留空；无附件/多行。CI 见链接。

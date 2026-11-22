@@ -72,6 +72,7 @@ const habits = createHabitStore(bridge, {
 const focusTaskId = ref('')
 const focusMinutes = ref('')
 const expandedTask = ref<string | null>(null)
+const taskNoteDrafts = ref<Record<string, string>>({})
 const focusRestMinutes = ref(readStorage('planna.focusRestMinutes') ?? '5')
 const focusStatsDays = ref(7)
 const modules = createModuleStore()
@@ -405,6 +406,13 @@ async function startTaskFocus(taskId: string): Promise<void> {
 function toggleTaskDetail(taskId: string): void {
   expandedTask.value = expandedTask.value === taskId ? null : taskId
   if (expandedTask.value) void focus.loadTaskHistory(taskId)
+}
+
+async function addTaskNote(taskId: string): Promise<void> {
+  const content = (taskNoteDrafts.value[taskId] ?? '').trim()
+  if (content === '') return
+  const created = await notes.create('', content, taskId)
+  if (created) taskNoteDrafts.value = { ...taskNoteDrafts.value, [taskId]: '' }
 }
 
 function taskSessions(taskId: string) {
@@ -824,6 +832,20 @@ onMounted(async () => {
             >
               加载更多
             </button>
+            <div class="composer__row">
+              <input
+                v-model="taskNoteDrafts[task.id]"
+                class="input"
+                type="text"
+                maxlength="20000"
+                placeholder="为任务添加笔记"
+                :aria-label="`为 ${task.title} 添加笔记`"
+                @keyup.enter="addTaskNote(task.id)"
+              />
+              <button class="button button--ghost" type="button" @click="addTaskNote(task.id)">
+                添加笔记
+              </button>
+            </div>
             <template v-if="notesForTask(notes.notes.value, task.id).length > 0">
               <p class="habits__meta">关联笔记</p>
               <ul class="goals__milestones">
