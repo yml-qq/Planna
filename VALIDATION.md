@@ -765,4 +765,5 @@
 - 登录后导航按模块可见性生成锚点（任务/专注/目标/习惯/笔记）；隐藏模块不生成链接；各区块加 `scroll-margin-top`。
 - 主题 auto/light/dark 持久化并以 `data-theme` 覆盖 CSS 变量；紧凑密度开关持久化；跳转主内容链接与 `:focus-visible` 轮廓。
 - 前端新增 3 项纯函数测试（主题归一化、导航链接、密度 class），合计 **88 项**；`pnpm build` 通过；服务端无变更。
+- [Server integration 45024177070](https://github.com/yml-qq/Planna/actions/runs/45024177070) 与 [Desktop core 45024177097](https://github.com/yml-qq/Planna/actions/runs/45024177097) 均 **success**。
 - 未接入 axe/Lighthouse 或屏幕阅读器真机测试；导航为页内锚点而非路由。
