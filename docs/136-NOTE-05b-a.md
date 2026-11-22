@@ -1,6 +1,6 @@
 # 136｜NOTE-05b-a：Tauri 附件命令层
 
-状态：代码已实现；本地前端 `pnpm test`（90 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过。CI 见 `VALIDATION.md`。附件 UI 面板与同步策略属 `NOTE-05b-b`。
+状态：代码已实现；本地前端 `pnpm test`（90 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45054313204](https://github.com/yml-qq/Planna/actions/runs/45054313204) 与 [Desktop core 45054313304](https://github.com/yml-qq/Planna/actions/runs/45054313304) 均 **success**。附件 UI 面板与同步策略属 `NOTE-05b-b`。
 
 ## 范围与验收
 

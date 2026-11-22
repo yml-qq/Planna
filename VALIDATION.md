@@ -879,4 +879,5 @@
 - Tauri 新增 `note_attachment_list/upload/download/delete`（在线 API；multipart 由 reqwest 新增 feature；下载走另存为对话框）。
 - 桥接新增 `NoteAttachment` 与 4 方法；Memory 模拟上传/列表/下载/删除与不支持类型；前端新增 1 项测试，合计 90 项。
 - 附件不进入本地 SQLite/同步；上传仅按扩展名映射 MIME，服务端仍做白名单/大小校验；下载文件名固定 `attachment.<ext>`。
-- 无 UI 面板/病毒扫描/配额；离线或未同步笔记上传会 401/404。CI 见链接。
+- 无 UI 面板/病毒扫描/配额；离线或未同步笔记上传会 401/404。
+- [Server integration 45054313204](https://github.com/yml-qq/Planna/actions/runs/45054313204) 与 [Desktop core 45054313304](https://github.com/yml-qq/Planna/actions/runs/45054313304) 均 **success**。
