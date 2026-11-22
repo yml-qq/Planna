@@ -966,4 +966,6 @@
 
 - 上传增加按 owner 的进程内固定窗口限流（默认 30/分钟，`NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE` 可配），超限 429 `ATTACHMENT_RATE_LIMITED`。
 - OpenAPI 上传新增 429；契约测试更新（36 项）；冒烟设置上限 2 后第 3 次上传 429、DB 活跃 2 条。
+- 首次 CI（`fa8149f`）失败：窗口为 scoped 服务实例字段，每请求重建导致第 3 次仍 201；改为进程级静态窗口（`cb9765d`）后通过。
+- [Server integration 45080910891](https://github.com/yml-qq/Planna/actions/runs/45080910891) 与 [Desktop core 45080910972](https://github.com/yml-qq/Planna/actions/runs/45080910972) 均 **success**。
 - 限流为进程内、固定窗口、无 Retry-After；重放/配额拒绝也计数；多实例不共享。

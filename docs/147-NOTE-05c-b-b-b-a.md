@@ -1,6 +1,6 @@
 # 147｜NOTE-05c-b-b-b-a：附件上传限流
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；首次 CI（`fa8149f`）因 scoped 服务窗口每请求重建失败，改为进程级静态窗口（`cb9765d`）后 [Server integration 45080910891](https://github.com/yml-qq/Planna/actions/runs/45080910891) 与 [Desktop core 45080910972](https://github.com/yml-qq/Planna/actions/runs/45080910972) 均 **success**。
 
 ## 范围与验收
 
