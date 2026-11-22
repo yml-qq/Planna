@@ -45,7 +45,8 @@
 | E07 | TIME-01G-b-a | 工作日判定 API（周末+覆盖，已交付，见 `120-TIME-01G-b-a.md`） | TIME-01G-a | policy tests |
 | E07 | TIME-01G-b-b-a | 工作日覆盖批量导入 API（已交付，见 `128-TIME-01G-b-b-a.md`） | TIME-01G-b-a | import tests |
 | E07 | TIME-01G-b-b-b-a | 工作日历客户端与月视图（已交付，见 `144-TIME-01G-b-b-b-a.md`） | TIME-01G-b-b-a | ui tests |
-| E07 | TIME-01G-b-b-b-b | 受信日历导入 UI、legal_workday 求值与 occurrence/提醒重排 | TIME-01G-b-b-b-a | policy tests |
+| E07 | TIME-01G-b-b-b-b-a | 工作日历批量导入 UI（已交付，见 `146-TIME-01G-b-b-b-b-a.md`） | TIME-01G-b-b-b-a | import tests |
+| E07 | TIME-01G-b-b-b-b-b | 受信来源/文件导入、legal_workday 求值与 occurrence/提醒重排 | TIME-01G-b-b-b-b-a | policy tests |
 | E07 | REM-01 | 本地提醒/权限/动作 | TIME-01 | device tests |
 | E07 | REM-02 | worker/远程推送（V1.1） | TIME-01 | retry tests |
 | E08 | AI-01 | Provider 抽象与结构化规则解析（已交付，见 `50-AI-01.md`） | E02,TASK-COMPLETE-01 | golden tests |

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge } from './api'
-import { createCalendarStore, monthLeadingBlanks, monthRange } from './calendar'
+import { createCalendarStore, monthLeadingBlanks, monthRange, parseOverrideLines } from './calendar'
 
 function createStore(overrides: Record<string, unknown> = {}) {
   const bridge = new MemoryBridge()
@@ -54,5 +54,27 @@ describe('calendar store', () => {
     const signedOut = createStore({ token: () => null })
     await signedOut.store.load()
     expect(signedOut.store.error.value).toBe('CALENDAR_SIGNED_OUT')
+  })
+})
+
+describe('calendar import', () => {
+  it('parses valid lines, notes, comments and reports invalid or duplicate dates', () => {
+    const parsed = parseOverrideLines(
+      '# 2026\n2026-10-01,holiday,国庆\n2026-10-03,workday\n2026-10-01,workday\nbad,holiday\n2026-10-05,party'
+    )
+    expect(parsed.items).toEqual([
+      { date: '2026-10-01', kind: 'holiday', note: '国庆' },
+      { date: '2026-10-03', kind: 'workday', note: null }
+    ])
+    expect(parsed.errors).toBe(3)
+  })
+
+  it('imports overrides through the store and reloads the month', async () => {
+    const { store } = createStore()
+    await store.load()
+    const result = await store.importLines('2026-10-01,holiday\n2026-10-03,workday')
+    expect(result).toEqual({ imported: 2, errors: 0 })
+    expect(store.days.value[0]?.kind).toBe('holiday')
+    expect(store.days.value[2]?.kind).toBe('workday')
   })
 })

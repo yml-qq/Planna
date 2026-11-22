@@ -953,3 +953,10 @@
 - modules/prefs 测试更新，前端合计 96 项；build/shell clippy/fmt 通过。
 - [Server integration 45074332295](https://github.com/yml-qq/Planna/actions/runs/45074332295) 与 [Desktop core 45074332281](https://github.com/yml-qq/Planna/actions/runs/45074332281) 均 **success**。
 - 未做批量清除/键盘方向键/gridcell 语义；默认 CN、无内置法定数据。
+
+## TIME-01G-b-b-b-b-a 日历导入 UI 检查（2026-11-22）
+
+- Tauri `workday_import` + 桥接；calendar `parseOverrideLines`（CSV 行/注释/非法/重复）与 `importLines`（调 API 后重载）。
+- UI 日历卡片新增批量导入 textarea/导入按钮/结果提示。
+- 前端新增 2 项测试，合计 98 项；build/shell clippy/fmt 通过。
+- 仅粘贴文本导入；无文件选择/预览；客户端不强制 366 上限；重复日期跳过；不内置法定数据/不触发提醒重排。

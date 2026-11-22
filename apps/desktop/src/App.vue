@@ -139,6 +139,9 @@ const reportStatus = ref('')
 const confirmGoal = ref<{ id: string; title: string } | null>(null)
 const attachmentsOpen = ref<Record<string, boolean>>({})
 const selectedCalendarDate = ref<string | null>(null)
+const calendarImportOpen = ref(false)
+const calendarImportText = ref('')
+const calendarImportStatus = ref('')
 const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
@@ -375,6 +378,16 @@ async function clearCalendarOverride(): Promise<void> {
   if (!selectedCalendarDate.value) return
   await calendar.clear(selectedCalendarDate.value)
   selectedCalendarDate.value = null
+}
+
+async function importCalendarOverrides(): Promise<void> {
+  const result = await calendar.importLines(calendarImportText.value)
+  if (!result) {
+    calendarImportStatus.value = '导入失败：' + (calendar.error.value ?? 'UNKNOWN')
+    return
+  }
+  calendarImportStatus.value = `导入 ${result.imported} 条，忽略 ${result.errors} 条`
+  if (result.imported > 0) calendarImportText.value = ''
 }
 
 async function toggleNoteAttachments(noteId: string): Promise<void> {
@@ -1241,6 +1254,22 @@ onMounted(async () => {
         </div>
       </div>
       <p class="card__hint">点击日期切换“工作日/休息日”覆盖；默认周一至周五为工作日。</p>
+      <div class="composer__row">
+        <button class="button button--ghost" type="button" @click="calendarImportOpen = !calendarImportOpen">
+          批量导入
+        </button>
+        <span v-if="calendarImportStatus" class="status">{{ calendarImportStatus }}</span>
+      </div>
+      <div v-if="calendarImportOpen" class="composer__row">
+        <textarea
+          v-model="calendarImportText"
+          class="input"
+          rows="4"
+          placeholder="每行：YYYY-MM-DD,holiday|workday[,备注]"
+          aria-label="批量导入工作日覆盖"
+        ></textarea>
+        <button class="button" type="button" @click="importCalendarOverrides">导入</button>
+      </div>
       <p v-if="calendar.error.value" class="status status--error" role="alert">{{ calendar.error.value }}</p>
       <div class="calendar-grid" role="grid" aria-label="工作日历">
         <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label" class="calendar-weekday">{{ label }}</span>

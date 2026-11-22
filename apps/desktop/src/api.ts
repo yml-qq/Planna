@@ -27,6 +27,12 @@ export interface SyncSummary {
   cursor: string | null
 }
 
+export interface WorkdayImportItem {
+  date: string
+  kind: 'holiday' | 'workday'
+  note?: string | null
+}
+
 export interface WorkdayDay {
   date: string
   kind: 'holiday' | 'workday'
@@ -382,6 +388,12 @@ export interface DesktopBridge {
     baseUrl: string,
     accessToken: string,
     date: string,
+    jurisdiction?: string
+  ): Promise<void>
+  workdayImport(
+    baseUrl: string,
+    accessToken: string,
+    items: WorkdayImportItem[],
     jurisdiction?: string
   ): Promise<void>
   upsertHabitLog(input: { habitId: string; logDate: string; quantity: number; status: 'done' | 'skipped' }): Promise<HabitLog>
@@ -1034,6 +1046,14 @@ export class MemoryBridge implements DesktopBridge {
     date: string
   ): Promise<void> {
     this.workdayOverrides.delete(date)
+  }
+
+  async workdayImport(
+    _baseUrl: string,
+    _accessToken: string,
+    items: WorkdayImportItem[]
+  ): Promise<void> {
+    for (const item of items) this.workdayOverrides.set(item.date, item.kind)
   }
 
   async exportConflicts(): Promise<string> {
@@ -1731,6 +1751,20 @@ export class TauriBridge implements DesktopBridge {
       baseUrl,
       accessToken,
       date,
+      jurisdiction: jurisdiction ?? null
+    })
+  }
+
+  async workdayImport(
+    baseUrl: string,
+    accessToken: string,
+    items: WorkdayImportItem[],
+    jurisdiction?: string
+  ): Promise<void> {
+    await this.invoke<void>('workday_import', {
+      baseUrl,
+      accessToken,
+      items,
       jurisdiction: jurisdiction ?? null
     })
   }

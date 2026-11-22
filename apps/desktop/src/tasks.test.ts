@@ -165,6 +165,9 @@ describe('task store', () => {
       },
       workdayOverrideClear: async () => {
         throw new Error('offline')
+      },
+      workdayImport: async () => {
+        throw new Error('offline')
       }
     }
     const store = createTaskStore(failing, 'inbox')

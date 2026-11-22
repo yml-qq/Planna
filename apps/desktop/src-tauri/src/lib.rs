@@ -1441,6 +1441,38 @@ fn workday_override_clear(
     Ok(())
 }
 
+#[derive(Deserialize, Serialize)]
+struct WorkdayImportItem {
+    date: String,
+    kind: String,
+    note: Option<String>,
+}
+
+#[tauri::command]
+fn workday_import(
+    base_url: String,
+    access_token: String,
+    jurisdiction: Option<String>,
+    items: Vec<WorkdayImportItem>,
+) -> Result<(), String> {
+    let response = http_client()
+        .post(format!(
+            "{}/calendar/workday-overrides/import",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .json(&serde_json::json!({
+            "jurisdiction": jurisdiction,
+            "overrides": items,
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1719,6 +1751,7 @@ pub fn run() {
             workday_days,
             workday_override_set,
             workday_override_clear,
+            workday_import,
             create_habit,
             update_habit,
             upsert_habit_log,

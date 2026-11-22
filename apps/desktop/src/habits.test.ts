@@ -214,6 +214,9 @@ describe('habit store', () => {
       },
       workdayOverrideClear: async () => {
         throw new Error('offline')
+      },
+      workdayImport: async () => {
+        throw new Error('offline')
       }
     }
     const store = createHabitStore(failing, storeOptions())

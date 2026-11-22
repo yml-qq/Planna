@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { DesktopBridge, WorkdayDay } from './api'
+import type { DesktopBridge, WorkdayDay, WorkdayImportItem } from './api'
 
 export interface CalendarStoreOptions {
   baseUrl: () => string
@@ -18,6 +18,32 @@ export interface CalendarStore {
   previousMonth: () => Promise<void>
   toggle: (date: string, current: string) => Promise<void>
   clear: (date: string) => Promise<void>
+  importLines: (text: string) => Promise<{ imported: number; errors: number } | null>
+}
+
+export interface ParsedOverrides {
+  items: WorkdayImportItem[]
+  errors: number
+}
+
+export function parseOverrideLines(text: string): ParsedOverrides {
+  const items: WorkdayImportItem[] = []
+  const seen = new Set<string>()
+  let errors = 0
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (line === '' || line.startsWith('#')) continue
+    const [date, kind, ...notes] = line.split(',').map((part) => part.trim())
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '') ||
+        (kind !== 'holiday' && kind !== 'workday') ||
+        seen.has(date!)) {
+      errors += 1
+      continue
+    }
+    seen.add(date!)
+    items.push({ date: date!, kind, note: notes.length > 0 ? notes.join(',') : null })
+  }
+  return { items, errors }
 }
 
 function errorCode(error: unknown): string {
@@ -114,6 +140,27 @@ export function createCalendarStore(
     }
   }
 
+  async function importLines(
+    text: string
+  ): Promise<{ imported: number; errors: number } | null> {
+    const parsed = parseOverrideLines(text)
+    if (parsed.items.length === 0) return { imported: 0, errors: parsed.errors }
+    const token = options.token()
+    if (!token) {
+      error.value = 'CALENDAR_SIGNED_OUT'
+      return null
+    }
+    error.value = null
+    try {
+      await bridge.workdayImport(options.baseUrl(), token, parsed.items)
+      await load()
+      return { imported: parsed.items.length, errors: parsed.errors }
+    } catch (failure) {
+      error.value = errorCode(failure)
+      return null
+    }
+  }
+
   return {
     year,
     month,
@@ -124,6 +171,7 @@ export function createCalendarStore(
     nextMonth,
     previousMonth,
     toggle,
-    clear
+    clear,
+    importLines
   }
 }
