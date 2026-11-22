@@ -1,6 +1,6 @@
 # 122｜NOTE-04b-2b-a：桌面本地笔记存储与同步 outbox
 
-状态：代码已实现；本地 core `cargo test`（笔记 4 项）与 clippy/fmt 通过。拉取应用与 UI 切换到本地笔记属 `NOTE-04b-2b-b`。
+状态：代码已实现；本地 core `cargo test`（笔记 4 项）与 clippy/fmt 通过；[Server integration 45026244524](https://github.com/yml-qq/Planna/actions/runs/45026244524) 与 [Desktop core 45026244527](https://github.com/yml-qq/Planna/actions/runs/45026244527) 均 **success**。拉取应用与 UI 切换到本地笔记属 `NOTE-04b-2b-b`。
 
 ## 范围与验收
 

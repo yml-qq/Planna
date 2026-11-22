@@ -772,4 +772,5 @@
 
 - core 新增 `notes` 表与 `create_note`/`update_note`/`delete_note`/`notes`：本地行与 outbox 同事务，entity_type=note，更新带版本守卫，删除为 tombstone。
 - 新增 4 项 core 测试（原子/幂等、版本冲突与 base_version、删除、校验），`cargo test` 全量通过；`cargo fmt --check`、`cargo clippy -D warnings` 通过。
+- [Server integration 45026244524](https://github.com/yml-qq/Planna/actions/runs/45026244524) 与 [Desktop core 45026244527](https://github.com/yml-qq/Planna/actions/runs/45026244527) 均 **success**。
 - 本地笔记尚未接入 UI；拉取仍忽略 note，留待 `NOTE-04b-2b-b`。
