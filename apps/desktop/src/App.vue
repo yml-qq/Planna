@@ -89,6 +89,10 @@ const goals = createGoalStore(bridge, {
 const goalTitle = ref('')
 const goalTargetDate = ref('')
 const goalGuidance = ref<Record<string, string>>({})
+const editingGoal = ref<string | null>(null)
+const editGoalTitle = ref('')
+const editGoalDescription = ref('')
+const editGoalTargetDate = ref('')
 const milestoneDrafts = ref<Record<string, string>>({})
 const focus = createFocusStore(bridge, {
   baseUrl: () => baseUrl.value,
@@ -225,6 +229,28 @@ async function submitGoal(): Promise<void> {
     goalTitle.value = ''
     goalTargetDate.value = ''
   }
+}
+
+function startEditGoal(goalId: string): void {
+  const goal = goals.goals.value.find((candidate) => candidate.id === goalId)
+  if (!goal) return
+  editingGoal.value = goalId
+  editGoalTitle.value = goal.title
+  editGoalDescription.value = goal.description
+  editGoalTargetDate.value = goal.targetDate ?? ''
+}
+
+function cancelEditGoal(): void {
+  editingGoal.value = null
+}
+
+async function saveEditGoal(goalId: string): Promise<void> {
+  const saved = await goals.updateDetails(goalId, {
+    title: editGoalTitle.value,
+    description: editGoalDescription.value,
+    targetDate: editGoalTargetDate.value === '' ? null : editGoalTargetDate.value
+  })
+  if (saved) editingGoal.value = null
 }
 
 async function previewGoalBreakdown(goalId: string): Promise<void> {
@@ -893,12 +919,22 @@ onMounted(async () => {
       </form>
       <ul v-if="goals.goals.value.length > 0" class="goals">
         <li v-for="goal in goals.goals.value" :key="goal.id" class="goals__item">
-          <div class="goals__header">
+          <div v-if="editingGoal === goal.id" class="goals__edit">
+            <input v-model="editGoalTitle" class="input" type="text" maxlength="200" aria-label="目标标题" />
+            <input v-model="editGoalDescription" class="input" type="text" maxlength="2000" aria-label="目标描述" />
+            <input v-model="editGoalTargetDate" class="input input--narrow" type="date" aria-label="目标日期" />
+            <div class="composer__row">
+              <button class="button" type="button" @click="saveEditGoal(goal.id)">保存</button>
+              <button class="button button--ghost" type="button" @click="cancelEditGoal">取消</button>
+            </div>
+          </div>
+          <div v-else class="goals__header">
             <span class="goals__title">{{ goal.title }}</span>
             <span class="goals__meta">
               {{ goal.status }} · {{ goal.progress.completedMilestones }}/{{ goal.progress.totalMilestones }}
               <template v-if="goal.targetDate"> · {{ goal.targetDate }}</template>
             </span>
+            <button class="button button--ghost" type="button" @click="startEditGoal(goal.id)">编辑</button>
           </div>
           <div class="goals__progress" :aria-label="`完成 ${goal.progress.percent}%`">
             <div class="goals__bar" :style="{ width: `${goal.progress.percent}%` }"></div>
@@ -913,6 +949,13 @@ onMounted(async () => {
                 />
                 {{ milestone.title }}
               </label>
+              <button
+                class="button button--ghost"
+                type="button"
+                @click="goals.removeMilestone(goal.id, milestone)"
+              >
+                删除
+              </button>
             </li>
           </ul>
           <div class="composer__row">

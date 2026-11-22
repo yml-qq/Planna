@@ -653,3 +653,10 @@
 - 前端新增 2 项测试（预览→逐条→全部添加与进度；AI_UNAVAILABLE/未登录），合计 **71 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - [Server integration 44987860005](https://github.com/yml-qq/Planna/actions/runs/44987860005) 与 [Desktop core 44987859983](https://github.com/yml-qq/Planna/actions/runs/44987859983) 均 **success**。
 - 未连接生产库、未提交凭据；目标编辑、里程碑删除/排序与 AI 建议去重留待 `GOAL-03c`。
+
+## GOAL-03c 目标编辑/里程碑删除检查（2026-11-22）
+
+- Tauri 新增 `goal_delete_milestone`；桥接新增 `goalDeleteMilestone`（Memory 同步删除并重算 progress）；goal store 新增 `updateDetails`/`removeMilestone`。
+- UI 目标行支持内联编辑标题/描述/日期（`goalUpdate` 版本校验），里程碑支持删除（`If-Match` 当前版本）。
+- 前端新增 2 项测试，合计 **73 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。

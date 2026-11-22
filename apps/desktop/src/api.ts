@@ -264,6 +264,13 @@ export interface DesktopBridge {
     goalId: string,
     guidance?: string
   ): Promise<GoalBreakdownSuggestion[]>
+  goalDeleteMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number
+  ): Promise<void>
   focusStats(
     baseUrl: string,
     accessToken: string,
@@ -758,6 +765,22 @@ export class MemoryBridge implements DesktopBridge {
       .filter((part) => part.length > 0)
       .slice(0, 5)
       .map((title, index) => ({ title, estimateMinutes: null, position: index + 1 }))
+  }
+
+  async goalDeleteMilestone(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    const milestone = goal.milestones.find((candidate) => candidate.id === milestoneId)
+    if (!milestone) throw new Error('404:MILESTONE_NOT_FOUND')
+    if (milestone.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    goal.milestones = goal.milestones.filter((candidate) => candidate.id !== milestoneId)
+    MemoryBridge.refreshProgress(goal)
   }
 
   async exportConflicts(): Promise<string> {
@@ -1359,6 +1382,22 @@ export class TauriBridge implements DesktopBridge {
       estimateMinutes: row.estimate_minutes,
       position: row.position
     }))
+  }
+
+  async goalDeleteMilestone(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    milestoneId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    await this.invoke<void>('goal_delete_milestone', {
+      baseUrl,
+      accessToken,
+      goalId,
+      milestoneId,
+      expectedVersion
+    })
   }
 
   async exportConflicts(): Promise<string> {

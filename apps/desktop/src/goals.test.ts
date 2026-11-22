@@ -134,3 +134,42 @@ describe('goal AI breakdown', () => {
     expect(signedOut.store.error.value).toBe('GOAL_SIGNED_OUT')
   })
 })
+
+describe('goal editing and milestone removal', () => {
+  it('updates goal details with the current version', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship', '2026-12-31')
+    expect(await store.updateDetails(goal!.id, {
+      title: 'Ship v2',
+      description: 'release plan',
+      targetDate: '2027-01-31'
+    })).toBe(true)
+    expect(store.goals.value[0]?.title).toBe('Ship v2')
+    expect(store.goals.value[0]?.description).toBe('release plan')
+    expect(store.goals.value[0]?.targetDate).toBe('2027-01-31')
+    expect(store.goals.value[0]?.version).toBe(2)
+
+    expect(await store.updateDetails(goal!.id, { title: '   ' })).toBe(false)
+    expect(store.error.value).toBe('INVALID_GOAL')
+  })
+
+  it('removes a milestone and recomputes progress', async () => {
+    const { store } = createStore()
+    const goal = await store.create('Ship')
+    await store.addMilestone(goal!.id, 'Draft')
+    await store.addMilestone(goal!.id, 'Review')
+    let current = store.goals.value[0]!
+    expect(await store.toggleMilestone(current.id, current.milestones[0]!)).toBe(true)
+    current = store.goals.value[0]!
+    expect(current.progress.percent).toBe(50)
+
+    expect(await store.removeMilestone(current.id, current.milestones[1]!)).toBe(true)
+    current = store.goals.value[0]!
+    expect(current.milestones).toHaveLength(1)
+    expect(current.progress).toEqual({
+      completedMilestones: 1,
+      totalMilestones: 1,
+      percent: 100
+    })
+  })
+})
