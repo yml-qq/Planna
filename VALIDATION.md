@@ -818,4 +818,5 @@
 - 新增 `POST /calendar/workday-overrides/import`：1..366 条、单请求重复日期/非法 kind/note 超长/空/超额 422，事务内自然键 upsert，返回 imported/jurisdiction；幂等。
 - OpenAPI 新增路径与 3 schema；契约测试断言（**35 项**）。
 - 冒烟覆盖导入/重复导入/列表/重复日期/空数组/非法 kind/367 条。
+- [Server integration 45036660571](https://github.com/yml-qq/Planna/actions/runs/45036660571) 与 [Desktop core 45036660566](https://github.com/yml-qq/Planna/actions/runs/45036660566) 均 **success**。
 - 服务端仍不内置法定数据；导入来源授权与 legal_workday RRULE、提醒重排留待 `TIME-01G-b-b-b`。

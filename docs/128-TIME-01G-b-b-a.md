@@ -1,6 +1,6 @@
 # 128｜TIME-01G-b-b-a：工作日覆盖批量导入 API
 
-状态：代码已实现；本地 build/format/契约 **35 项**通过，CI 见 `VALIDATION.md`。`legal_workday` RRULE 求值与提醒重排属 `TIME-01G-b-b-b`。
+状态：代码已实现；本地 build/format/契约 **35 项**通过；[Server integration 45036660571](https://github.com/yml-qq/Planna/actions/runs/45036660571) 与 [Desktop core 45036660566](https://github.com/yml-qq/Planna/actions/runs/45036660566) 均 **success**。`legal_workday` RRULE 求值与提醒重排属 `TIME-01G-b-b-b`。
 
 ## 范围与验收
 
