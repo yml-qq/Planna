@@ -854,4 +854,5 @@
 
 - 新增 `scripts/backup-restore-drill.sh`：postgres:18 容器 pg_dump → 重建 planna_restore → pg_restore --exit-on-error → 核心表行数对比；CI PostgreSQL 18 job 在冒烟后执行。
 - 脚本**未在本机执行**（Windows 无可用 bash/Linux Docker）；以 CI 运行结果为准。
+- **CI 实际执行通过**：[Server integration 45045904340](https://github.com/yml-qq/Planna/actions/runs/45045904340)（含 pg_dump/restore 与核心表行数对比）与 [Desktop core 45045904488](https://github.com/yml-qq/Planna/actions/runs/45045904488) 均 **success**。
 - 仅隔离库/CI；不覆盖 PITR/RTO/RPO/生产回滚。生产部署/签名/灰度留待 `REL-02-b`。
