@@ -865,3 +865,10 @@
 - 首次 CI（`d14acc0`）失败：冒烟断言重复删除 404，但实现返回 204（已删除视为目标状态）；修正测试/文档（`40e73c0`）后通过，未改实现。
 - [Server integration 45050136159](https://github.com/yml-qq/Planna/actions/runs/45050136159) 与 [Desktop core 45050136155](https://github.com/yml-qq/Planna/actions/runs/45050136155) 均 **success**。
 - 附件不进入同步；删除不删磁盘文件；无配额/病毒扫描；默认临时目录，生产需配置持久化。桌面 UI 留待 `NOTE-05b`。
+
+## NOTE-05a-b 附件清理检查（2026-11-22）
+
+- 新增 `NoteAttachmentCleanup.PurgeDeletedAsync`（软删且超保留期：删文件→删行，文件失败跳过）与 API 单例注册。
+- Worker 新增 `NoteAttachmentCleanupWorker`：默认保留 30 天、每 60 分钟，环境变量可配；异常记录后继续。
+- 冒烟在上传→软删后解析清理服务，断言行/文件删除与报告 `{1,1}`。
+- 本地 build/format/契约通过；Worker 定时循环/配置未集成测试；未做配额/病毒扫描。

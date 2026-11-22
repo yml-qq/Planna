@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Planna.Api;
 using Planna.Application.Identity;
+using Planna.Application.Notes;
 
 internal static class HttpNoteAttachmentSmoke
 {
@@ -31,6 +32,8 @@ internal static class HttpNoteAttachmentSmoke
         Environment.SetEnvironmentVariable("JWT_SIGNING_KEY", "local-test-signing-key-32-bytes-minimum-2026");
         Environment.SetEnvironmentVariable("AUTH_CODE_PEPPER", "local-test-code-pepper-32-bytes-minimum-2026");
         Environment.SetEnvironmentVariable("AUTH_OUTBOX_KEY", Convert.ToBase64String(new byte[32]));
+        var attachmentRoot = Path.Combine(Path.GetTempPath(), "planna-attach-" + Guid.NewGuid());
+        Environment.SetEnvironmentVariable("NOTE_ATTACHMENT_DIR", attachmentRoot);
         await using var factory = new AttachmentFactory();
         using var client = factory.CreateClient();
         var issuer = factory.Services.GetRequiredService<IAccessTokenIssuer>();
@@ -92,6 +95,16 @@ internal static class HttpNoteAttachmentSmoke
         Check(await Delete(client, token, note, Guid.NewGuid()), HttpStatusCode.NotFound);
         if (await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1 AND deleted_at IS NOT NULL", note) != 1)
             throw new InvalidOperationException("Attachment soft delete mismatch.");
+
+        var filePath = Path.Combine(attachmentRoot, owner.ToString(), note.ToString(),
+            attachmentId + ".txt");
+        if (!File.Exists(filePath))
+            throw new InvalidOperationException("Attachment file missing before cleanup.");
+        var cleanup = factory.Services.GetRequiredService<INoteAttachmentCleanup>();
+        var report = await cleanup.PurgeDeletedAsync(DateTimeOffset.UtcNow.AddMinutes(1), CancellationToken.None);
+        if (report.PurgedAttachments != 1 || report.RemovedFiles != 1 || File.Exists(filePath) ||
+            await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1", note) != 0)
+            throw new InvalidOperationException("Attachment cleanup mismatch.");
         Console.WriteLine("PASS: note attachments scope, upload/list/download, idempotency, type/size and soft delete");
     }
 

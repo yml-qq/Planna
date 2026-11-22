@@ -3,6 +3,9 @@ using Planna.Application.Identity;
 using Planna.Infrastructure.Identity;
 using Planna.Infrastructure.Persistence;
 using Planna.Infrastructure.Privacy;
+using Planna.Application.Notes;
+using Planna.Infrastructure.Notes;
+using Planna.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
 var configuration = builder.Configuration;
@@ -43,6 +46,23 @@ builder.Services.AddHostedService(sp => new PrivacyCleanupWorker(
     sp.GetRequiredService<IServiceScopeFactory>(), sp.GetRequiredService<TimeProvider>(),
     sp.GetRequiredService<ILogger<PrivacyCleanupWorker>>(),
     TimeSpan.FromDays(retentionDays), TimeSpan.FromMinutes(cleanupIntervalMinutes)));
+var attachmentRetentionDays = 30;
+if (configuration["NOTE_ATTACHMENT_RETENTION_DAYS"] is { } attachmentRetention &&
+    (!int.TryParse(attachmentRetention, out attachmentRetentionDays) ||
+     attachmentRetentionDays is < 1 or > 3650))
+    throw new InvalidOperationException("NOTE_ATTACHMENT_RETENTION_DAYS must be between 1 and 3650.");
+var attachmentCleanupMinutes = 60;
+if (configuration["NOTE_ATTACHMENT_CLEANUP_INTERVAL_MINUTES"] is { } attachmentInterval &&
+    (!int.TryParse(attachmentInterval, out attachmentCleanupMinutes) ||
+     attachmentCleanupMinutes is < 1 or > 1440))
+    throw new InvalidOperationException(
+        "NOTE_ATTACHMENT_CLEANUP_INTERVAL_MINUTES must be between 1 and 1440.");
+builder.Services.AddSingleton<INoteAttachmentCleanup>(_ =>
+    new NoteAttachmentCleanup(connection, configuration));
+builder.Services.AddHostedService(sp => new NoteAttachmentCleanupWorker(
+    sp.GetRequiredService<INoteAttachmentCleanup>(), sp.GetRequiredService<TimeProvider>(),
+    sp.GetRequiredService<ILogger<NoteAttachmentCleanupWorker>>(),
+    TimeSpan.FromDays(attachmentRetentionDays), TimeSpan.FromMinutes(attachmentCleanupMinutes)));
 builder.Services.AddHostedService<LoginEmailWorker>();
 builder.Services.AddHostedService<StepUpEmailWorker>();
 await builder.Build().RunAsync();

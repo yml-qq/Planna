@@ -36,3 +36,11 @@ public interface INoteAttachmentService
     Task<NoteAttachmentResult> DeleteAsync(Guid ownerId, Guid noteId, Guid attachmentId,
         CancellationToken ct);
 }
+
+public sealed record AttachmentCleanupReport(int PurgedAttachments, int RemovedFiles);
+
+public interface INoteAttachmentCleanup
+{
+    Task<AttachmentCleanupReport> PurgeDeletedAsync(DateTimeOffset olderThan,
+        CancellationToken ct);
+}
