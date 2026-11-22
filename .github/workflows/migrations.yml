@@ -48,3 +48,12 @@ jobs:
         run: dotnet run --project server/tools/Planna.Migrate --no-build
       - name: PostgreSQL migration and HTTP checks
         run: dotnet run --project server/tests/Planna.MigrationSmoke --no-build
+
+      - name: Backup and restore drill
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: planna
+          PGPASSWORD: local-ci-only
+          PGDATABASE: planna_test
+        run: bash scripts/backup-restore-drill.sh

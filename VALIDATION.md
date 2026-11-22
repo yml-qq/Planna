@@ -849,3 +849,9 @@
 - core 新增 1 项搜索测试，笔记合计 8 项；前端 89 项/build、shell clippy/fmt 通过。
 - [Server integration 45044198303](https://github.com/yml-qq/Planna/actions/runs/45044198303) 与 [Desktop core 45044198371](https://github.com/yml-qq/Planna/actions/runs/45044198371) 均 **success**。
 - 无 FTS5/分词/排名，全表扫描；仅本地 SQLite 笔记。全文索引/附件/模板留待后续。
+
+## REL-02-a 备份/恢复演练检查（2026-11-22）
+
+- 新增 `scripts/backup-restore-drill.sh`：postgres:18 容器 pg_dump → 重建 planna_restore → pg_restore --exit-on-error → 核心表行数对比；CI PostgreSQL 18 job 在冒烟后执行。
+- 脚本**未在本机执行**（Windows 无可用 bash/Linux Docker）；以 CI 运行结果为准。
+- 仅隔离库/CI；不覆盖 PITR/RTO/RPO/生产回滚。生产部署/签名/灰度留待 `REL-02-b`。

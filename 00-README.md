@@ -143,6 +143,7 @@
 | 130 | `docs/130-NOTE-04b-2b-b-c-b-b-b-a.md` | 任务详情内编辑关联笔记 |
 | 131 | `docs/131-FOCUS-09b-e-a.md` | 报表“另存为”对话框 |
 | 132 | `docs/132-NOTE-04b-2b-b-c-b-b-b-b-a.md` | 本地笔记搜索下推 SQLite |
+| 133 | `docs/133-REL-02-a.md` | 备份/恢复演练自动化（隔离库） |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

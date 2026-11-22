@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Backup/restore drill for an isolated PostgreSQL 18 database.
+#
+# It dumps the source database with pg_dump, restores into a separate restore
+# database, and compares row counts for core tables. Intended for CI/isolated
+# environments only; never point it at production.
+set -euo pipefail
+
+PGHOST="${PGHOST:-127.0.0.1}"
+PGPORT="${PGPORT:-5432}"
+PGUSER="${PGUSER:-planna}"
+PGPASSWORD="${PGPASSWORD:?PGPASSWORD is required}"
+PGDATABASE="${PGDATABASE:-planna_test}"
+RESTORE_DB="${RESTORE_DB:-planna_restore}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WORKDIR="$ROOT/.backup-drill"
+DUMP="/work/.backup-drill/planna.dump"
+
+mkdir -p "$WORKDIR"
+rm -f "$WORKDIR/planna.dump"
+
+run_pg() {
+  docker run --rm --network host \
+    -v "$ROOT:/work" -w /work \
+    -e PGPASSWORD="$PGPASSWORD" \
+    postgres:18 "$@"
+}
+
+echo "dumping $PGDATABASE from $PGHOST:$PGPORT"
+run_pg pg_dump -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+  -Fc --no-owner --no-privileges -f "$DUMP"
+
+echo "recreating $RESTORE_DB"
+run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -v ON_ERROR_STOP=1 \
+  -c "DROP DATABASE IF EXISTS \"$RESTORE_DB\";" \
+  -c "CREATE DATABASE \"$RESTORE_DB\";"
+
+echo "restoring into $RESTORE_DB"
+run_pg pg_restore -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
+  --no-owner --no-privileges --exit-on-error "$DUMP"
+
+for table in users tasks task_lists habits habit_logs notes goals workday_overrides; do
+  source_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+    -Atc "SELECT count(*) FROM $table")"
+  restore_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
+    -Atc "SELECT count(*) FROM $table")"
+  if [[ "$source_count" != "$restore_count" ]]; then
+    echo "row count mismatch for $table: source=$source_count restore=$restore_count" >&2
+    exit 1
+  fi
+  echo "ok $table rows=$source_count"
+done
+
+echo "backup/restore drill passed"
