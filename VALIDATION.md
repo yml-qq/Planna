@@ -732,3 +732,4 @@
 - goal store 新增 `aiRetryAt`/`retryPreview`：RATE_LIMITED 冷却 30s、AI_UNAVAILABLE 冷却 10s，冷却期内不发请求；成功后清空冷却。
 - UI 显示“重试（Ns）”倒计时按钮，`nowTick` 每秒刷新并随组件卸载清理。
 - 前端新增 1 项假时钟测试，合计 **85 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 45007228355](https://github.com/yml-qq/Planna/actions/runs/45007228355) 与 [Desktop core 45007228452](https://github.com/yml-qq/Planna/actions/runs/45007228452) 均 **success**。

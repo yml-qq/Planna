@@ -1,6 +1,6 @@
 # 117｜GOAL-03g-c：AI 拆解重试与限流退避
 
-状态：代码已实现；本地 `pnpm test`（85 项）与 `pnpm build` 通过，桌面 CI 见 `VALIDATION.md` 的 GOAL-03g-c 小节。目标删除审计/冲突提示属 `GOAL-03g-d`。
+状态：代码已实现；本地 `pnpm test`（85 项）与 `pnpm build` 通过；[Server integration 45007228355](https://github.com/yml-qq/Planna/actions/runs/45007228355) 与 [Desktop core 45007228452](https://github.com/yml-qq/Planna/actions/runs/45007228452) 均 **success**。目标删除审计/冲突提示属 `GOAL-03g-d`。
 
 ## 范围与验收
 
