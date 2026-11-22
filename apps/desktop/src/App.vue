@@ -712,6 +712,14 @@ onMounted(async () => {
               </li>
             </ul>
             <p v-else class="empty">该任务还没有专注记录。</p>
+            <button
+              v-if="focus.taskCursors.value[task.id]"
+              class="button button--ghost"
+              type="button"
+              @click="focus.loadMoreTaskHistory(task.id)"
+            >
+              加载更多
+            </button>
           </div>
         </li>
       </ul>

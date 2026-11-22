@@ -320,3 +320,26 @@ describe('task focus history', () => {
     expect(store.taskHistory.value['missing']).toEqual([])
   })
 })
+
+describe('task history pagination', () => {
+  it('pages task sessions and appends on load more', async () => {
+    let clock = 14_000_000
+    const { store, bridge } = createStore(() => clock)
+    for (let index = 0; index < 3; index += 1) {
+      await store.start(1500, 'task-1')
+      clock += 60_000
+      await store.complete()
+    }
+    const page = await bridge.focusPage('', 'token', { limit: 2, taskId: 'task-1' })
+    expect(page.items).toHaveLength(2)
+    expect(page.nextCursor).toBe('2')
+
+    await store.loadTaskHistory('task-1', 2)
+    expect(store.taskHistory.value['task-1']).toHaveLength(2)
+    expect(store.taskCursors.value['task-1']).toBe('2')
+
+    await store.loadMoreTaskHistory('task-1')
+    expect(store.taskHistory.value['task-1']).toHaveLength(3)
+    expect(store.taskCursors.value['task-1']).toBeNull()
+  })
+})

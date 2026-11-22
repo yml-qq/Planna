@@ -676,3 +676,10 @@
 - 本地 build/format/契约 34 项通过；服务端无迁移。
 - [Server integration 44992322891](https://github.com/yml-qq/Planna/actions/runs/44992322891) 与 [Desktop core 44992322857](https://github.com/yml-qq/Planna/actions/runs/44992322857) 均 **success**。
 - 未连接生产库、未提交凭据；桌面“加载更多”、报表导出与后台通知真机验证留待 `FOCUS-09b-b`。
+
+## FOCUS-09b-b 桌面分页消费检查（2026-11-22）
+
+- Tauri 新增 `focus_page`；桥接新增 `FocusPage`/`focusPage`（Memory 数字偏移、Tauri 映射）；focus store `loadTaskHistory` 记录 `taskCursors`，`loadMoreTaskHistory` 追加下一页。
+- UI 任务详情在存在 next_cursor 时显示“加载更多”，空页后隐藏。
+- 前端新增 1 项分页测试，合计 **75 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。

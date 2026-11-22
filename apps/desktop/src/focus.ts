@@ -82,6 +82,7 @@ export interface FocusStore {
   stats: Ref<FocusStats | null>
   recent: Ref<FocusSession[]>
   taskHistory: Ref<Record<string, FocusSession[]>>
+  taskCursors: Ref<Record<string, string | null>>
   restHint: Ref<string | null>
   restRemaining: Ref<number>
   restEndsAt: Ref<number | null>
@@ -96,6 +97,7 @@ export interface FocusStore {
   loadStats: (from: string, to: string, timeZone: string) => Promise<void>
   loadRecent: (limit?: number) => Promise<void>
   loadTaskHistory: (taskId: string, limit?: number) => Promise<void>
+  loadMoreTaskHistory: (taskId: string) => Promise<void>
   skipRest: () => void
   tick: () => void
   tickRest: () => void
@@ -113,6 +115,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
   const stats = ref<FocusStats | null>(null)
   const recent = ref<FocusSession[]>([])
   const taskHistory = ref<Record<string, FocusSession[]>>({})
+  const taskCursors = ref<Record<string, string | null>>({})
   const restHint = ref<string | null>(null)
   const restRemaining = ref(0)
   const restEndsAt = ref<number | null>(null)
@@ -332,8 +335,26 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     const token = requireToken()
     if (!token) return
     try {
-      const sessions = await bridge.focusList(options.baseUrl(), token, limit, taskId)
-      taskHistory.value = { ...taskHistory.value, [taskId]: sessions }
+      const page = await bridge.focusPage(options.baseUrl(), token, { limit, taskId })
+      taskHistory.value = { ...taskHistory.value, [taskId]: page.items }
+      taskCursors.value = { ...taskCursors.value, [taskId]: page.nextCursor }
+    } catch (failure) {
+      error.value = errorCode(failure)
+    }
+  }
+
+  async function loadMoreTaskHistory(taskId: string): Promise<void> {
+    const cursor = taskCursors.value[taskId]
+    if (!cursor) return
+    const token = requireToken()
+    if (!token) return
+    try {
+      const page = await bridge.focusPage(options.baseUrl(), token, { limit: 50, taskId, cursor })
+      taskHistory.value = {
+        ...taskHistory.value,
+        [taskId]: [...(taskHistory.value[taskId] ?? []), ...page.items]
+      }
+      taskCursors.value = { ...taskCursors.value, [taskId]: page.nextCursor }
     } catch (failure) {
       error.value = errorCode(failure)
     }
@@ -357,6 +378,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     stats,
     recent,
     taskHistory,
+    taskCursors,
     restHint,
     restRemaining,
     restEndsAt,
@@ -371,6 +393,7 @@ export function createFocusStore(bridge: DesktopBridge, options: FocusStoreOptio
     loadStats,
     loadRecent,
     loadTaskHistory,
+    loadMoreTaskHistory,
     skipRest,
     tick,
     tickRest

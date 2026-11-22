@@ -76,6 +76,11 @@ export interface Goal {
   milestones: Milestone[]
 }
 
+export interface FocusPage {
+  items: FocusSession[]
+  nextCursor: string | null
+}
+
 export interface FocusDayStat {
   date: string
   completedSessions: number
@@ -278,6 +283,11 @@ export interface DesktopBridge {
     to: string,
     timeZone: string
   ): Promise<FocusStats>
+  focusPage(
+    baseUrl: string,
+    accessToken: string,
+    input?: { limit?: number; taskId?: string | null; cursor?: string | null }
+  ): Promise<FocusPage>
   noteList(
     baseUrl: string,
     accessToken: string,
@@ -784,6 +794,22 @@ export class MemoryBridge implements DesktopBridge {
     if (milestone.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
     goal.milestones = goal.milestones.filter((candidate) => candidate.id !== milestoneId)
     MemoryBridge.refreshProgress(goal)
+  }
+
+  async focusPage(
+    _baseUrl: string,
+    _accessToken: string,
+    input: { limit?: number; taskId?: string | null; cursor?: string | null } = {}
+  ): Promise<FocusPage> {
+    const limit = input.limit ?? 20
+    const offset = input.cursor ? Number.parseInt(input.cursor, 10) : 0
+    if (!Number.isFinite(offset) || offset < 0) throw new Error('400:INVALID_CURSOR')
+    const filtered = [...this.focusSessions.values()]
+      .filter((session) => !input.taskId || session.taskId === input.taskId)
+      .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
+    const items = filtered.slice(offset, offset + limit)
+    const nextCursor = offset + limit < filtered.length ? String(offset + limit) : null
+    return { items, nextCursor }
   }
 
   async exportConflicts(): Promise<string> {
@@ -1401,6 +1427,24 @@ export class TauriBridge implements DesktopBridge {
       milestoneId,
       expectedVersion
     })
+  }
+
+  async focusPage(
+    baseUrl: string,
+    accessToken: string,
+    input: { limit?: number; taskId?: string | null; cursor?: string | null } = {}
+  ): Promise<FocusPage> {
+    const page = await this.invoke<{ items: RawFocusSession[]; next_cursor: string | null }>(
+      'focus_page',
+      {
+        baseUrl,
+        accessToken,
+        limit: input.limit ?? 20,
+        taskId: input.taskId ?? null,
+        cursor: input.cursor ?? null
+      }
+    )
+    return { items: page.items.map(toFocusSession), nextCursor: page.next_cursor }
   }
 
   async exportConflicts(): Promise<string> {

@@ -79,7 +79,8 @@
 | E10 | FOCUS-08 | 任务详情专注历史与统计柱状图（已交付，见 `102-FOCUS-08.md`） | FOCUS-07 | ui tests |
 | E10 | FOCUS-09a | 按任务过滤的专注历史（已交付，见 `103-FOCUS-09a.md`） | FOCUS-08 | filter tests |
 | E10 | FOCUS-09b-a | 专注历史游标分页 API（已交付，见 `109-FOCUS-09b-a.md`） | FOCUS-09a | paging tests |
-| E10 | FOCUS-09b-b | 桌面分页消费、周/月报表导出、独立详情页与后台通知真机验证 | FOCUS-09b-a | stats tests |
+| E10 | FOCUS-09b-b | 桌面专注历史分页消费（已交付，见 `110-FOCUS-09b-b.md`） | FOCUS-09b-a | paging tests |
+| E10 | FOCUS-09b-c | 周/月报表导出、独立任务详情页与后台通知真机验证 | FOCUS-09b-b | stats tests |
 | E10 | GOAL-01 | 目标/里程碑服务端 API（已交付，见 `88-GOAL-01.md`） | E04 | progress tests |
 | E10 | GOAL-02 | 目标/里程碑桌面 UI（已交付，见 `90-GOAL-02.md`） | GOAL-01 | progress tests |
 | E10 | GOAL-03a | AI 目标拆解预览 API（只读，已交付，见 `105-GOAL-03a.md`） | GOAL-02 | no auto-write |

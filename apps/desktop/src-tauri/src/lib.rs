@@ -949,6 +949,44 @@ fn goal_delete_milestone(
     Ok(())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct FocusPageDto {
+    items: Vec<FocusSessionDto>,
+    next_cursor: Option<String>,
+}
+
+#[tauri::command]
+fn focus_page(
+    base_url: String,
+    access_token: String,
+    limit: Option<i64>,
+    task_id: Option<String>,
+    cursor: Option<String>,
+) -> Result<FocusPageDto, String> {
+    let mut url = format!(
+        "{}/focus-sessions?limit={}",
+        base(&base_url),
+        limit.unwrap_or(20)
+    );
+    if let Some(task_id) = task_id.filter(|value| !value.is_empty()) {
+        url.push_str("&task_id=");
+        url.push_str(&urlencoding::encode(&task_id));
+    }
+    if let Some(cursor) = cursor.filter(|value| !value.is_empty()) {
+        url.push_str("&cursor=");
+        url.push_str(&urlencoding::encode(&cursor));
+    }
+    let response = http_client()
+        .get(url)
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
@@ -1230,6 +1268,7 @@ pub fn run() {
             goal_breakdown_preview,
             goal_delete_milestone,
             focus_stats,
+            focus_page,
             note_list,
             note_create,
             note_update,
