@@ -1551,7 +1551,7 @@ paths:
       tags: [Notes]
       operationId: uploadNoteAttachment
       summary: Upload one attachment for an owned note
-      description: Multipart field `file`; allowlisted types (text/plain, text/markdown, image/png, image/jpeg, application/pdf) and 1 byte..5 MiB. The Idempotency-Key becomes the attachment id and replays return 200. Quotas: at most 20 active attachments per note and 200 MiB per owner; exceeding them returns 422.
+      description: "Multipart field `file`; allowlisted types (text/plain, text/markdown, image/png, image/jpeg, application/pdf) and 1 byte..5 MiB. The Idempotency-Key becomes the attachment id and replays return 200. Quotas: at most 20 active attachments per note and 200 MiB per owner; exceeding them returns 422."
       security: [{bearerAuth: []}]
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
