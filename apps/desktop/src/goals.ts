@@ -218,18 +218,16 @@ export function createGoalStore(bridge: DesktopBridge, options: GoalStoreOptions
     }
     const targetIndex = direction === 'up' ? index - 1 : index + 1
     if (targetIndex < 0 || targetIndex >= ordered.length) return false
-    const neighbor = ordered[targetIndex]!
-    const movingPosition = milestone.position
     const token = tokenOrNull()
     if (!token) return false
     loading.value = true
     error.value = null
     try {
-      await bridge.goalUpdateMilestone(options.baseUrl(), token, goalId, milestone.id,
-        milestone.version, { position: neighbor.position })
-      await bridge.goalUpdateMilestone(options.baseUrl(), token, goalId, neighbor.id,
-        neighbor.version, { position: movingPosition })
-      await refresh()
+      const ids = ordered.map((item) => item.id)
+      ;[ids[index], ids[targetIndex]] = [ids[targetIndex]!, ids[index]!]
+      const updated = await bridge.goalReorderMilestones(options.baseUrl(), token, goalId,
+        goal.version, ids)
+      goals.value = goals.value.map((candidate) => (candidate.id === goalId ? updated : candidate))
       return true
     } catch (failure) {
       error.value = errorCode(failure)

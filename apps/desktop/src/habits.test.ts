@@ -184,6 +184,9 @@ describe('habit store', () => {
       goalDelete: async () => {
         throw new Error('offline')
       },
+      goalReorderMilestones: async () => {
+        throw new Error('offline')
+      },
       noteList: async () => [],
       noteCreate: async () => {
         throw new Error('offline')

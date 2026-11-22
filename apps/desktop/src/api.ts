@@ -282,6 +282,13 @@ export interface DesktopBridge {
     goalId: string,
     expectedVersion: number
   ): Promise<void>
+  goalReorderMilestones(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    milestoneIds: string[]
+  ): Promise<Goal>
   focusStats(
     baseUrl: string,
     accessToken: string,
@@ -828,6 +835,31 @@ export class MemoryBridge implements DesktopBridge {
     if (!goal) throw new Error('404:GOAL_NOT_FOUND')
     if (goal.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
     this.goals.delete(goalId)
+  }
+
+  async goalReorderMilestones(
+    _baseUrl: string,
+    _accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    milestoneIds: string[]
+  ): Promise<Goal> {
+    const goal = this.goals.get(goalId)
+    if (!goal) throw new Error('404:GOAL_NOT_FOUND')
+    if (goal.version !== expectedVersion) throw new Error('409:VERSION_CONFLICT')
+    const current = goal.milestones
+    if (current.length !== milestoneIds.length ||
+        new Set(milestoneIds).size !== milestoneIds.length ||
+        current.some((milestone) => !milestoneIds.includes(milestone.id))) {
+      throw new Error('422:INVALID_MILESTONE_ORDER')
+    }
+    goal.milestones = milestoneIds.map((id, index) => {
+      const milestone = current.find((candidate) => candidate.id === id)!
+      return { ...milestone, position: index + 1, version: milestone.version + 1 }
+    })
+    goal.version += 1
+    goal.updatedAt = new Date().toISOString()
+    return { ...goal, milestones: [...goal.milestones] }
   }
 
   async exportConflicts(): Promise<string> {
@@ -1472,6 +1504,23 @@ export class TauriBridge implements DesktopBridge {
     expectedVersion: number
   ): Promise<void> {
     await this.invoke<void>('goal_delete', { baseUrl, accessToken, goalId, expectedVersion })
+  }
+
+  async goalReorderMilestones(
+    baseUrl: string,
+    accessToken: string,
+    goalId: string,
+    expectedVersion: number,
+    milestoneIds: string[]
+  ): Promise<Goal> {
+    const row = await this.invoke<RawGoal>('goal_reorder_milestones', {
+      baseUrl,
+      accessToken,
+      goalId,
+      expectedVersion,
+      milestoneIds
+    })
+    return toGoal(row)
   }
 
   async exportConflicts(): Promise<string> {

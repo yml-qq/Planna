@@ -125,6 +125,7 @@
 | 112 | `docs/112-GOAL-03e.md` | AI 建议去重与目标归档过滤 |
 | 113 | `docs/113-GOAL-03f.md` | 目标删除 |
 | 114 | `docs/114-GOAL-03g-a.md` | 里程碑批量排序 API |
+| 115 | `docs/115-GOAL-03g-b.md` | 桌面批量排序接入 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

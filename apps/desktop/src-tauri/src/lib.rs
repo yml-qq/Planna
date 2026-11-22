@@ -1008,6 +1008,33 @@ fn goal_delete(
 }
 
 #[tauri::command]
+fn goal_reorder_milestones(
+    base_url: String,
+    access_token: String,
+    goal_id: String,
+    expected_version: i64,
+    milestone_ids: Vec<String>,
+) -> Result<GoalDto, String> {
+    let response = http_client()
+        .put(format!(
+            "{}/goals/{goal_id}/milestones/order",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .header("Idempotency-Key", uuid::Uuid::new_v4().to_string())
+        .json(&serde_json::json!({
+            "expected_version": expected_version,
+            "milestone_ids": milestone_ids,
+        }))
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    response.json().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn outbox_issues(state: State<'_, AppState>) -> Result<Vec<OutboxIssueDto>, String> {
     let store = state.store.lock().map_err(|_| "store lock poisoned")?;
     let entries = store
@@ -1288,6 +1315,7 @@ pub fn run() {
             goal_breakdown_preview,
             goal_delete_milestone,
             goal_delete,
+            goal_reorder_milestones,
             focus_stats,
             focus_page,
             note_list,

@@ -185,9 +185,12 @@ describe('milestone ordering', () => {
     expect(current.milestones.map((item) => item.title)).toEqual(['Draft', 'Review', 'Ship'])
 
     const review = current.milestones[1]!
+    const before = current.version
     expect(await store.moveMilestone(current.id, review, 'up')).toBe(true)
     current = store.goals.value[0]!
     expect(current.milestones.map((item) => item.title)).toEqual(['Review', 'Draft', 'Ship'])
+    expect(current.milestones.map((item) => item.position)).toEqual([1, 2, 3])
+    expect(current.version).toBe(before + 1)
 
     const moved = current.milestones[0]!
     expect(await store.moveMilestone(current.id, moved, 'up')).toBe(false)
