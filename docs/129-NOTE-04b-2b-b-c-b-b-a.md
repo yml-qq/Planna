@@ -1,6 +1,6 @@
 # 129｜NOTE-04b-2b-b-c-b-b-a：任务详情内新建关联笔记
 
-状态：代码已实现；本地 `pnpm test`（89 项）与 `pnpm build` 通过，CI 见 `VALIDATION.md`。任务详情内编辑既有笔记/附件/模板属 `NOTE-04b-2b-b-c-b-b-b`。
+状态：代码已实现；本地 `pnpm test`（89 项）与 `pnpm build` 通过；[Server integration 45038967441](https://github.com/yml-qq/Planna/actions/runs/45038967441) 与 [Desktop core 45038967545](https://github.com/yml-qq/Planna/actions/runs/45038967545) 均 **success**。任务详情内编辑既有笔记/附件/模板属 `NOTE-04b-2b-b-c-b-b-b`。
 
 ## 范围与验收
 
