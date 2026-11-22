@@ -307,6 +307,64 @@ public sealed class GoalService(TaskWriteContext db, TimeProvider clock) : IGoal
         return new(GoalStatus.Deleted);
     }
 
+    public async Task<GoalResult> ReorderMilestonesAsync(Guid ownerId, Guid mutationId, Guid goalId,
+        ReorderMilestonesRequest request, CancellationToken ct)
+    {
+        if (goalId == Guid.Empty || request.ExpectedVersion < 1 ||
+            request.MilestoneIds is null || request.MilestoneIds.Count == 0 ||
+            request.MilestoneIds.Distinct().Count() != request.MilestoneIds.Count)
+            return new(GoalStatus.Invalid, Code: "INVALID_MILESTONE_ORDER");
+        var hash = Hash("PUT /goals/" + goalId + "/milestones/order\n" +
+                        JsonSerializer.Serialize(request));
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await LockAsync(ownerId, ct);
+        var replay = await ReplayAsync<GoalView>(ownerId, mutationId, hash, ct,
+            goal => new(GoalStatus.Replayed, Goal: goal));
+        if (replay is not null) return replay;
+        var goal = await LoadGoalAsync(ownerId, goalId, forUpdate: true, ct);
+        if (goal is null) return new(GoalStatus.NotFound, Code: "GOAL_NOT_FOUND");
+        if (goal.Version != request.ExpectedVersion)
+            return new(GoalStatus.VersionConflict,
+                Details: new VersionConflictDetails(goalId, goal.Version, []));
+        var rows = (await LoadMilestoneRowsAsync(ownerId, goalId, ct)).ToList();
+        if (rows.Count != request.MilestoneIds.Count ||
+            rows.Any(row => !request.MilestoneIds.Contains(row.Id)))
+            return new(GoalStatus.Invalid, Code: "INVALID_MILESTONE_ORDER");
+        var now = Truncate(clock.GetUtcNow());
+        for (var index = 0; index < request.MilestoneIds.Count; index++)
+        {
+            var milestoneId = request.MilestoneIds[index];
+            await ExecuteAsync(db, """
+                UPDATE milestones SET position=@Position, version=version+1, updated_at=@Now
+                WHERE id=@Id AND owner_id=@Owner
+                """, p =>
+            {
+                p.Add(new NpgsqlParameter("Position", index + 1));
+                p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = now.UtcDateTime });
+                p.Add(new NpgsqlParameter("Id", milestoneId));
+                p.Add(new NpgsqlParameter("Owner", ownerId));
+            }, ct);
+        }
+        var version = goal.Version + 1;
+        await ExecuteAsync(db, """
+            UPDATE goals SET version=@Version, updated_at=@Now
+            WHERE id=@Id AND owner_id=@Owner
+            """, p =>
+        {
+            p.Add(new NpgsqlParameter("Version", version));
+            p.Add(new NpgsqlParameter("Now", NpgsqlDbType.TimestampTz) { Value = now.UtcDateTime });
+            p.Add(new NpgsqlParameter("Id", goalId));
+            p.Add(new NpgsqlParameter("Owner", ownerId));
+        }, ct);
+        var milestones = await LoadMilestonesAsync(ownerId, goalId, ct);
+        var view = new GoalView(goalId, goal.Title, goal.Description, FormatDate(goal.TargetDate),
+            goal.Status, version, Instant(goal.CreatedAt), now, Progress(milestones), milestones);
+        db.Mutations.Add(Mutation(ownerId, mutationId, hash, view, now));
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return new(GoalStatus.Updated, view);
+    }
+
     private async Task<GoalRow?> LoadGoalAsync(Guid ownerId, Guid goalId, bool forUpdate,
         CancellationToken ct) =>
         await db.Database.GetDbConnection().QuerySingleOrDefaultAsync<GoalRow>(new CommandDefinition("""
@@ -328,6 +386,17 @@ public sealed class GoalService(TaskWriteContext db, TimeProvider clock) : IGoal
             WHERE id=@Id AND goal_id=@Goal AND owner_id=@Owner AND deleted_at IS NULL
             """, new { Id = milestoneId, Goal = goalId, Owner = ownerId },
             db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+
+    private async Task<IReadOnlyList<MilestoneRow>> LoadMilestoneRowsAsync(Guid ownerId,
+        Guid goalId, CancellationToken ct) =>
+        (await db.Database.GetDbConnection().QueryAsync<MilestoneRow>(new CommandDefinition("""
+            SELECT id AS "Id", goal_id AS "GoalId", title AS "Title", due_date AS "DueDate",
+                completed AS "Completed", position AS "Position", version AS "Version",
+                created_at AS "CreatedAt", updated_at AS "UpdatedAt", deleted_at AS "DeletedAt"
+            FROM milestones WHERE owner_id=@Owner AND goal_id=@Goal AND deleted_at IS NULL
+            ORDER BY position, created_at, id
+            """, new { Owner = ownerId, Goal = goalId },
+            db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct))).ToList();
 
     private async Task<IReadOnlyList<MilestoneView>> LoadMilestonesAsync(Guid ownerId, Guid goalId,
         CancellationToken ct)

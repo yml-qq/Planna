@@ -645,6 +645,14 @@ class Spec01Contracts(unittest.TestCase):
 
     def test_goal_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
+        order = api["paths"]["/goals/{id}/milestones/order"]["put"]
+        self.assertEqual(set(order["responses"]), {"200", "400", "401", "404", "409", "422"})
+        self.assertIn({"$ref": "#/components/parameters/IdempotencyKey"}, order["parameters"])
+        order_schema = api["components"]["schemas"]["ReorderMilestonesRequest"]
+        self.assertEqual(set(order_schema["required"]), {"expected_version", "milestone_ids"})
+        self.assertEqual(order_schema["properties"]["milestone_ids"]["minItems"], 1)
+        self.assertTrue(order_schema["properties"]["milestone_ids"]["uniqueItems"])
+
         goals = api["paths"]["/goals"]
         self.assertEqual(set(goals["get"]["responses"]), {"200", "401"})
         create = goals["post"]

@@ -68,6 +68,11 @@ public sealed record UpdateMilestoneRequest(
     [property: JsonPropertyName("expected_version")] long ExpectedVersion,
     [property: JsonPropertyName("patch")] MilestonePatch? Patch);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ReorderMilestonesRequest(
+    [property: JsonPropertyName("expected_version")] long ExpectedVersion,
+    [property: JsonPropertyName("milestone_ids")] IReadOnlyList<Guid>? MilestoneIds);
+
 public enum GoalStatus
 {
     Ok, Created, Updated, Deleted, Replayed, Invalid, NotFound, VersionConflict, Conflict, AccountDeleted
@@ -99,4 +104,7 @@ public interface IGoalService
 
     Task<GoalResult> DeleteMilestoneAsync(Guid ownerId, Guid mutationId, Guid goalId,
         Guid milestoneId, long expectedVersion, CancellationToken ct);
+
+    Task<GoalResult> ReorderMilestonesAsync(Guid ownerId, Guid mutationId, Guid goalId,
+        ReorderMilestonesRequest request, CancellationToken ct);
 }

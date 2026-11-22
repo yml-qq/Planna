@@ -15,6 +15,7 @@ public static class GoalEndpoints
         group.MapPatch("/{id}", Update).WithName("UpdateGoal");
         group.MapDelete("/{id}", Delete).WithName("DeleteGoal");
         group.MapPost("/{id}/milestones", CreateMilestone).WithName("CreateMilestone");
+        group.MapPut("/{id}/milestones/order", ReorderMilestones).WithName("ReorderMilestones");
         group.MapPatch("/{id}/milestones/{milestoneId}", UpdateMilestone).WithName("UpdateMilestone");
         group.MapDelete("/{id}/milestones/{milestoneId}", DeleteMilestone).WithName("DeleteMilestone");
         return app;
@@ -110,6 +111,25 @@ public static class GoalEndpoints
                 $"/goals/{goalId}/milestones/{result.Milestone!.Id}", result.Milestone),
             GoalStatus.Replayed => TypedResults.Ok(result.Milestone),
             GoalStatus.NotFound => Error(http, 404, result.Code!),
+            GoalStatus.Invalid => Error(http, 422, result.Code!),
+            GoalStatus.Conflict => Error(http, 409, result.Code!),
+            _ => Error(http, 500, "INTERNAL_ERROR")
+        };
+    }
+
+    private static async Task<IResult> ReorderMilestones(HttpContext http, string id,
+        ReorderMilestonesRequest request, IGoalService service, CancellationToken ct)
+    {
+        if (!Guid.TryParse(id, out var goalId) || goalId == Guid.Empty)
+            return Error(http, 400, "INVALID_GOAL_ID");
+        if (!TryOwner(http, out var owner)) return Error(http, 401, "UNAUTHORIZED");
+        if (!TryMutation(http, out var mutation)) return Error(http, 400, "INVALID_IDEMPOTENCY_KEY");
+        var result = await service.ReorderMilestonesAsync(owner, mutation, goalId, request, ct);
+        return result.Status switch
+        {
+            GoalStatus.Updated or GoalStatus.Replayed => TypedResults.Ok(result.Goal),
+            GoalStatus.NotFound => Error(http, 404, result.Code!),
+            GoalStatus.VersionConflict => Error(http, 409, "VERSION_CONFLICT", result.Details),
             GoalStatus.Invalid => Error(http, 422, result.Code!),
             GoalStatus.Conflict => Error(http, 409, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
