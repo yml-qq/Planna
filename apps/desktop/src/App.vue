@@ -7,7 +7,7 @@ import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
-import { createNoteStore } from './notes'
+import { createNoteStore, notesForTask } from './notes'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -824,6 +824,19 @@ onMounted(async () => {
             >
               加载更多
             </button>
+            <template v-if="notesForTask(notes.notes.value, task.id).length > 0">
+              <p class="habits__meta">关联笔记</p>
+              <ul class="goals__milestones">
+                <li
+                  v-for="note in notesForTask(notes.notes.value, task.id)"
+                  :key="note.id"
+                  class="goals__milestone"
+                >
+                  <span>{{ note.title || '无标题' }}</span>
+                  <span class="habits__meta">{{ note.content.slice(0, 80) }}</span>
+                </li>
+              </ul>
+            </template>
           </div>
         </li>
       </ul>

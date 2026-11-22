@@ -1,6 +1,10 @@
 import { ref, type Ref } from 'vue'
 import type { DesktopBridge, Note } from './api'
 
+export function notesForTask(notes: Note[], taskId: string): Note[] {
+  return notes.filter((note) => note.taskId === taskId)
+}
+
 export interface NoteStoreOptions {
   baseUrl: () => string
   token: () => string | null

@@ -805,3 +805,9 @@
 - 新增 1 项 core 测试（快照 v3→v4），笔记测试合计 7 项；`cargo test`、fmt、clippy 与前端 88 项/build 通过。
 - [Server integration 45032601924](https://github.com/yml-qq/Planna/actions/runs/45032601924) 与 [Desktop core 45032601891](https://github.com/yml-qq/Planna/actions/runs/45032601891) 均 **success**。
 - 冲突列表仍为通用实体列表，无正文 diff；附件/模板/全文搜索留待 `NOTE-04b-2b-b-c-b`。
+
+## NOTE-04b-2b-b-c-b-a 任务详情笔记检查（2026-11-22）
+
+- 新增 `notesForTask` 纯函数；任务详情展开时展示关联笔记（标题/正文前 80 字符），仅使用本地已加载笔记。
+- 前端新增 1 项过滤测试，合计 **89 项**；`pnpm build` 通过；服务端无变更。
+- 仅展示不编辑；长正文截断 80 字符；未额外拉取服务端。CI 待网络恢复。

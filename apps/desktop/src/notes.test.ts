@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
-import { createNoteStore } from './notes'
+import { createNoteStore, notesForTask } from './notes'
 
 function createStore(token = 'token') {
   const bridge = new MemoryBridge()
@@ -91,5 +91,17 @@ describe('note store', () => {
     await failingStore.refresh()
     expect(await failingStore.remove(created)).toBe(false)
     expect(failingStore.error.value).toBe('VERSION_CONFLICT')
+  })
+})
+
+describe('notes for task', () => {
+  it('filters notes by task id', () => {
+    const notes = [
+      { id: 'n1', title: 'A', content: 'a', taskId: 'task-1', version: 1, createdAt: '', updatedAt: '' },
+      { id: 'n2', title: 'B', content: 'b', taskId: null, version: 1, createdAt: '', updatedAt: '' },
+      { id: 'n3', title: 'C', content: 'c', taskId: 'task-1', version: 1, createdAt: '', updatedAt: '' }
+    ]
+    expect(notesForTask(notes, 'task-1').map((note) => note.id)).toEqual(['n1', 'n3'])
+    expect(notesForTask(notes, 'missing')).toEqual([])
   })
 })
