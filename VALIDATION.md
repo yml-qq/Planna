@@ -645,3 +645,11 @@
 - 本地 build/format/契约 34 项通过；服务端无迁移。
 - [Server integration 44986659804](https://github.com/yml-qq/Planna/actions/runs/44986659804) 与 [Desktop core 44986659819](https://github.com/yml-qq/Planna/actions/runs/44986659819) 均 **success**。
 - 未连接生产库、未提交凭据；桌面 AI 拆解 UI、逐条添加/目标编辑/排序留待 `GOAL-03b`。
+
+## GOAL-03b 桌面 AI 拆解检查（2026-11-22）
+
+- Tauri 新增 `goal_breakdown_preview`；桥接新增 `GoalBreakdownSuggestion`/`goalBreakdownPreview`（Memory 确定性切分 + Tauri 映射）。
+- goal store 新增 `suggestions`/`breakdownLoading`/`previewBreakdown`/`addSuggestion`/`addAllSuggestions`；UI 目标行提供 guidance、AI 拆解、逐条添加与全部添加，且预览不写数据。
+- 前端新增 2 项测试（预览→逐条→全部添加与进度；AI_UNAVAILABLE/未登录），合计 **71 项**；`pnpm build`、shell `cargo check/clippy/fmt` 通过；服务端无变更。
+- [Server integration 44987860005](https://github.com/yml-qq/Planna/actions/runs/44987860005) 与 [Desktop core 44987859983](https://github.com/yml-qq/Planna/actions/runs/44987859983) 均 **success**。
+- 未连接生产库、未提交凭据；目标编辑、里程碑删除/排序与 AI 建议去重留待 `GOAL-03c`。
