@@ -682,4 +682,4 @@
 - Tauri 新增 `focus_page`；桥接新增 `FocusPage`/`focusPage`（Memory 数字偏移、Tauri 映射）；focus store `loadTaskHistory` 记录 `taskCursors`，`loadMoreTaskHistory` 追加下一页。
 - UI 任务详情在存在 next_cursor 时显示“加载更多”，空页后隐藏。
 - 前端新增 1 项分页测试，合计 **75 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
-- **CI 未触发**：GitHub 443 连接不稳定；本切片完成本地验证，待网络恢复后推送并补 CI 链接。
+- 网络恢复后推送（`75c1752`）并补 CI：[Server integration 44996532155](https://github.com/yml-qq/Planna/actions/runs/44996532155) 与 [Desktop core 44996532135](https://github.com/yml-qq/Planna/actions/runs/44996532135) 均 **success**。

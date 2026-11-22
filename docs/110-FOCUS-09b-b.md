@@ -1,6 +1,6 @@
 # 110｜FOCUS-09b-b：桌面专注历史分页消费
 
-状态：代码已实现；本地 `pnpm test`（75 项）与 `pnpm build` 通过。**CI 待网络恢复**（GitHub 当前不可达）。
+状态：代码已实现；本地 `pnpm test`（75 项）与 `pnpm build` 通过；[Server integration 44996532155](https://github.com/yml-qq/Planna/actions/runs/44996532155) 与 [Desktop core 44996532135](https://github.com/yml-qq/Planna/actions/runs/44996532135) 均 **success**。
 
 ## 范围与验收
 
