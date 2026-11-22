@@ -787,4 +787,5 @@
 - Tauri 新增 `notes_local`/`note_local_create`/`note_local_update`/`note_local_delete`；桥接 note 方法改为本地命令，搜索/任务过滤在本地列表完成。
 - `syncNow` 成功后刷新任务/习惯/目标/笔记/专注历史；拉取 note 变更由 NOTE-04b-2b-b-a 的 `apply_note_pull` 应用。
 - 前端 **88 项**测试与 `pnpm build` 通过；shell `cargo check/clippy/fmt` 通过；core 笔记 6 项测试通过。
-- 边界：仍要求登录；无 note 专用冲突 UI；附件/模板/全文搜索未实现。CI 待网络恢复。
+- [Server integration 45029236258](https://github.com/yml-qq/Planna/actions/runs/45029236258) 与 [Desktop core 45029236259](https://github.com/yml-qq/Planna/actions/runs/45029236259) 均 **success**。
+- 边界：仍要求登录；无 note 专用冲突 UI；附件/模板/全文搜索未实现。

@@ -1,6 +1,6 @@
 # 124｜NOTE-04b-2b-b-b：桌面笔记 UI 切换到本地存储
 
-状态：代码已实现；本地 `pnpm test`（88 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过。CI 待网络恢复，见 `VALIDATION.md`。
+状态：代码已实现；本地 `pnpm test`（88 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45029236258](https://github.com/yml-qq/Planna/actions/runs/45029236258) 与 [Desktop core 45029236259](https://github.com/yml-qq/Planna/actions/runs/45029236259) 均 **success**。
 
 ## 范围与验收
 
