@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { densityClass, navLinks, normalizeTheme } from './prefs'
 
-const allVisible = { habits: true, focus: true, goals: true, notes: true }
-const noneVisible = { habits: false, focus: false, goals: false, notes: false }
+const allVisible = { habits: true, focus: true, goals: true, notes: true, calendar: true }
+const noneVisible = { habits: false, focus: false, goals: false, notes: false, calendar: false }
 
 describe('preferences', () => {
   it('normalizes theme values and falls back to auto', () => {
@@ -16,6 +16,7 @@ describe('preferences', () => {
   it('builds navigation links from module visibility', () => {
     expect(navLinks(allVisible).map((link) => link.id)).toEqual([
       'tasks',
+      'calendar',
       'focus',
       'goals',
       'habits',

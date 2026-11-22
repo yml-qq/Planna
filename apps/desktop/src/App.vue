@@ -138,6 +138,7 @@ const ledgerStatus = ref('')
 const reportStatus = ref('')
 const confirmGoal = ref<{ id: string; title: string } | null>(null)
 const attachmentsOpen = ref<Record<string, boolean>>({})
+const selectedCalendarDate = ref<string | null>(null)
 const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
@@ -363,6 +364,17 @@ async function saveEditNote(noteId: string, version: number): Promise<void> {
     editNoteTitle.value = ''
     editNoteContent.value = ''
   }
+}
+
+async function toggleCalendarDay(date: string, kind: string): Promise<void> {
+  selectedCalendarDate.value = date
+  await calendar.toggle(date, kind)
+}
+
+async function clearCalendarOverride(): Promise<void> {
+  if (!selectedCalendarDate.value) return
+  await calendar.clear(selectedCalendarDate.value)
+  selectedCalendarDate.value = null
 }
 
 async function toggleNoteAttachments(noteId: string): Promise<void> {
@@ -1206,13 +1218,26 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="signedIn" id="calendar" class="card" aria-labelledby="calendar-title">
+    <section
+      v-if="signedIn && modules.visibility.value.calendar"
+      id="calendar"
+      class="card"
+      aria-labelledby="calendar-title"
+    >
       <div class="card__row">
         <h2 id="calendar-title" class="card__title">工作日历</h2>
         <div class="composer__row">
           <button class="button button--ghost" type="button" @click="calendar.previousMonth()">上一月</button>
           <span class="habits__meta">{{ calendar.year.value }} 年 {{ calendar.month.value }} 月</span>
           <button class="button button--ghost" type="button" @click="calendar.nextMonth()">下一月</button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="!selectedCalendarDate"
+            @click="clearCalendarOverride"
+          >
+            清除选中覆盖
+          </button>
         </div>
       </div>
       <p class="card__hint">点击日期切换“工作日/休息日”覆盖；默认周一至周五为工作日。</p>
@@ -1231,7 +1256,7 @@ onMounted(async () => {
           :class="'calendar-day--' + day.kind"
           type="button"
           :aria-label="day.date + (day.kind === 'workday' ? ' 工作日' : ' 休息日')"
-          @click="calendar.toggle(day.date, day.kind)"
+          @click="toggleCalendarDay(day.date, day.kind)"
         >
           {{ Number(day.date.slice(8)) }}
         </button>

@@ -1,24 +1,26 @@
 import { ref, type Ref } from 'vue'
 
-export type ModuleKey = 'habits' | 'focus' | 'goals' | 'notes'
+export type ModuleKey = 'habits' | 'focus' | 'goals' | 'notes' | 'calendar'
 
 export interface ModuleVisibility {
   habits: boolean
   focus: boolean
   goals: boolean
   notes: boolean
+  calendar: boolean
 }
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   habits: '习惯',
   focus: '专注',
   goals: '目标',
-  notes: '笔记'
+  notes: '笔记',
+  calendar: '日历'
 }
 
 const STORAGE_KEY = 'planna.modules'
 
-const defaults = (): ModuleVisibility => ({ habits: true, focus: true, goals: true, notes: true })
+const defaults = (): ModuleVisibility => ({ habits: true, focus: true, goals: true, notes: true, calendar: true })
 
 export function loadVisibility(raw: string | null): ModuleVisibility {
   const fallback = defaults()
@@ -31,7 +33,8 @@ export function loadVisibility(raw: string | null): ModuleVisibility {
       habits: typeof record.habits === 'boolean' ? record.habits : fallback.habits,
       focus: typeof record.focus === 'boolean' ? record.focus : fallback.focus,
       goals: typeof record.goals === 'boolean' ? record.goals : fallback.goals,
-      notes: typeof record.notes === 'boolean' ? record.notes : fallback.notes
+      notes: typeof record.notes === 'boolean' ? record.notes : fallback.notes,
+      calendar: typeof record.calendar === 'boolean' ? record.calendar : fallback.calendar
     }
   } catch {
     return fallback

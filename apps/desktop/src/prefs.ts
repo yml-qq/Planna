@@ -13,6 +13,7 @@ export interface NavLink {
 
 export function navLinks(visibility: ModuleVisibility): NavLink[] {
   const links: NavLink[] = [{ id: 'tasks', label: '任务' }]
+  if (visibility.calendar) links.push({ id: 'calendar', label: '日历' })
   if (visibility.focus) links.push({ id: 'focus', label: '专注' })
   if (visibility.goals) links.push({ id: 'goals', label: '目标' })
   if (visibility.habits) links.push({ id: 'habits', label: '习惯' })
