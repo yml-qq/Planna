@@ -1,6 +1,6 @@
 # 144｜TIME-01G-b-b-b-a：工作日历客户端与月视图
 
-状态：代码已实现；本地前端 `pnpm test`（96 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；CI 见 `VALIDATION.md`。法定节假日数据导入/提醒重排仍属 `TIME-01G-b-b-b-b`。
+状态：代码已实现；本地前端 `pnpm test`（96 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45072311127](https://github.com/yml-qq/Planna/actions/runs/45072311127) 与 [Desktop core 45072311246](https://github.com/yml-qq/Planna/actions/runs/45072311246) 均 **success**。法定节假日数据导入/提醒重排仍属 `TIME-01G-b-b-b-b`。
 
 ## 范围与验收
 

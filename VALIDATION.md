@@ -943,4 +943,5 @@
 - Tauri 新增 workday_days/override_set/override_clear；桥接与 Memory 模拟；calendar store（月边界/前导空白/加载/切换/清除/跨年）。
 - UI 新增工作日历卡片：月导航、7 列网格、工作日/休息日样式、点击切换覆盖。
 - 前端新增 4 项测试，合计 96 项；build、shell clippy/fmt 通过。
+- [Server integration 45072311127](https://github.com/yml-qq/Planna/actions/runs/45072311127) 与 [Desktop core 45072311246](https://github.com/yml-qq/Planna/actions/runs/45072311246) 均 **success**。
 - 不内置法定数据；未纳入模块可见性；无备注输入/清除按钮；role=grid 子项非 gridcell。
