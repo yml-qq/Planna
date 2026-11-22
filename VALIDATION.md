@@ -667,3 +667,12 @@
 - UI 每条里程碑新增“上移/下移”；刷新后按服务端顺序展示。
 - 前端新增 1 项排序测试，合计 **74 项**；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - 网络恢复后推送（`ebac8df`）并补 CI：[Server integration 44991099591](https://github.com/yml-qq/Planna/actions/runs/44991099591) 与 [Desktop core 44991099480](https://github.com/yml-qq/Planna/actions/runs/44991099480) 均 **success**。
+
+## FOCUS-09b-a 专注历史游标分页检查（2026-11-22）
+
+- `GET /focus-sessions` 新增不透明 `cursor`（base64url `started_at|id`）与 `next_cursor`；按 `(started_at,id)` keyset 继续取，满页才返回 cursor；非法 cursor 400 `INVALID_CURSOR`，任务过滤/404 语义沿用 FOCUS-09a。
+- OpenAPI 新增 `cursor` 参数与 `FocusSessionList.next_cursor`；契约测试断言（**34 项**）。
+- 冒烟 `HttpFocusPageSmoke`：3 条→limit=2 两页（2+1），续页 `next_cursor=null`，非法 cursor/limit 400，未认证 401。
+- 本地 build/format/契约 34 项通过；服务端无迁移。
+- [Server integration 44992322891](https://github.com/yml-qq/Planna/actions/runs/44992322891) 与 [Desktop core 44992322857](https://github.com/yml-qq/Planna/actions/runs/44992322857) 均 **success**。
+- 未连接生产库、未提交凭据；桌面“加载更多”、报表导出与后台通知真机验证留待 `FOCUS-09b-b`。

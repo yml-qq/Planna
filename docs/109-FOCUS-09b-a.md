@@ -1,6 +1,6 @@
 # 109｜FOCUS-09b-a：专注历史游标分页 API
 
-状态：代码已实现；本地 build/format/契约 **34 项**通过，CI 见 `VALIDATION.md` 的 FOCUS-09b-a 小节。桌面分页消费与报表属 `FOCUS-09b-b`。
+状态：代码已实现；本地 build/format/契约 **34 项**通过；[Server integration 44992322891](https://github.com/yml-qq/Planna/actions/runs/44992322891) 与 [Desktop core 44992322857](https://github.com/yml-qq/Planna/actions/runs/44992322857) 均 **success**。桌面分页消费与报表属 `FOCUS-09b-b`。
 
 ## 范围与验收
 
