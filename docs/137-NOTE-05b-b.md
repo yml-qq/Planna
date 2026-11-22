@@ -1,6 +1,6 @@
 # 137｜NOTE-05b-b：笔记附件面板
 
-状态：代码已实现；本地前端 `pnpm test`（91 项）与 `pnpm build`、shell `cargo check/clippy/fmt` 通过，CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（91 项）与 `pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45056399333](https://github.com/yml-qq/Planna/actions/runs/45056399333) 与 [Desktop core 45056399341](https://github.com/yml-qq/Planna/actions/runs/45056399341) 均 **success**。
 
 ## 范围与验收
 

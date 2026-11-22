@@ -887,3 +887,4 @@
 - 笔记卡片新增附件展开/加载、上传（原生选择）、下载（另存为）、删除与状态提示；notes store 增加附件状态和方法。
 - 前端新增 2 项测试（bridge 文件类型/删除、store 上传/下载/删除流程），合计 91 项；shell clippy/fmt 通过。
 - 附件完全在线：离线/未同步笔记会 401/404；无缓存/离线队列/进度/预览；删除由服务端保留期清理。
+- [Server integration 45056399333](https://github.com/yml-qq/Planna/actions/runs/45056399333) 与 [Desktop core 45056399341](https://github.com/yml-qq/Planna/actions/runs/45056399341) 均 **success**。
