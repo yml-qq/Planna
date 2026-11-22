@@ -789,3 +789,10 @@
 - 前端 **88 项**测试与 `pnpm build` 通过；shell `cargo check/clippy/fmt` 通过；core 笔记 6 项测试通过。
 - [Server integration 45029236258](https://github.com/yml-qq/Planna/actions/runs/45029236258) 与 [Desktop core 45029236259](https://github.com/yml-qq/Planna/actions/runs/45029236259) 均 **success**。
 - 边界：仍要求登录；无 note 专用冲突 UI；附件/模板/全文搜索未实现。
+
+## UX-04 确认对话框/响应式检查（2026-11-22）
+
+- 新增原生 `<dialog>` 确认框（aria-modal/labelledby/describedby、默认焦点取消、Esc 取消），目标删除不再使用 `window.confirm`。
+- ≤520px 导航/偏好字号收紧；`prefers-reduced-motion` 关闭动画与平滑滚动。
+- 前端 **88 项**测试与 `pnpm build` 通过；未新增单测（依赖原生 dialog 焦点行为）。
+- 未接入 axe/屏幕阅读器；笔记删除等未使用该对话框，留待 `UX-05`。

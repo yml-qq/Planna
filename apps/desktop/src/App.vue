@@ -9,6 +9,7 @@ import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
 import { createNoteStore } from './notes'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
 import {
@@ -126,6 +127,7 @@ const conflicts = ref<ConflictIssue[]>([])
 const ledgerText = ref('')
 const ledgerStatus = ref('')
 const reportStatus = ref('')
+const confirmGoal = ref<{ id: string; title: string } | null>(null)
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -261,9 +263,16 @@ async function saveEditGoal(goalId: string): Promise<void> {
   if (saved) editingGoal.value = null
 }
 
-async function deleteGoal(goalId: string): Promise<void> {
-  if (typeof window !== 'undefined' && !window.confirm('删除该目标？')) return
+function requestDeleteGoal(goalId: string): void {
   const goal = goals.goals.value.find((candidate) => candidate.id === goalId)
+  if (goal) confirmGoal.value = { id: goal.id, title: goal.title }
+}
+
+async function confirmDeleteGoal(): Promise<void> {
+  const target = confirmGoal.value
+  confirmGoal.value = null
+  if (!target) return
+  const goal = goals.goals.value.find((candidate) => candidate.id === target.id)
   if (goal) await goals.deleteGoal(goal)
 }
 
@@ -712,6 +721,14 @@ onMounted(async () => {
         </label>
       </div>
     </header>
+    <ConfirmDialog
+      :open="confirmGoal !== null"
+      title="删除目标"
+      :message="`删除“${confirmGoal?.title ?? ''}”后无法恢复，确定继续？`"
+      confirm-label="删除"
+      @confirm="confirmDeleteGoal"
+      @cancel="confirmGoal = null"
+    />
 
     <section v-if="signedOut" class="card" aria-labelledby="login-title">
       <h2 id="login-title" class="card__title">登录</h2>
@@ -1048,7 +1065,7 @@ onMounted(async () => {
               <template v-if="goal.targetDate"> · {{ goal.targetDate }}</template>
             </span>
             <button class="button button--ghost" type="button" @click="startEditGoal(goal.id)">编辑</button>
-            <button class="button button--ghost" type="button" @click="deleteGoal(goal.id)">删除</button>
+            <button class="button button--ghost" type="button" @click="requestDeleteGoal(goal.id)">删除</button>
           </div>
           <div class="goals__progress" :aria-label="`完成 ${goal.progress.percent}%`">
             <div class="goals__bar" :style="{ width: `${goal.progress.percent}%` }"></div>
