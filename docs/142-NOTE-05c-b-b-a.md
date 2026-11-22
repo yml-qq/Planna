@@ -1,6 +1,6 @@
 # 142｜NOTE-05c-b-b-a：并发上传配额验证与单文件上限配置
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；并发冒烟在 CI 中执行，结果见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45068120223](https://github.com/yml-qq/Planna/actions/runs/45068120223) 与 [Desktop core 45068120262](https://github.com/yml-qq/Planna/actions/runs/45068120262) 均 **success**（并发配额冒烟在 CI 通过）。
 
 ## 范围与验收
 
