@@ -636,3 +636,12 @@
 - note store `update` 改为 `{title?, content?}` 部分更新，校验标题 ≤200/正文 ≤20000 且不能同时为空；UI 内联编辑新增标题输入，保存/取消同时处理两者。
 - 测试保持 **69 项**（原更新用例扩展为标题+正文与空值拒绝）；`pnpm build` 与 shell `cargo check/clippy/fmt` 通过；服务端无变更。
 - 网络恢复后推送（`f0ca7a2`）并补 CI：[Server integration 44985431458](https://github.com/yml-qq/Planna/actions/runs/44985431458) 与 [Desktop core 44985431483](https://github.com/yml-qq/Planna/actions/runs/44985431483) 均 **success**。
+
+## GOAL-03a AI 目标拆解预览检查（2026-11-22）
+
+- 新增只读契约 `POST /ai/goals/{goalId}/breakdowns/preview`（`/ai` 组限流）：guidance ≤2000、owner 目标校验、AI 未启用 503 `AI_UNAVAILABLE`；返回 `goal_id/suggestions/assumptions`，不写 goals/milestones。
+- OpenAPI 新增路径与 3 个 schema；契约测试新增 `test_goal_breakdown_contract`（**34 项**）。
+- 冒烟 `HttpGoalBreakdownSmoke`：未认证 401、正常预览 ≥2 条、无 DB 写入、跨 owner/不存在 404、超长 guidance 422、非法 JSON 400、AI_PROVIDER=none→503。
+- 本地 build/format/契约 34 项通过；服务端无迁移。
+- [Server integration 44986659804](https://github.com/yml-qq/Planna/actions/runs/44986659804) 与 [Desktop core 44986659819](https://github.com/yml-qq/Planna/actions/runs/44986659819) 均 **success**。
+- 未连接生产库、未提交凭据；桌面 AI 拆解 UI、逐条添加/目标编辑/排序留待 `GOAL-03b`。
