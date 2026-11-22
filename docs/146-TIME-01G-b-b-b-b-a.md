@@ -1,6 +1,6 @@
 # 146｜TIME-01G-b-b-b-b-a：工作日历批量导入 UI
 
-状态：代码已实现；本地前端 `pnpm test`（98 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；CI 见 `VALIDATION.md`。legal_workday 求值与提醒重排仍属 `TIME-01G-b-b-b-b-b`。
+状态：代码已实现；本地前端 `pnpm test`（98 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45076372346](https://github.com/yml-qq/Planna/actions/runs/45076372346) 与 [Desktop core 45076372291](https://github.com/yml-qq/Planna/actions/runs/45076372291) 均 **success**。legal_workday 求值与提醒重排仍属 `TIME-01G-b-b-b-b-b`。
 
 ## 范围与验收
 
