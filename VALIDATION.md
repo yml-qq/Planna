@@ -1045,4 +1045,4 @@
 
 - drill 在行数对比后对 8 张核心表做 `md5(string_agg(t::text ... ORDER BY id))` 校验和对比（源库 vs 恢复库）。
 - 仅隔离 CI 数据库；attachment_rate_windows 仍只对比行数；不校验索引/序列/约束。
-- 脚本静态检查通过；实际结果以 CI drill 为准。
+- [Server integration 45214423716](https://github.com/yml-qq/Planna/actions/runs/45214423716)（含 drill）与 [Desktop core 45214424421](https://github.com/yml-qq/Planna/actions/runs/45214424421) 均 **success**，源/恢复库行数与内容校验和一致。
