@@ -975,4 +975,4 @@
 - 日期按钮支持方向键（±1/±7 天）移动焦点，`moveFocusIndex` 首尾钳制；容器由错误的 role=grid 改为 role=group。
 - 新增 moveFocusIndex 边界测试，前端合计 99 项；build 通过。
 - 全部日期按钮仍在 Tab 序列（无 roving tabindex）；未做 Home/End/跨月/屏幕阅读器验证。
-- **CI 未触发**：GitHub 443 不可达；本切片仅本地验证，待网络恢复后推送并补 CI 链接。
+- [Server integration 45083782335](https://github.com/yml-qq/Planna/actions/runs/45083782335) 与 [Desktop core 45083782352](https://github.com/yml-qq/Planna/actions/runs/45083782352) 均 **success**。
