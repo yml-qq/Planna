@@ -1033,3 +1033,9 @@
 - 新增 `spec/focus-report-v1.schema.json` 与 `examples/spec-01/focus-report.json`；契约测试用 Draft202012Validator+FormatChecker 校验，合计 37 项。
 - [Server integration 45205996334](https://github.com/yml-qq/Planna/actions/runs/45205996334) 与 [Desktop core 45205996300](https://github.com/yml-qq/Planna/actions/runs/45205996300) 均 **success**。
 - Schema 仅导出契约，运行时 TS/Rust 不加载校验；仅 v1、无迁移策略。
+
+## NOTE-05c-b-b-b-b-b-b-b-a 客户端退避提示检查（2026-11-22）
+
+- Tauri 429 读取 Retry-After 并返回 `429:ATTACHMENT_RATE_LIMITED:<seconds>`；notes helper 映射中文提示（限流秒数/类型/大小/配额/未同步）。
+- 上传/下载/删除失败统一提示；前端新增 1 项测试，合计 103 项；build/shell clippy 通过。
+- 仅提示，无自动重试/倒计时；错误仍为字符串；下载/删除不限流。

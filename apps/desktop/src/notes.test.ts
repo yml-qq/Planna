@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
-import { createNoteStore, notesForTask } from './notes'
+import { attachmentErrorMessage, createNoteStore, notesForTask } from './notes'
 
 function createStore(token = 'token') {
   const bridge = new MemoryBridge()
@@ -136,5 +136,15 @@ describe('note attachment store', () => {
     expect(await store.downloadAttachment('note-1', items[0]!.id)).toBe('downloads/' + items[0]!.id)
     expect(await store.deleteAttachment('note-1', items[0]!.id)).toBe(true)
     expect(store.attachments.value['note-1']).toEqual([])
+  })
+})
+
+describe('attachment error messages', () => {
+  it('formats rate limits with retry seconds and other codes', () => {
+    expect(attachmentErrorMessage('ATTACHMENT_RATE_LIMITED:42')).toBe('上传过于频繁，请 42 秒后重试')
+    expect(attachmentErrorMessage('ATTACHMENT_RATE_LIMITED')).toBe('上传过于频繁，请稍后重试')
+    expect(attachmentErrorMessage('UNSUPPORTED_ATTACHMENT_TYPE')).toBe('不支持该文件类型')
+    expect(attachmentErrorMessage(null)).toBe('')
+    expect(attachmentErrorMessage('SOMETHING_ELSE')).toBe('附件操作失败（SOMETHING_ELSE）')
   })
 })

@@ -7,7 +7,7 @@ import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
-import { createNoteStore, notesForTask } from './notes'
+import { attachmentErrorMessage, createNoteStore, notesForTask } from './notes'
 import {
   arrowAction,
   createCalendarStore,
@@ -462,7 +462,7 @@ async function uploadNoteAttachment(noteId: string): Promise<void> {
   const saved = await notes.uploadAttachment(noteId, path)
   attachmentMessage.value = {
     ...attachmentMessage.value,
-    [noteId]: saved ? '已上传' : '上传失败：' + (notes.attachmentError.value ?? 'UNKNOWN')
+    [noteId]: saved ? '已上传' : '上传失败：' + attachmentErrorMessage(notes.attachmentError.value)
   }
 }
 
@@ -478,7 +478,7 @@ async function deleteNoteAttachment(noteId: string, attachmentId: string): Promi
   const removed = await notes.deleteAttachment(noteId, attachmentId)
   attachmentMessage.value = {
     ...attachmentMessage.value,
-    [noteId]: removed ? '已删除附件' : '删除失败：' + (notes.attachmentError.value ?? 'UNKNOWN')
+    [noteId]: removed ? '已删除附件' : '删除失败：' + attachmentErrorMessage(notes.attachmentError.value)
   }
 }
 

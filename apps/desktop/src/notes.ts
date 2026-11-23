@@ -1,6 +1,29 @@
 import { ref, type Ref } from 'vue'
 import type { DesktopBridge, Note, NoteAttachment } from './api'
 
+export function attachmentErrorMessage(code: string | null): string {
+  if (!code) return ''
+  const [base, seconds] = code.split(':')
+  switch (base) {
+    case 'ATTACHMENT_RATE_LIMITED':
+      return seconds ? `上传过于频繁，请 ${seconds} 秒后重试` : '上传过于频繁，请稍后重试'
+    case 'UNSUPPORTED_ATTACHMENT_TYPE':
+      return '不支持该文件类型'
+    case 'ATTACHMENT_TOO_LARGE':
+      return '文件超过大小限制'
+    case 'ATTACHMENT_EMPTY':
+      return '文件为空'
+    case 'ATTACHMENT_NOTE_QUOTA':
+      return '该笔记附件数量已达上限'
+    case 'ATTACHMENT_OWNER_QUOTA':
+      return '附件总容量已达上限'
+    case 'NOTE_NOT_FOUND':
+      return '笔记尚未同步到服务端，请先同步'
+    default:
+      return `附件操作失败（${code}）`
+  }
+}
+
 export function notesForTask(notes: Note[], taskId: string): Note[] {
   return notes.filter((note) => note.taskId === taskId)
 }

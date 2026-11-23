@@ -1271,6 +1271,15 @@ fn note_attachment_upload(
         .send()
         .map_err(|error| error.to_string())?;
     if !response.status().is_success() {
+        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            let retry = response
+                .headers()
+                .get("retry-after")
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| value.parse::<u64>().ok())
+                .unwrap_or(60);
+            return Err(format!("429:ATTACHMENT_RATE_LIMITED:{retry}"));
+        }
         return Err(focus_error(response));
     }
     response.json().map_err(|error| error.to_string())
