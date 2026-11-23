@@ -1025,4 +1025,5 @@
 - 新增 `focusStatsJson`（schema_version + FocusStats）与 CSV/JSON 文件名；UI“导出 JSON”写下载目录。
 - Tauri 文件名净化接受 .csv/.json，另存为对话框增加 JSON 过滤器；Rust 3 项单测通过。
 - 前端 102 项测试、build 通过。
+- [Server integration 45200880021](https://github.com/yml-qq/Planna/actions/runs/45200880021) 与 [Desktop core 45200879856](https://github.com/yml-qq/Planna/actions/runs/45200879856) 均 **success**。
 - 无独立 JSON Schema；同日覆盖；无 PDF/Excel/时间戳防覆盖。

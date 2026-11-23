@@ -1,6 +1,6 @@
 # 155｜FOCUS-09b-e-b-a：JSON 报表导出
 
-状态：代码已实现；本地前端 `pnpm test`（102 项）、`pnpm build`、Rust `cargo test --lib`（3 项）/clippy 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（102 项）、`pnpm build`、Rust `cargo test --lib`（3 项）/clippy 通过；[Server integration 45200880021](https://github.com/yml-qq/Planna/actions/runs/45200880021) 与 [Desktop core 45200879856](https://github.com/yml-qq/Planna/actions/runs/45200879856) 均 **success**。
 
 ## 范围与验收
 
