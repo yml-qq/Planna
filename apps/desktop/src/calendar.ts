@@ -59,6 +59,15 @@ export function monthRange(year: number, month: number): { from: string; to: str
   return { from, to }
 }
 
+export type ArrowAction = 'next' | 'previous' | 'move'
+
+export function arrowAction(index: number, delta: number, length: number): ArrowAction {
+  if (length <= 0) return 'move'
+  if (delta > 0 && index >= length - 1) return 'next'
+  if (delta < 0 && index <= 0) return 'previous'
+  return 'move'
+}
+
 export function tabbableDate(days: WorkdayDay[], focused: string | null): string | null {
   if (focused && days.some((day) => day.date === focused)) return focused
   return days[0]?.date ?? null

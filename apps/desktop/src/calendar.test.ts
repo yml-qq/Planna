@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge } from './api'
 import {
+  arrowAction,
   createCalendarStore,
   monthLeadingBlanks,
   monthRange,
@@ -42,6 +43,14 @@ describe('calendar store', () => {
     expect(store.days.value[0]?.kind).toBe('workday')
     await store.clear('2026-10-01')
     expect(store.days.value[0]?.kind).toBe('workday')
+  })
+
+  it('moves across month boundaries only at the edges', () => {
+    expect(arrowAction(0, 1, 31)).toBe('move')
+    expect(arrowAction(30, 1, 31)).toBe('next')
+    expect(arrowAction(0, -1, 31)).toBe('previous')
+    expect(arrowAction(5, -1, 31)).toBe('move')
+    expect(arrowAction(0, 1, 0)).toBe('move')
   })
 
   it('keeps exactly one tabbable day per month', () => {

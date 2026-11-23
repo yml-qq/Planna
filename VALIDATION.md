@@ -997,3 +997,9 @@
 - 冒烟校验 Retry-After 为 1..60 整数；契约/OpenAPI 描述更新（36 项）。
 - [Server integration 45182825178](https://github.com/yml-qq/Planna/actions/runs/45182825178) 与 [Desktop core 45182825307](https://github.com/yml-qq/Planna/actions/runs/45182825307) 均 **success**。
 - 仍为固定窗口/进程内；多实例各自计算；客户端未消费。
+
+## UX-06-b-c 日历跨月键盘检查（2026-11-22）
+
+- 月末右/月初左跨月并聚焦边界；PageUp/PageDown 切月聚焦上月末/下月首；Home/End 当月首尾。
+- arrowAction 纯函数与边界测试，前端合计 101 项；build 通过。
+- 未实现完整 ARIA grid/屏幕阅读器/年跳转/焦点持久化。

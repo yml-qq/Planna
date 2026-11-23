@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createBridge, type ConflictIssue, type ConflictStrategy, type OutboxIssue } from './api'
 import { createSessionStore } from './session'
 import { createFocusStore, formatDuration } from './focus'
@@ -8,7 +8,13 @@ import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
 import { createNoteStore, notesForTask } from './notes'
-import { createCalendarStore, monthLeadingBlanks, moveFocusIndex, tabbableDate } from './calendar'
+import {
+  arrowAction,
+  createCalendarStore,
+  monthLeadingBlanks,
+  moveFocusIndex,
+  tabbableDate
+} from './calendar'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -382,15 +388,45 @@ async function clearCalendarOverride(): Promise<void> {
   selectedCalendarDate.value = null
 }
 
-function focusCalendarDay(date: string, delta: number): void {
+function calendarButtons(): HTMLButtonElement[] {
   const grid = calendarGrid.value
-  if (!grid) return
-  const buttons = Array.from(grid.querySelectorAll<HTMLButtonElement>('button[data-date]'))
+  return grid ? Array.from(grid.querySelectorAll<HTMLButtonElement>('button[data-date]')) : []
+}
+
+function focusCalendarBoundary(which: 'first' | 'last'): void {
+  const buttons = calendarButtons()
+  const target = which === 'first' ? buttons[0] : buttons[buttons.length - 1]
+  if (target?.dataset.date) focusedCalendarDate.value = target.dataset.date
+  target?.focus()
+}
+
+async function focusCalendarDay(date: string, delta: number): Promise<void> {
+  const buttons = calendarButtons()
   const index = buttons.findIndex((button) => button.dataset.date === date)
   if (index < 0) return
+  const action = arrowAction(index, delta, buttons.length)
+  if (action === 'next') {
+    await calendar.nextMonth()
+    await nextTick()
+    focusCalendarBoundary('first')
+    return
+  }
+  if (action === 'previous') {
+    await calendar.previousMonth()
+    await nextTick()
+    focusCalendarBoundary('last')
+    return
+  }
   const target = buttons[moveFocusIndex(index, delta, buttons.length)]
   if (target?.dataset.date) focusedCalendarDate.value = target.dataset.date
   target?.focus()
+}
+
+async function changeCalendarMonth(delta: number): Promise<void> {
+  if (delta < 0) await calendar.previousMonth()
+  else await calendar.nextMonth()
+  await nextTick()
+  focusCalendarBoundary(delta < 0 ? 'last' : 'first')
 }
 
 async function importCalendarOverrides(): Promise<void> {
@@ -1266,7 +1302,7 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-      <p class="card__hint">点击日期切换“工作日/休息日”覆盖；方向键移动；默认周一至周五为工作日。</p>
+      <p class="card__hint">点击日期切换“工作日/休息日”覆盖；方向键移动（月末/月初跨月）、Home/End、PageUp/PageDown 切月；默认周一至周五为工作日。</p>
       <div class="composer__row">
         <button class="button button--ghost" type="button" @click="calendarImportOpen = !calendarImportOpen">
           批量导入
@@ -1308,6 +1344,8 @@ onMounted(async () => {
           @keydown.down.prevent="focusCalendarDay(day.date, 7)"
           @keydown.home.prevent="focusCalendarDay(day.date, -999)"
           @keydown.end.prevent="focusCalendarDay(day.date, 999)"
+          @keydown.page-up.prevent="changeCalendarMonth(-1)"
+          @keydown.page-down.prevent="changeCalendarMonth(1)"
         >
           {{ Number(day.date.slice(8)) }}
         </button>
