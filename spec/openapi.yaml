@@ -1586,7 +1586,7 @@ paths:
           description: Attachment upload rate limited; retry after the Retry-After header
           headers:
             Retry-After:
-              description: Seconds to wait before retrying
+              description: Remaining seconds in the fixed one-minute window
               schema: {type: string, example: "60"}
           content:
             application/json:

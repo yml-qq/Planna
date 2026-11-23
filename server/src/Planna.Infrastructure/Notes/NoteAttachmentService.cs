@@ -71,8 +71,10 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
-        if (!TryConsumeUpload(ownerId)) return new(NoteAttachmentStatus.RateLimited,
-            Code: "ATTACHMENT_RATE_LIMITED");
+        var gate = TryConsumeUpload(ownerId);
+        if (!gate.Allowed)
+            return new(NoteAttachmentStatus.RateLimited, Code: "ATTACHMENT_RATE_LIMITED",
+                RetryAfterSeconds: gate.RetryAfterSeconds);
 
         // Serialize quota checks and inserts per owner so concurrent uploads cannot overshoot.
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -151,7 +153,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             : new(NoteAttachmentStatus.Ok);
     }
 
-    private bool TryConsumeUpload(Guid ownerId)
+    private (bool Allowed, int RetryAfterSeconds) TryConsumeUpload(Guid ownerId)
     {
         var now = clock.GetUtcNow();
         var window = UploadWindows.GetOrAdd(ownerId, _ => new UploadWindow { Start = now });
@@ -162,9 +164,13 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
                 window.Start = now;
                 window.Count = 0;
             }
-            if (window.Count >= maxUploadsPerMinute) return false;
+            if (window.Count >= maxUploadsPerMinute)
+            {
+                var remaining = (window.Start + TimeSpan.FromMinutes(1) - now).TotalSeconds;
+                return (false, Math.Max(1, (int)Math.Ceiling(remaining)));
+            }
             window.Count++;
-            return true;
+            return (true, 0);
         }
     }
 

@@ -161,6 +161,7 @@
 | 148 | `docs/148-UX-06-b-a.md` | 日历键盘导航与 ARIA 语义 |
 | 149 | `docs/149-NOTE-05c-b-b-b-b-a.md` | 限流响应 Retry-After |
 | 150 | `docs/150-UX-06-b-b.md` | 日历 roving tabindex 与 Home/End |
+| 151 | `docs/151-NOTE-05c-b-b-b-b-b-a.md` | 动态 Retry-After |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

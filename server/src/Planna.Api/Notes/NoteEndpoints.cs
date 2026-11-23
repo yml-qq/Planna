@@ -87,7 +87,8 @@ public static class NoteEndpoints
             NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
             NoteAttachmentStatus.TooLarge => Error(http, 413, result.Code!),
             NoteAttachmentStatus.UnsupportedType => Error(http, 415, result.Code!),
-            NoteAttachmentStatus.RateLimited => RateLimited(http, result.Code!),
+            NoteAttachmentStatus.RateLimited => RateLimited(http, result.Code!,
+                result.RetryAfterSeconds),
             NoteAttachmentStatus.Invalid => Error(http, 422, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
@@ -212,9 +213,9 @@ public static class NoteEndpoints
                version >= 1;
     }
 
-    private static IResult RateLimited(HttpContext http, string code)
+    private static IResult RateLimited(HttpContext http, string code, int? retryAfterSeconds)
     {
-        http.Response.Headers.RetryAfter = "60";
+        http.Response.Headers.RetryAfter = (retryAfterSeconds ?? 60).ToString();
         return Error(http, 429, code);
     }
 

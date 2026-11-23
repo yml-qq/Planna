@@ -990,3 +990,9 @@
 - 新增 tabbableDate 测试，前端合计 100 项；build 通过。
 - [Server integration 45178339264](https://github.com/yml-qq/Planna/actions/runs/45178339264) 与 [Desktop core 45178339276](https://github.com/yml-qq/Planna/actions/runs/45178339276) 均 **success**。
 - 未做跨月方向键/PageUp/PageDown/完整 ARIA grid/屏幕阅读器验证。
+
+## NOTE-05c-b-b-b-b-b-a 动态 Retry-After 检查（2026-11-22）
+
+- 限流 429 的 Retry-After 改为固定窗口剩余秒数（1..60 向上取整）；服务结果携带 RetryAfterSeconds，端点写入 header。
+- 冒烟校验 Retry-After 为 1..60 整数；契约/OpenAPI 描述更新（36 项）。
+- 仍为固定窗口/进程内；多实例各自计算；客户端未消费。

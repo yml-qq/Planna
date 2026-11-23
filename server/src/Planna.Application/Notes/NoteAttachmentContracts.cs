@@ -19,7 +19,8 @@ public enum NoteAttachmentStatus
 }
 
 public sealed record NoteAttachmentResult(NoteAttachmentStatus Status,
-    NoteAttachmentView? Attachment = null, NoteAttachmentList? List = null, string? Code = null);
+    NoteAttachmentView? Attachment = null, NoteAttachmentList? List = null, string? Code = null,
+    int? RetryAfterSeconds = null);
 
 public sealed record NoteAttachmentDownload(NoteAttachmentView Attachment, Stream Content);
 
