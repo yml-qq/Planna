@@ -1017,4 +1017,5 @@
 - 新迁移 `attachment_rate_windows`；限流改为事务内 DB 行（advisory lock 串行化），跨实例共享窗口。
 - 冒烟：第一个实例 2 次 201，第二个独立实例第 3 次 429（Retry-After 1..60），DB 活跃 2 条。
 - 备份演练表清单加入该表；契约 36 项；本地 build/format 通过。
+- [Server integration 45196615252](https://github.com/yml-qq/Planna/actions/runs/45196615252) 与 [Desktop core 45196615433](https://github.com/yml-qq/Planna/actions/runs/45196615433) 均 **success**（跨实例冒烟与备份演练通过）。
 - 固定窗口；事务失败回滚计数；每 owner 一行不清理；未做滑动窗口/客户端退避。

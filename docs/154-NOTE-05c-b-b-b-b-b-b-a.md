@@ -1,6 +1,6 @@
 # 154｜NOTE-05c-b-b-b-b-b-b-a：数据库级附件限流（跨实例）
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45196615252](https://github.com/yml-qq/Planna/actions/runs/45196615252) 与 [Desktop core 45196615433](https://github.com/yml-qq/Planna/actions/runs/45196615433) 均 **success**（跨实例冒烟与备份演练通过）。
 
 ## 范围与验收
 
