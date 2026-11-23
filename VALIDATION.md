@@ -983,3 +983,9 @@
 - 冒烟校验第三次上传 429 的 Retry-After 为 "60"。
 - [Server integration 45174370025](https://github.com/yml-qq/Planna/actions/runs/45174370025) 与 [Desktop core 45174369986](https://github.com/yml-qq/Planna/actions/runs/45174369986) 均 **success**。
 - 固定 60 秒（窗口长度），非动态剩余时间；仅附件上传；客户端暂未展示。
+
+## UX-06-b-b 日历 roving tabindex 检查（2026-11-22）
+
+- 日期按钮仅一个 tabindex=0（上次焦点/当月首日），其余 -1；方向键/聚焦更新焦点；Home/End 跳首尾。
+- 新增 tabbableDate 测试，前端合计 100 项；build 通过。
+- 未做跨月方向键/PageUp/PageDown/完整 ARIA grid/屏幕阅读器验证。

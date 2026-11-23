@@ -8,7 +8,7 @@ import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
 import { createNoteStore, notesForTask } from './notes'
-import { createCalendarStore, monthLeadingBlanks, moveFocusIndex } from './calendar'
+import { createCalendarStore, monthLeadingBlanks, moveFocusIndex, tabbableDate } from './calendar'
 import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
@@ -143,6 +143,7 @@ const calendarImportOpen = ref(false)
 const calendarImportText = ref('')
 const calendarImportStatus = ref('')
 const calendarGrid = ref<HTMLElement | null>(null)
+const focusedCalendarDate = ref<string | null>(null)
 const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
@@ -387,7 +388,9 @@ function focusCalendarDay(date: string, delta: number): void {
   const buttons = Array.from(grid.querySelectorAll<HTMLButtonElement>('button[data-date]'))
   const index = buttons.findIndex((button) => button.dataset.date === date)
   if (index < 0) return
-  buttons[moveFocusIndex(index, delta, buttons.length)]?.focus()
+  const target = buttons[moveFocusIndex(index, delta, buttons.length)]
+  if (target?.dataset.date) focusedCalendarDate.value = target.dataset.date
+  target?.focus()
 }
 
 async function importCalendarOverrides(): Promise<void> {
@@ -1295,12 +1298,16 @@ onMounted(async () => {
           :class="'calendar-day--' + day.kind"
           type="button"
           :data-date="day.date"
+          :tabindex="tabbableDate(calendar.days.value, focusedCalendarDate) === day.date ? 0 : -1"
           :aria-label="day.date + (day.kind === 'workday' ? ' 工作日' : ' 休息日')"
+          @focus="focusedCalendarDate = day.date"
           @click="toggleCalendarDay(day.date, day.kind)"
           @keydown.left.prevent="focusCalendarDay(day.date, -1)"
           @keydown.right.prevent="focusCalendarDay(day.date, 1)"
           @keydown.up.prevent="focusCalendarDay(day.date, -7)"
           @keydown.down.prevent="focusCalendarDay(day.date, 7)"
+          @keydown.home.prevent="focusCalendarDay(day.date, -999)"
+          @keydown.end.prevent="focusCalendarDay(day.date, 999)"
         >
           {{ Number(day.date.slice(8)) }}
         </button>

@@ -59,6 +59,11 @@ export function monthRange(year: number, month: number): { from: string; to: str
   return { from, to }
 }
 
+export function tabbableDate(days: WorkdayDay[], focused: string | null): string | null {
+  if (focused && days.some((day) => day.date === focused)) return focused
+  return days[0]?.date ?? null
+}
+
 export function moveFocusIndex(index: number, delta: number, length: number): number {
   if (length <= 0) return 0
   return Math.min(length - 1, Math.max(0, index + delta))

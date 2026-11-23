@@ -5,7 +5,8 @@ import {
   monthLeadingBlanks,
   monthRange,
   moveFocusIndex,
-  parseOverrideLines
+  parseOverrideLines,
+  tabbableDate
 } from './calendar'
 
 function createStore(overrides: Record<string, unknown> = {}) {
@@ -41,6 +42,17 @@ describe('calendar store', () => {
     expect(store.days.value[0]?.kind).toBe('workday')
     await store.clear('2026-10-01')
     expect(store.days.value[0]?.kind).toBe('workday')
+  })
+
+  it('keeps exactly one tabbable day per month', () => {
+    const days = [
+      { date: '2026-10-01', kind: 'workday' as const },
+      { date: '2026-10-02', kind: 'workday' as const }
+    ]
+    expect(tabbableDate(days, null)).toBe('2026-10-01')
+    expect(tabbableDate(days, '2026-10-02')).toBe('2026-10-02')
+    expect(tabbableDate(days, '2026-11-01')).toBe('2026-10-01')
+    expect(tabbableDate([], '2026-10-01')).toBeNull()
   })
 
   it('clamps keyboard focus movement inside the grid', () => {
