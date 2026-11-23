@@ -166,6 +166,7 @@
 | 153 | `docs/153-UX-06-b-d-a.md` | 日历年/月跳转与焦点持久化 |
 | 154 | `docs/154-NOTE-05c-b-b-b-b-b-b-a.md` | 数据库级附件限流（跨实例） |
 | 155 | `docs/155-FOCUS-09b-e-b-a.md` | JSON 报表导出 |
+| 156 | `docs/156-FOCUS-09b-e-b-b-a.md` | JSON 报表 Schema 与示例校验 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

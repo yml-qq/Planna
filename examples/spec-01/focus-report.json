@@ -1,0 +1,14 @@
+{
+  "schema_version": "planna-focus-report-v1",
+  "from": "2026-11-16",
+  "to": "2026-11-22",
+  "timeZone": "Asia/Shanghai",
+  "totalSessions": 3,
+  "completedSessions": 2,
+  "abandonedSessions": 1,
+  "actualSeconds": 3720,
+  "days": [
+    {"date": "2026-11-20", "completedSessions": 1, "actualSeconds": 1800},
+    {"date": "2026-11-22", "completedSessions": 1, "actualSeconds": 1920}
+  ]
+}

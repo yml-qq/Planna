@@ -701,6 +701,15 @@ class Spec01Contracts(unittest.TestCase):
         download = api["paths"]["/notes/{id}/attachments/{attachmentId}"]["get"]
         self.assertIn("application/octet-stream", download["responses"]["200"]["content"])
 
+    def test_focus_report_schema(self):
+        schema = json.loads((ROOT / "spec/focus-report-v1.schema.json").read_text(encoding="utf-8"))
+        example = json.loads((ROOT / "examples/spec-01/focus-report.json").read_text(encoding="utf-8"))
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(example)
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "planna-focus-report-v1")
+        self.assertEqual(set(schema["required"]),
+                         {"schema_version", "from", "to", "timeZone", "totalSessions",
+                          "completedSessions", "abandonedSessions", "actualSeconds", "days"})
+
     def test_workday_override_contract(self):
         api = yaml.safe_load((ROOT / "spec/openapi.yaml").read_text(encoding="utf-8"))
         collection = api["paths"]["/calendar/workday-overrides"]["get"]
