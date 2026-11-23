@@ -1,6 +1,6 @@
 # 149｜NOTE-05c-b-b-b-b-a：限流响应 Retry-After
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45174370025](https://github.com/yml-qq/Planna/actions/runs/45174370025) 与 [Desktop core 45174369986](https://github.com/yml-qq/Planna/actions/runs/45174369986) 均 **success**。
 
 ## 范围与验收
 

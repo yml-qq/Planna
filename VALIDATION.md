@@ -981,4 +981,5 @@
 
 - 附件上传 429 增加 `Retry-After: 60`；OpenAPI 上传 429 内联并声明 header，契约断言（36 项）。
 - 冒烟校验第三次上传 429 的 Retry-After 为 "60"。
+- [Server integration 45174370025](https://github.com/yml-qq/Planna/actions/runs/45174370025) 与 [Desktop core 45174369986](https://github.com/yml-qq/Planna/actions/runs/45174369986) 均 **success**。
 - 固定 60 秒（窗口长度），非动态剩余时间；仅附件上传；客户端暂未展示。
