@@ -988,4 +988,5 @@
 
 - 日期按钮仅一个 tabindex=0（上次焦点/当月首日），其余 -1；方向键/聚焦更新焦点；Home/End 跳首尾。
 - 新增 tabbableDate 测试，前端合计 100 项；build 通过。
+- [Server integration 45178339264](https://github.com/yml-qq/Planna/actions/runs/45178339264) 与 [Desktop core 45178339276](https://github.com/yml-qq/Planna/actions/runs/45178339276) 均 **success**。
 - 未做跨月方向键/PageUp/PageDown/完整 ARIA grid/屏幕阅读器验证。
