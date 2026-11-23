@@ -64,4 +64,28 @@ for table in users tasks task_lists habits habit_logs notes goals workday_overri
   echo "ok $table checksum=$source_sum"
 done
 
-echo "backup/restore drill passed (row counts + content checksums)"
+compare_count() {
+  local label="$1"
+  local sql="$2"
+  local source_count restore_count
+  source_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+    -Atc "$sql")"
+  restore_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
+    -Atc "$sql")"
+  if [[ "$source_count" != "$restore_count" ]]; then
+    echo "object count mismatch for $label: source=$source_count restore=$restore_count" >&2
+    exit 1
+  fi
+  echo "ok $label count=$source_count"
+}
+
+compare_count "columns" \
+  "SELECT count(*) FROM information_schema.columns WHERE table_schema='public'"
+compare_count "indexes" \
+  "SELECT count(*) FROM pg_indexes WHERE schemaname='public'"
+compare_count "constraints" \
+  "SELECT count(*) FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public'"
+compare_count "sequences" \
+  "SELECT count(*) FROM information_schema.sequences WHERE sequence_schema='public'"
+
+echo "backup/restore drill passed (row counts + content checksums + object counts)"
