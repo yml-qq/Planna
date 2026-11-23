@@ -170,6 +170,7 @@
 | 157 | `docs/157-NOTE-05c-b-b-b-b-b-b-b-a.md` | 附件上传客户端退避提示 |
 | 158 | `docs/158-REL-02-a-b.md` | 备份恢复内容校验和 |
 | 159 | `docs/159-REL-02-a-c.md` | 恢复库 schema 对象计数校验 |
+| 160 | `docs/160-REL-02-a-d.md` | schema 定义哈希校验 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

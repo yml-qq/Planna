@@ -1052,3 +1052,9 @@
 - drill 增加 columns/indexes/constraints/sequences 的源/恢复计数对比，不一致即失败。
 - 只比数量，不比定义；不含视图/函数/触发器/权限/序列值；仅隔离 CI 数据库。
 - [Server integration 45218413270](https://github.com/yml-qq/Planna/actions/runs/45218413270)（含 drill）与 [Desktop core 45218413176](https://github.com/yml-qq/Planna/actions/runs/45218413176) 均 **success**，列/索引/约束/序列计数一致。
+
+## REL-02-a-d schema 定义哈希检查（2026-11-22）
+
+- drill 增加 columns/indexes/constraints 定义文本的 md5 对比（源 vs 恢复），不一致即失败。
+- 不覆盖视图/函数/触发器/权限/序列值；定义文本依赖 PG18；仅隔离 CI 数据库。
+- 结果以 CI drill 为准。

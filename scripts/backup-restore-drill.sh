@@ -88,4 +88,26 @@ compare_count "constraints" \
 compare_count "sequences" \
   "SELECT count(*) FROM information_schema.sequences WHERE sequence_schema='public'"
 
-echo "backup/restore drill passed (row counts + content checksums + object counts)"
+compare_definition_hash() {
+  local label="$1"
+  local sql="$2"
+  local source_hash restore_hash
+  source_hash="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+    -Atc "SELECT md5(coalesce(string_agg(definition, E'\\n' ORDER BY definition), '')) FROM ($sql) AS definitions(definition)")"
+  restore_hash="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
+    -Atc "SELECT md5(coalesce(string_agg(definition, E'\\n' ORDER BY definition), '')) FROM ($sql) AS definitions(definition)")"
+  if [[ "$source_hash" != "$restore_hash" ]]; then
+    echo "definition hash mismatch for $label: source=$source_hash restore=$restore_hash" >&2
+    exit 1
+  fi
+  echo "ok $label definition_hash=$source_hash"
+}
+
+compare_definition_hash "columns" \
+  "SELECT table_name || '.' || column_name || ':' || data_type || ':' || is_nullable || ':' || coalesce(column_default, '') AS definition FROM information_schema.columns WHERE table_schema='public'"
+compare_definition_hash "indexes" \
+  "SELECT indexname || ':' || indexdef AS definition FROM pg_indexes WHERE schemaname='public'"
+compare_definition_hash "constraints" \
+  "SELECT contype || ':' || conname || ':' || pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE connamespace='public'::regnamespace"
+
+echo "backup/restore drill passed (row counts + content checksums + object counts + definition hashes)"
