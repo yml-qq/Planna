@@ -1059,3 +1059,9 @@
 - 不覆盖视图/函数/触发器/权限/序列值；定义文本依赖 PG18；仅隔离 CI 数据库。
 - 首次 CI（`8cd7797`）失败：`contype` 为 `"char"`，`||` 无唯一候选；改为 `contype::text`（`e25576e`）。
 - [Server integration 45227703879](https://github.com/yml-qq/Planna/actions/runs/45227703879)（含 drill）与 [Desktop core 45227703668](https://github.com/yml-qq/Planna/actions/runs/45227703668) 均 **success**。
+
+## SEC-02-b-a 许可证清单检查（2026-11-22）
+
+- Server CI 生成 dotnet 包清单 artifact；Desktop CI 生成 pnpm 生产依赖许可证 JSON/TXT artifact，缺文件即失败。
+- 本地 `pnpm licenses list --prod --json`/文本退出 0 并产出（未提交）。
+- 非完整 SBOM；dotnet 清单无许可证字段；仅生产依赖；不做合规判定；SEC-02-b 仍需外部渗透/密钥审计/正式 SBOM。

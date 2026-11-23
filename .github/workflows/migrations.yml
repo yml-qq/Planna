@@ -38,6 +38,15 @@ jobs:
           dotnet build server/Planna.slnx --no-restore --warnaserror
       - name: NuGet vulnerability scan
         run: dotnet list server/Planna.slnx package --vulnerable --include-transitive
+      - name: Dependency inventory
+        run: |
+          mkdir -p artifacts/licenses
+          dotnet list server/Planna.slnx package --include-transitive > artifacts/licenses/dotnet-packages.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-packages
+          path: artifacts/licenses/dotnet-packages.txt
+          if-no-files-found: error
       - name: Format
         run: dotnet format server/Planna.slnx --verify-no-changes --no-restore
       - name: OpenAPI and shared contract checks

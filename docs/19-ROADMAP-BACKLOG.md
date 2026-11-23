@@ -128,7 +128,8 @@
 | E11 | SEC-01A | 服务端安全基线（安全头/异常兜底/请求上限/AI 限流，已交付，见 `59-SEC-01A.md`） | PRIV-CLEANUP-01 | security smoke |
 | E11 | SEC-01 | 首发安全与隐私内部评审（已交付，见 `93-SEC-01.md`；鉴权矩阵/依赖扫描/配置审计） | SEC-01A | 权限/数据治理 |
 | E11 | SEC-02-a | 依赖漏洞审计接入 CI（已交付，见 `138-SEC-02-a.md`） | SEC-01 | audit CI |
-| E11 | SEC-02-b | 外部渗透测试、密钥/部署配置审计、许可证与 SBOM | SEC-02-a | 渗透测试 |
+| E11 | SEC-02-b-a | CI 依赖许可证清单（已交付，见 `161-SEC-02-b-a.md`） | SEC-02-a | artifact CI |
+| E11 | SEC-02-b-b | 外部渗透测试、密钥/部署配置审计、SPDX/CycloneDX SBOM 与许可证策略 | SEC-02-b-a | 渗透测试 |
 | E11 | REL-01 | 发布门禁与运维就绪包（已交付，见 `95-REL-01.md`；迁移工具/Release dry-run/备份手册） | SEC-01 | release checklist |
 | E11 | REL-02-a | 备份/恢复演练自动化（隔离库，已交付，见 `133-REL-02-a.md`） | REL-01 | drill tests |
 | E11 | REL-02-a-b | 备份恢复内容校验和（已交付，见 `158-REL-02-a-b.md`） | REL-02-a | drill tests |
