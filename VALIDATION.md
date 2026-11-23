@@ -1031,4 +1031,5 @@
 ## FOCUS-09b-e-b-b-a 报表 Schema 检查（2026-11-22）
 
 - 新增 `spec/focus-report-v1.schema.json` 与 `examples/spec-01/focus-report.json`；契约测试用 Draft202012Validator+FormatChecker 校验，合计 37 项。
+- [Server integration 45205996334](https://github.com/yml-qq/Planna/actions/runs/45205996334) 与 [Desktop core 45205996300](https://github.com/yml-qq/Planna/actions/runs/45205996300) 均 **success**。
 - Schema 仅导出契约，运行时 TS/Rust 不加载校验；仅 v1、无迁移策略。

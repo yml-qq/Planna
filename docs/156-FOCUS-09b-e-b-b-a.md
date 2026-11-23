@@ -1,6 +1,6 @@
 # 156｜FOCUS-09b-e-b-b-a：JSON 报表 Schema 与示例校验
 
-状态：代码已实现；本地契约测试 **37 项**通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地契约测试 **37 项**通过；[Server integration 45205996334](https://github.com/yml-qq/Planna/actions/runs/45205996334) 与 [Desktop core 45205996300](https://github.com/yml-qq/Planna/actions/runs/45205996300) 均 **success**。
 
 ## 范围与验收
 
