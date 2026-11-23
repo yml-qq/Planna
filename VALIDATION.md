@@ -1038,4 +1038,5 @@
 
 - Tauri 429 读取 Retry-After 并返回 `429:ATTACHMENT_RATE_LIMITED:<seconds>`；notes helper 映射中文提示（限流秒数/类型/大小/配额/未同步）。
 - 上传/下载/删除失败统一提示；前端新增 1 项测试，合计 103 项；build/shell clippy 通过。
+- [Server integration 45210236777](https://github.com/yml-qq/Planna/actions/runs/45210236777) 与 [Desktop core 45210236861](https://github.com/yml-qq/Planna/actions/runs/45210236861) 均 **success**。
 - 仅提示，无自动重试/倒计时；错误仍为字符串；下载/删除不限流。

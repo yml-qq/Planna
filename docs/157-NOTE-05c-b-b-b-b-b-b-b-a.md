@@ -1,6 +1,6 @@
 # 157｜NOTE-05c-b-b-b-b-b-b-b-a：附件上传客户端退避提示
 
-状态：代码已实现；本地前端 `pnpm test`（103 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（103 项）、`pnpm build`、shell `cargo check/clippy/fmt` 通过；[Server integration 45210236777](https://github.com/yml-qq/Planna/actions/runs/45210236777) 与 [Desktop core 45210236861](https://github.com/yml-qq/Planna/actions/runs/45210236861) 均 **success**。
 
 ## 范围与验收
 
