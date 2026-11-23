@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -24,7 +24,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             1, 10L * 1024 * 1024 * 1024);
     private readonly int maxUploadsPerMinute =
         ParseInt(configuration["NOTE_ATTACHMENT_MAX_UPLOADS_PER_MINUTE"], 30, 1, 1000);
-    private static readonly ConcurrentDictionary<Guid, UploadWindow> UploadWindows = new();
+
 
     private static readonly Dictionary<string, string> Extensions = new()
     {
@@ -71,16 +71,16 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
-        var gate = TryConsumeUpload(ownerId);
-        if (!gate.Allowed)
-            return new(NoteAttachmentStatus.RateLimited, Code: "ATTACHMENT_RATE_LIMITED",
-                RetryAfterSeconds: gate.RetryAfterSeconds);
-
         // Serialize quota checks and inserts per owner so concurrent uploads cannot overshoot.
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var ownerKey = ownerId.ToString();
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtext({ownerKey}))", ct);
+        var nowForRate = clock.GetUtcNow();
+        var gate = await ConsumeRateAsync(ownerId, nowForRate, ct);
+        if (!gate.Allowed)
+            return new(NoteAttachmentStatus.RateLimited, Code: "ATTACHMENT_RATE_LIMITED",
+                RetryAfterSeconds: gate.RetryAfterSeconds);
         var existing = await LoadAsync(ownerId, noteId, attachmentId, ct);
         if (existing is not null)
         {
@@ -153,31 +153,46 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
             : new(NoteAttachmentStatus.Ok);
     }
 
-    private (bool Allowed, int RetryAfterSeconds) TryConsumeUpload(Guid ownerId)
+    private async Task<(bool Allowed, int RetryAfterSeconds)> ConsumeRateAsync(Guid ownerId,
+        DateTimeOffset now, CancellationToken ct)
     {
-        var now = clock.GetUtcNow();
-        var window = UploadWindows.GetOrAdd(ownerId, _ => new UploadWindow { Start = now });
-        lock (window)
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
+        var row = await connection.QuerySingleOrDefaultAsync<(DateTime Start, int Count)>(
+            new CommandDefinition("""
+                SELECT window_start AS "Start", count AS "Count"
+                FROM attachment_rate_windows WHERE owner_id=@Owner
+                """, new { Owner = ownerId }, db.Database.CurrentTransaction?.GetDbTransaction(),
+                cancellationToken: ct));
+        if (row == default)
         {
-            if (now - window.Start >= TimeSpan.FromMinutes(1))
-            {
-                window.Start = now;
-                window.Count = 0;
-            }
-            if (window.Count >= maxUploadsPerMinute)
-            {
-                var remaining = (window.Start + TimeSpan.FromMinutes(1) - now).TotalSeconds;
-                return (false, Math.Max(1, (int)Math.Ceiling(remaining)));
-            }
-            window.Count++;
+            await connection.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO attachment_rate_windows(owner_id, window_start, count)
+                VALUES(@Owner, @Now, 1)
+                """, new { Owner = ownerId, Now = now.UtcDateTime },
+                db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
             return (true, 0);
         }
-    }
-
-    private sealed class UploadWindow
-    {
-        public DateTimeOffset Start { get; set; }
-        public int Count { get; set; }
+        var start = new DateTimeOffset(DateTime.SpecifyKind(row.Start, DateTimeKind.Utc));
+        if (now - start >= TimeSpan.FromMinutes(1))
+        {
+            await connection.ExecuteAsync(new CommandDefinition("""
+                UPDATE attachment_rate_windows SET window_start=@Now, count=1
+                WHERE owner_id=@Owner
+                """, new { Owner = ownerId, Now = now.UtcDateTime },
+                db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+            return (true, 0);
+        }
+        if (row.Count >= maxUploadsPerMinute)
+        {
+            var remaining = (start + TimeSpan.FromMinutes(1) - now).TotalSeconds;
+            return (false, Math.Max(1, (int)Math.Ceiling(remaining)));
+        }
+        await connection.ExecuteAsync(new CommandDefinition("""
+            UPDATE attachment_rate_windows SET count=count+1 WHERE owner_id=@Owner
+            """, new { Owner = ownerId },
+            db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+        return (true, 0);
     }
 
     private async Task<(long NoteCount, long OwnerBytes)> UsageAsync(Guid ownerId, Guid noteId,

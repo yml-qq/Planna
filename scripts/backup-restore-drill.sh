@@ -39,7 +39,7 @@ echo "restoring into $RESTORE_DB"
 run_pg pg_restore -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
   --no-owner --no-privileges --exit-on-error "$DUMP"
 
-for table in users tasks task_lists habits habit_logs notes goals workday_overrides; do
+for table in users tasks task_lists habits habit_logs notes goals workday_overrides attachment_rate_windows; do
   source_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
     -Atc "SELECT count(*) FROM $table")"
   restore_count="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \

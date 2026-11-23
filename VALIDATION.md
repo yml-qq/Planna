@@ -1011,3 +1011,10 @@
 - 前端 101 项测试与 build 通过（未新增组件测试）。
 - [Server integration 45192312929](https://github.com/yml-qq/Planna/actions/runs/45192312929) 与 [Desktop core 45192312915](https://github.com/yml-qq/Planna/actions/runs/45192312915) 均 **success**。
 - 年范围滚动；焦点只持久化日期；切换月触发网络加载；未做完整 ARIA grid/屏幕阅读器。
+
+## NOTE-05c-b-b-b-b-b-b-a DB 限流检查（2026-11-22）
+
+- 新迁移 `attachment_rate_windows`；限流改为事务内 DB 行（advisory lock 串行化），跨实例共享窗口。
+- 冒烟：第一个实例 2 次 201，第二个独立实例第 3 次 429（Retry-After 1..60），DB 活跃 2 条。
+- 备份演练表清单加入该表；契约 36 项；本地 build/format 通过。
+- 固定窗口；事务失败回滚计数；每 owner 一行不清理；未做滑动窗口/客户端退避。

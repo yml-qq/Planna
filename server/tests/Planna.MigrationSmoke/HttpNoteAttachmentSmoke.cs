@@ -203,14 +203,19 @@ internal static class HttpNoteAttachmentSmoke
             using var rateClient = rateFactory.CreateClient();
             var rateToken = rateFactory.Services.GetRequiredService<IAccessTokenIssuer>()
                 .Issue(rateOwner, rateSession);
-            var first = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
-                "a.txt", "text/plain", "a");
-            var second = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
-                "b.txt", "text/plain", "b");
-            var third = await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+            Check(await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+                "a.txt", "text/plain", "a"), HttpStatusCode.Created);
+            Check(await Upload(rateClient, rateToken, rateNote, Guid.NewGuid(),
+                "b.txt", "text/plain", "b"), HttpStatusCode.Created);
+        }
+        // A second host instance must see the same DB-backed window.
+        await using (var secondRateFactory = new AttachmentFactory())
+        {
+            using var secondClient = secondRateFactory.CreateClient();
+            var secondToken = secondRateFactory.Services.GetRequiredService<IAccessTokenIssuer>()
+                .Issue(rateOwner, rateSession);
+            var third = await Upload(secondClient, secondToken, rateNote, Guid.NewGuid(),
                 "c.txt", "text/plain", "c");
-            Check(first, HttpStatusCode.Created);
-            Check(second, HttpStatusCode.Created);
             Check(third, HttpStatusCode.TooManyRequests);
             if (!third.Headers.TryGetValues("Retry-After", out var retryAfter) ||
                 !int.TryParse(retryAfter.FirstOrDefault(), out var retrySeconds) ||
