@@ -1057,4 +1057,5 @@
 
 - drill 增加 columns/indexes/constraints 定义文本的 md5 对比（源 vs 恢复），不一致即失败。
 - 不覆盖视图/函数/触发器/权限/序列值；定义文本依赖 PG18；仅隔离 CI 数据库。
-- 结果以 CI drill 为准。
+- 首次 CI（`8cd7797`）失败：`contype` 为 `"char"`，`||` 无唯一候选；改为 `contype::text`（`e25576e`）。
+- [Server integration 45227703879](https://github.com/yml-qq/Planna/actions/runs/45227703879)（含 drill）与 [Desktop core 45227703668](https://github.com/yml-qq/Planna/actions/runs/45227703668) 均 **success**。
