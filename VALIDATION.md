@@ -1019,3 +1019,10 @@
 - 备份演练表清单加入该表；契约 36 项；本地 build/format 通过。
 - [Server integration 45196615252](https://github.com/yml-qq/Planna/actions/runs/45196615252) 与 [Desktop core 45196615433](https://github.com/yml-qq/Planna/actions/runs/45196615433) 均 **success**（跨实例冒烟与备份演练通过）。
 - 固定窗口；事务失败回滚计数；每 owner 一行不清理；未做滑动窗口/客户端退避。
+
+## FOCUS-09b-e-b-a JSON 导出检查（2026-11-22）
+
+- 新增 `focusStatsJson`（schema_version + FocusStats）与 CSV/JSON 文件名；UI“导出 JSON”写下载目录。
+- Tauri 文件名净化接受 .csv/.json，另存为对话框增加 JSON 过滤器；Rust 3 项单测通过。
+- 前端 102 项测试、build 通过。
+- 无独立 JSON Schema；同日覆盖；无 PDF/Excel/时间戳防覆盖。

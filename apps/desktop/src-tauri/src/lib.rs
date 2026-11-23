@@ -1144,7 +1144,8 @@ fn sanitize_report_filename(input: &str) -> String {
     if cleaned.is_empty() {
         cleaned.push_str("focus-report");
     }
-    if !cleaned.to_ascii_lowercase().ends_with(".csv") {
+    let lower = cleaned.to_ascii_lowercase();
+    if !lower.ends_with(".csv") && !lower.ends_with(".json") {
         cleaned.push_str(".csv");
     }
     if cleaned.len() > 120 {
@@ -1181,6 +1182,7 @@ fn focus_report_save_as(
         .file()
         .set_file_name(sanitize_report_filename(&filename))
         .add_filter("CSV", &["csv"])
+        .add_filter("JSON", &["json"])
         .blocking_save_file();
     let Some(path) = selected else {
         return Ok(None);

@@ -18,6 +18,10 @@ export function focusStatsSummary(stats: FocusStats): string {
   )
 }
 
-export function focusReportFilename(stats: FocusStats): string {
-  return `planna-focus-${stats.to}.csv`
+export function focusReportFilename(stats: FocusStats, extension: 'csv' | 'json' = 'csv'): string {
+  return `planna-focus-${stats.to}.${extension}`
+}
+
+export function focusStatsJson(stats: FocusStats): string {
+  return JSON.stringify({ schema_version: 'planna-focus-report-v1', ...stats }, null, 2)
 }

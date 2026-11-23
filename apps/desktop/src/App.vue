@@ -15,7 +15,7 @@ import {
   moveFocusIndex,
   tabbableDate
 } from './calendar'
-import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
+import { focusReportFilename, focusStatsCsv, focusStatsJson, focusStatsSummary } from './report'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { addDays, createHabitStore, localDate } from './habits'
 import { createNotifier } from './notifier'
@@ -715,6 +715,17 @@ async function exportFocusReport(): Promise<void> {
   reportStatus.value = path ? '已保存：' + path : '保存失败（' + (focus.error.value ?? 'UNKNOWN') + '）'
 }
 
+async function exportFocusJson(): Promise<void> {
+  reportStatus.value = ''
+  const stats = focus.stats.value
+  if (!stats) return
+  const path = await focus.saveReport(
+    focusReportFilename(stats, 'json'),
+    focusStatsJson(stats)
+  )
+  reportStatus.value = path ? '已保存：' + path : '保存失败（' + (focus.error.value ?? 'UNKNOWN') + '）'
+}
+
 async function saveFocusReportAs(): Promise<void> {
   reportStatus.value = ''
   const stats = focus.stats.value
@@ -1270,6 +1281,14 @@ onMounted(async () => {
             @click="saveFocusReportAs"
           >
             另存为…
+          </button>
+          <button
+            class="button button--ghost"
+            type="button"
+            :disabled="!focus.stats.value"
+            @click="exportFocusJson"
+          >
+            导出 JSON
           </button>
           <span v-if="reportStatus" class="status">{{ reportStatus }}</span>
         </div>

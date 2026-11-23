@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FocusStats } from './api'
-import { focusReportFilename, focusStatsCsv, focusStatsSummary } from './report'
+import { focusReportFilename, focusStatsCsv, focusStatsJson, focusStatsSummary } from './report'
 
 function stats(): FocusStats {
   return {
@@ -35,8 +35,16 @@ describe('focus report', () => {
     )
   })
 
-  it('builds a dated CSV filename', () => {
+  it('builds dated CSV/JSON filenames', () => {
     expect(focusReportFilename(stats())).toBe('planna-focus-2026-11-22.csv')
+    expect(focusReportFilename(stats(), 'json')).toBe('planna-focus-2026-11-22.json')
+  })
+
+  it('serializes a versioned JSON report', () => {
+    const parsed = JSON.parse(focusStatsJson(stats())) as Record<string, unknown>
+    expect(parsed.schema_version).toBe('planna-focus-report-v1')
+    expect(parsed.actualSeconds).toBe(3720)
+    expect(parsed.days).toHaveLength(2)
   })
 
   it('keeps an empty export valid', () => {
