@@ -168,6 +168,7 @@
 | 155 | `docs/155-FOCUS-09b-e-b-a.md` | JSON 报表导出 |
 | 156 | `docs/156-FOCUS-09b-e-b-b-a.md` | JSON 报表 Schema 与示例校验 |
 | 157 | `docs/157-NOTE-05c-b-b-b-b-b-b-b-a.md` | 附件上传客户端退避提示 |
+| 158 | `docs/158-REL-02-a-b.md` | 备份恢复内容校验和 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

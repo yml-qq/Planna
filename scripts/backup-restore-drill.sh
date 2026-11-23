@@ -2,8 +2,8 @@
 # Backup/restore drill for an isolated PostgreSQL 18 database.
 #
 # It dumps the source database with pg_dump, restores into a separate restore
-# database, and compares row counts for core tables. Intended for CI/isolated
-# environments only; never point it at production.
+# database, and compares row counts plus content checksums for core tables.
+# Intended for CI/isolated environments only; never point it at production.
 set -euo pipefail
 
 PGHOST="${PGHOST:-127.0.0.1}"
@@ -51,4 +51,17 @@ for table in users tasks task_lists habits habit_logs notes goals workday_overri
   echo "ok $table rows=$source_count"
 done
 
-echo "backup/restore drill passed"
+for table in users tasks task_lists habits habit_logs notes goals workday_overrides; do
+  checksum_sql="SELECT md5(coalesce(string_agg(t::text, ',' ORDER BY id), '')) FROM $table t"
+  source_sum="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+    -Atc "$checksum_sql")"
+  restore_sum="$(run_pg psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$RESTORE_DB" \
+    -Atc "$checksum_sql")"
+  if [[ "$source_sum" != "$restore_sum" ]]; then
+    echo "content checksum mismatch for $table" >&2
+    exit 1
+  fi
+  echo "ok $table checksum=$source_sum"
+done
+
+echo "backup/restore drill passed (row counts + content checksums)"

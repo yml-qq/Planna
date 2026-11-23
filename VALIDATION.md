@@ -1040,3 +1040,9 @@
 - 上传/下载/删除失败统一提示；前端新增 1 项测试，合计 103 项；build/shell clippy 通过。
 - [Server integration 45210236777](https://github.com/yml-qq/Planna/actions/runs/45210236777) 与 [Desktop core 45210236861](https://github.com/yml-qq/Planna/actions/runs/45210236861) 均 **success**。
 - 仅提示，无自动重试/倒计时；错误仍为字符串；下载/删除不限流。
+
+## REL-02-a-b 备份校验和检查（2026-11-22）
+
+- drill 在行数对比后对 8 张核心表做 `md5(string_agg(t::text ... ORDER BY id))` 校验和对比（源库 vs 恢复库）。
+- 仅隔离 CI 数据库；attachment_rate_windows 仍只对比行数；不校验索引/序列/约束。
+- 脚本静态检查通过；实际结果以 CI drill 为准。
