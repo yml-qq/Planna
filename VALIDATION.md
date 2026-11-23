@@ -1002,4 +1002,5 @@
 
 - 月末右/月初左跨月并聚焦边界；PageUp/PageDown 切月聚焦上月末/下月首；Home/End 当月首尾。
 - arrowAction 纯函数与边界测试，前端合计 101 项；build 通过。
+- [Server integration 45186502190](https://github.com/yml-qq/Planna/actions/runs/45186502190) 与 [Desktop core 45186502492](https://github.com/yml-qq/Planna/actions/runs/45186502492) 均 **success**。
 - 未实现完整 ARIA grid/屏幕阅读器/年跳转/焦点持久化。
