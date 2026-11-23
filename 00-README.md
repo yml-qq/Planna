@@ -163,6 +163,7 @@
 | 150 | `docs/150-UX-06-b-b.md` | 日历 roving tabindex 与 Home/End |
 | 151 | `docs/151-NOTE-05c-b-b-b-b-b-a.md` | 动态 Retry-After |
 | 152 | `docs/152-UX-06-b-c.md` | 日历跨月方向键与 PageUp/PageDown |
+| 153 | `docs/153-UX-06-b-d-a.md` | 日历年/月跳转与焦点持久化 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

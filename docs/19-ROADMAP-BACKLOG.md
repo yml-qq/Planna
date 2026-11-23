@@ -64,7 +64,8 @@
 | E09 | UX-06-b-a | 日历键盘导航与 ARIA 语义（已交付，见 `148-UX-06-b-a.md`） | UX-06-a | ui tests |
 | E09 | UX-06-b-b | 日历 roving tabindex 与 Home/End（已交付，见 `150-UX-06-b-b.md`） | UX-06-b-a | a11y tests |
 | E09 | UX-06-b-c | 日历跨月方向键与 PageUp/PageDown（已交付，见 `152-UX-06-b-c.md`） | UX-06-b-b | a11y tests |
-| E09 | UX-06-b-d | 完整 ARIA grid、年/月跳转、焦点持久化与屏幕阅读器验证 | UX-06-b-c | accessibility tests |
+| E09 | UX-06-b-d-a | 日历年/月跳转与焦点持久化（已交付，见 `153-UX-06-b-d-a.md`） | UX-06-b-c | ui tests |
+| E09 | UX-06-b-d-b | 完整 ARIA grid、月份 select 可访问性与屏幕阅读器验证 | UX-06-b-d-a | accessibility tests |
 | E10 | HAB-01A | 习惯 CRUD（服务端，已交付，见 `68-HAB-01A.md`） | E04 | repeat tests |
 | E10 | HAB-01B | 打卡日志：同日唯一、补签与窗口查询（已交付，见 `69-HAB-01B.md`） | HAB-01A | repeat tests |
 | E10 | HAB-01C | 连续天数规则与 streak 查询（已交付，见 `70-HAB-01C.md`） | HAB-01B | repeat tests |

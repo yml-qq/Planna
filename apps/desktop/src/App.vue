@@ -149,7 +149,7 @@ const calendarImportOpen = ref(false)
 const calendarImportText = ref('')
 const calendarImportStatus = ref('')
 const calendarGrid = ref<HTMLElement | null>(null)
-const focusedCalendarDate = ref<string | null>(null)
+const focusedCalendarDate = ref<string | null>(readStorage('planna.calendarFocus'))
 const attachmentMessage = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
@@ -420,6 +420,17 @@ async function focusCalendarDay(date: string, delta: number): Promise<void> {
   const target = buttons[moveFocusIndex(index, delta, buttons.length)]
   if (target?.dataset.date) focusedCalendarDate.value = target.dataset.date
   target?.focus()
+}
+
+const calendarYears = computed(() => {
+  const base = calendar.year.value
+  return Array.from({ length: 11 }, (_, index) => base - 5 + index)
+})
+
+async function jumpCalendar(): Promise<void> {
+  await calendar.load()
+  await nextTick()
+  focusedCalendarDate.value = calendar.days.value[0]?.date ?? null
 }
 
 async function changeCalendarMonth(delta: number): Promise<void> {
@@ -798,6 +809,10 @@ watch(
   (value) => writeStorage('planna.habitReminders', JSON.stringify(value)),
   { deep: true }
 )
+
+watch(focusedCalendarDate, (value) => {
+  writeStorage('planna.calendarFocus', value ?? '')
+})
 
 watch(theme, (value) => {
   writeStorage('planna.theme', value)
@@ -1290,7 +1305,12 @@ onMounted(async () => {
         <h2 id="calendar-title" class="card__title">工作日历</h2>
         <div class="composer__row">
           <button class="button button--ghost" type="button" @click="calendar.previousMonth()">上一月</button>
-          <span class="habits__meta">{{ calendar.year.value }} 年 {{ calendar.month.value }} 月</span>
+          <select v-model.number="calendar.year.value" class="input input--narrow" aria-label="年份" @change="jumpCalendar">
+            <option v-for="year in calendarYears" :key="year" :value="year">{{ year }} 年</option>
+          </select>
+          <select v-model.number="calendar.month.value" class="input input--narrow" aria-label="月份" @change="jumpCalendar">
+            <option v-for="month in 12" :key="month" :value="month">{{ month }} 月</option>
+          </select>
           <button class="button button--ghost" type="button" @click="calendar.nextMonth()">下一月</button>
           <button
             class="button button--ghost"

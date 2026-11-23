@@ -1004,3 +1004,9 @@
 - arrowAction 纯函数与边界测试，前端合计 101 项；build 通过。
 - [Server integration 45186502190](https://github.com/yml-qq/Planna/actions/runs/45186502190) 与 [Desktop core 45186502492](https://github.com/yml-qq/Planna/actions/runs/45186502492) 均 **success**。
 - 未实现完整 ARIA grid/屏幕阅读器/年跳转/焦点持久化。
+
+## UX-06-b-d-a 日历年/月跳转检查（2026-11-22）
+
+- 日历新增年（±5）/月下拉，选择后重载并聚焦当月首日；焦点日期持久化到 localStorage。
+- 前端 101 项测试与 build 通过（未新增组件测试）。
+- 年范围滚动；焦点只持久化日期；切换月触发网络加载；未做完整 ARIA grid/屏幕阅读器。
