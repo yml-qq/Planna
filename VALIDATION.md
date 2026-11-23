@@ -995,4 +995,5 @@
 
 - 限流 429 的 Retry-After 改为固定窗口剩余秒数（1..60 向上取整）；服务结果携带 RetryAfterSeconds，端点写入 header。
 - 冒烟校验 Retry-After 为 1..60 整数；契约/OpenAPI 描述更新（36 项）。
+- [Server integration 45182825178](https://github.com/yml-qq/Planna/actions/runs/45182825178) 与 [Desktop core 45182825307](https://github.com/yml-qq/Planna/actions/runs/45182825307) 均 **success**。
 - 仍为固定窗口/进程内；多实例各自计算；客户端未消费。

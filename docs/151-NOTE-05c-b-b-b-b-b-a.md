@@ -1,6 +1,6 @@
 # 151｜NOTE-05c-b-b-b-b-b-a：动态 Retry-After
 
-状态：代码已实现；本地 build/format/契约 **36 项**通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **36 项**通过；[Server integration 45182825178](https://github.com/yml-qq/Planna/actions/runs/45182825178) 与 [Desktop core 45182825307](https://github.com/yml-qq/Planna/actions/runs/45182825307) 均 **success**。
 
 ## 范围与验收
 
