@@ -1051,4 +1051,4 @@
 
 - drill 增加 columns/indexes/constraints/sequences 的源/恢复计数对比，不一致即失败。
 - 只比数量，不比定义；不含视图/函数/触发器/权限/序列值；仅隔离 CI 数据库。
-- 结果以 CI drill 为准。
+- [Server integration 45218413270](https://github.com/yml-qq/Planna/actions/runs/45218413270)（含 drill）与 [Desktop core 45218413176](https://github.com/yml-qq/Planna/actions/runs/45218413176) 均 **success**，列/索引/约束/序列计数一致。
