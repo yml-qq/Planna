@@ -108,6 +108,6 @@ compare_definition_hash "columns" \
 compare_definition_hash "indexes" \
   "SELECT indexname || ':' || indexdef AS definition FROM pg_indexes WHERE schemaname='public'"
 compare_definition_hash "constraints" \
-  "SELECT contype || ':' || conname || ':' || pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE connamespace='public'::regnamespace"
+  "SELECT contype::text || ':' || conname || ':' || pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE connamespace='public'::regnamespace"
 
 echo "backup/restore drill passed (row counts + content checksums + object counts + definition hashes)"
