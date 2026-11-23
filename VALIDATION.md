@@ -1009,4 +1009,5 @@
 
 - 日历新增年（±5）/月下拉，选择后重载并聚焦当月首日；焦点日期持久化到 localStorage。
 - 前端 101 项测试与 build 通过（未新增组件测试）。
+- [Server integration 45192312929](https://github.com/yml-qq/Planna/actions/runs/45192312929) 与 [Desktop core 45192312915](https://github.com/yml-qq/Planna/actions/runs/45192312915) 均 **success**。
 - 年范围滚动；焦点只持久化日期；切换月触发网络加载；未做完整 ARIA grid/屏幕阅读器。
