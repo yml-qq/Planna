@@ -212,6 +212,9 @@ internal static class HttpNoteAttachmentSmoke
             Check(first, HttpStatusCode.Created);
             Check(second, HttpStatusCode.Created);
             Check(third, HttpStatusCode.TooManyRequests);
+            if (!third.Headers.TryGetValues("Retry-After", out var retryAfter) ||
+                retryAfter.FirstOrDefault() != "60")
+                throw new InvalidOperationException("Attachment rate limit Retry-After header missing.");
             if (await Scalar(db, "SELECT count(*) FROM note_attachments WHERE note_id=$1 AND deleted_at IS NULL",
                     rateNote) != 2)
                 throw new InvalidOperationException("Attachment rate limit did not stop the third upload.");

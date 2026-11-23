@@ -1582,7 +1582,15 @@ paths:
         "404": {$ref: '#/components/responses/ErrorResponse'}
         "413": {$ref: '#/components/responses/ErrorResponse'}
         "415": {$ref: '#/components/responses/ErrorResponse'}
-        "429": {$ref: '#/components/responses/ErrorResponse'}
+        "429":
+          description: Attachment upload rate limited; retry after the Retry-After header
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying
+              schema: {type: string, example: "60"}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorBody'}
     get:
       tags: [Notes]
       operationId: listNoteAttachments

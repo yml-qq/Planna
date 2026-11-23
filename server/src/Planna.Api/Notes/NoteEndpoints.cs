@@ -87,7 +87,7 @@ public static class NoteEndpoints
             NoteAttachmentStatus.NotFound => Error(http, 404, result.Code!),
             NoteAttachmentStatus.TooLarge => Error(http, 413, result.Code!),
             NoteAttachmentStatus.UnsupportedType => Error(http, 415, result.Code!),
-            NoteAttachmentStatus.RateLimited => Error(http, 429, result.Code!),
+            NoteAttachmentStatus.RateLimited => RateLimited(http, result.Code!),
             NoteAttachmentStatus.Invalid => Error(http, 422, result.Code!),
             _ => Error(http, 500, "INTERNAL_ERROR")
         };
@@ -210,6 +210,12 @@ public static class NoteEndpoints
         return raw.StartsWith('v') &&
                long.TryParse(raw[1..], NumberStyles.None, CultureInfo.InvariantCulture, out version) &&
                version >= 1;
+    }
+
+    private static IResult RateLimited(HttpContext http, string code)
+    {
+        http.Response.Headers.RetryAfter = "60";
+        return Error(http, 429, code);
     }
 
     private static IResult Error(HttpContext http, int status, string code, object? details = null)

@@ -976,3 +976,9 @@
 - 新增 moveFocusIndex 边界测试，前端合计 99 项；build 通过。
 - 全部日期按钮仍在 Tab 序列（无 roving tabindex）；未做 Home/End/跨月/屏幕阅读器验证。
 - [Server integration 45083782335](https://github.com/yml-qq/Planna/actions/runs/45083782335) 与 [Desktop core 45083782352](https://github.com/yml-qq/Planna/actions/runs/45083782352) 均 **success**。
+
+## NOTE-05c-b-b-b-b-a Retry-After 检查（2026-11-22）
+
+- 附件上传 429 增加 `Retry-After: 60`；OpenAPI 上传 429 内联并声明 header，契约断言（36 项）。
+- 冒烟校验第三次上传 429 的 Retry-After 为 "60"。
+- 固定 60 秒（窗口长度），非动态剩余时间；仅附件上传；客户端暂未展示。
