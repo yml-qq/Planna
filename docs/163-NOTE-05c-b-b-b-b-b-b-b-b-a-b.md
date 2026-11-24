@@ -1,6 +1,6 @@
 # 163｜NOTE-05c-b-b-b-b-b-b-b-b-a-b：预览 Blob URL 生命周期清理
 
-状态：代码已实现；本地前端 `pnpm test`（104 项）与 `pnpm build` 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（104 项）与 `pnpm build` 通过；[Server integration 45405268245](https://github.com/yml-qq/Planna/actions/runs/45405268245) 与 [Desktop core 45405268617](https://github.com/yml-qq/Planna/actions/runs/45405268617) 均 **success**。
 
 ## 范围与验收
 
