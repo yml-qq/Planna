@@ -1300,19 +1300,18 @@ fn content_matches(content_type: &str, bytes: &[u8]) -> bool {
     }
 }
 
-#[tauri::command]
-fn note_attachment_bytes(
-    base_url: String,
-    access_token: String,
-    note_id: String,
-    attachment_id: String,
-) -> Result<Vec<u8>, String> {
+fn fetch_attachment(
+    base_url: &str,
+    access_token: &str,
+    note_id: &str,
+    attachment_id: &str,
+) -> Result<(String, Vec<u8>), String> {
     let response = http_client()
         .get(format!(
             "{}/notes/{note_id}/attachments/{attachment_id}",
-            base(&base_url)
+            base(base_url)
         ))
-        .bearer_auth(&access_token)
+        .bearer_auth(access_token)
         .send()
         .map_err(|error| error.to_string())?;
     if !response.status().is_success() {
@@ -1338,7 +1337,65 @@ fn note_attachment_bytes(
     if !content_matches(&content_type, &bytes) {
         return Err("415:ATTACHMENT_CONTENT_MISMATCH".into());
     }
-    Ok(bytes.to_vec())
+    Ok((content_type, bytes.to_vec()))
+}
+
+#[tauri::command]
+fn note_attachment_bytes(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    attachment_id: String,
+) -> Result<Vec<u8>, String> {
+    let (_, bytes) = fetch_attachment(&base_url, &access_token, &note_id, &attachment_id)?;
+    Ok(bytes)
+}
+
+#[tauri::command]
+fn note_attachment_open(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    attachment_id: String,
+) -> Result<String, String> {
+    let (content_type, bytes) =
+        fetch_attachment(&base_url, &access_token, &note_id, &attachment_id)?;
+    let extension = match content_type.as_str() {
+        "image/png" => "png",
+        "image/jpeg" => "jpg",
+        "application/pdf" => "pdf",
+        "text/markdown" => "md",
+        _ => "txt",
+    };
+    let safe_id: String = attachment_id
+        .chars()
+        .filter(|value| value.is_ascii_alphanumeric() || *value == '-')
+        .collect();
+    let directory = std::env::temp_dir().join("planna-attachments");
+    std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    let path = directory.join(format!("{safe_id}.{extension}"));
+    std::fs::write(&path, bytes).map_err(|error| error.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    let mut command = {
+        let mut command = std::process::Command::new("cmd");
+        command.args(["/C", "start", ""]).arg(&path);
+        command
+    };
+    #[cfg(target_os = "macos")]
+    let mut command = {
+        let mut command = std::process::Command::new("open");
+        command.arg(&path);
+        command
+    };
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut command = {
+        let mut command = std::process::Command::new("xdg-open");
+        command.arg(&path);
+        command
+    };
+    command.spawn().map_err(|error| error.to_string())?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
@@ -1816,6 +1873,7 @@ pub fn run() {
             note_attachment_delete,
             note_attachment_pick,
             note_attachment_bytes,
+            note_attachment_open,
             workday_days,
             workday_override_set,
             workday_override_clear,

@@ -537,6 +537,25 @@ async function uploadNoteAttachment(noteId: string): Promise<void> {
   }
 }
 
+async function openNoteAttachment(noteId: string, attachmentId: string): Promise<void> {
+  const token = session.token.value
+  if (!token) return
+  try {
+    const path = await bridge.noteAttachmentOpen(baseUrl.value, token, noteId, attachmentId)
+    attachmentMessage.value = {
+      ...attachmentMessage.value,
+      [noteId]: '已用系统应用打开：' + path
+    }
+  } catch (failure) {
+    attachmentMessage.value = {
+      ...attachmentMessage.value,
+      [noteId]: '打开失败：' + attachmentErrorMessage(
+        failure instanceof Error ? failure.message.split(':').slice(1).join(':') : null
+      )
+    }
+  }
+}
+
 async function downloadNoteAttachment(noteId: string, attachmentId: string): Promise<void> {
   const path = await notes.downloadAttachment(noteId, attachmentId)
   attachmentMessage.value = {
@@ -1269,6 +1288,14 @@ onMounted(async () => {
                     @click="previewNoteAttachment(note.id, attachment)"
                   >
                     预览
+                  </button>
+                  <button
+                    v-if="isPdfAttachment(attachment.contentType)"
+                    class="button button--ghost"
+                    type="button"
+                    @click="openNoteAttachment(note.id, attachment.id)"
+                  >
+                    外部打开
                   </button>
                   <img
                     v-if="attachmentPreviewUrls[attachment.id] && !isPdfAttachment(attachment.contentType)"

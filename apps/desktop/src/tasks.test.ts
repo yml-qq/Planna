@@ -152,6 +152,7 @@ describe('task store', () => {
       },
       noteAttachmentList: async () => [],
       noteAttachmentBytes: async () => [],
+      noteAttachmentOpen: async () => 'memory-preview.tmp',
       noteAttachmentUpload: async () => {
         throw new Error('offline')
       },

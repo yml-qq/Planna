@@ -1114,3 +1114,9 @@
 - 冒烟新增 fake.png + "hello" → 415；OpenAPI 描述更新；契约 37 项、build/format 通过。
 - [Server integration 45430217114](https://github.com/yml-qq/Planna/actions/runs/45430217114) 与 [Desktop core 45430217137](https://github.com/yml-qq/Planna/actions/runs/45430217137) 均 **success**（fake.png 415 冒烟通过）。
 - 仅魔数/UTF-8，不替代病毒扫描；上传整块入内存；类型仍由客户端声明。
+
+## NOTE-05c-server-content-check-b-a 外部打开检查（2026-11-22）
+
+- Tauri 复用 fetch/签名校验后写临时文件（安全附件 ID + 扩展名），Windows cmd start/macOS open/Linux xdg-open；PDF UI 新增外部打开。
+- 前端 105 项测试、build；Rust check/clippy/fmt 通过。
+- 临时文件不清理；外部应用不受控；只对 PDF；spawn 不等待；无设备验证。
