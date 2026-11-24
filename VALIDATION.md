@@ -1133,4 +1133,5 @@
 
 - 预览缓存按附件 id 维护顺序，上限 20；超限淘汰最旧并 revoke URL/文本；删除/卸载移出。
 - 前端新增 1 项测试，合计 106 项；build 通过。
+- [Server integration 45442887728](https://github.com/yml-qq/Planna/actions/runs/45442887728) 与 [Desktop core 45442887355](https://github.com/yml-qq/Planna/actions/runs/45442887355) 均 **success**。
 - 上限固定不可配；仅内存；命中不提升顺序；无字节限额/手动刷新。
