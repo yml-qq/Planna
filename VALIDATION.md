@@ -1112,4 +1112,5 @@
 
 - 上传读取字节后校验 PNG/JPEG/PDF 魔数与文本 UTF-8；不匹配 415 ATTACHMENT_CONTENT_MISMATCH；实际长度复核/入库。
 - 冒烟新增 fake.png + "hello" → 415；OpenAPI 描述更新；契约 37 项、build/format 通过。
+- [Server integration 45430217114](https://github.com/yml-qq/Planna/actions/runs/45430217114) 与 [Desktop core 45430217137](https://github.com/yml-qq/Planna/actions/runs/45430217137) 均 **success**（fake.png 415 冒烟通过）。
 - 仅魔数/UTF-8，不替代病毒扫描；上传整块入内存；类型仍由客户端声明。

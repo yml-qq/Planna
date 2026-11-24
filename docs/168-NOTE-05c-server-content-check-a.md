@@ -1,6 +1,6 @@
 # 168｜NOTE-05c-server-content-check-a：服务端上传内容签名校验
 
-状态：代码已实现；本地 build/format/契约 **37 项**/OpenAPI 校验通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地 build/format/契约 **37 项**/OpenAPI 校验通过；[Server integration 45430217114](https://github.com/yml-qq/Planna/actions/runs/45430217114) 与 [Desktop core 45430217137](https://github.com/yml-qq/Planna/actions/runs/45430217137) 均 **success**（fake.png 415 冒烟通过）。
 
 ## 范围与验收
 
