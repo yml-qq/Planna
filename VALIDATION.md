@@ -1119,4 +1119,5 @@
 
 - Tauri 复用 fetch/签名校验后写临时文件（安全附件 ID + 扩展名），Windows cmd start/macOS open/Linux xdg-open；PDF UI 新增外部打开。
 - 前端 105 项测试、build；Rust check/clippy/fmt 通过。
+- [Server integration 45434557198](https://github.com/yml-qq/Planna/actions/runs/45434557198) 与 [Desktop core 45434557092](https://github.com/yml-qq/Planna/actions/runs/45434557092) 均 **success**。
 - 临时文件不清理；外部应用不受控；只对 PDF；spawn 不等待；无设备验证。
