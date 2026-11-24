@@ -176,6 +176,7 @@
 | 163 | `docs/163-NOTE-05c-b-b-b-b-b-b-b-b-a-b.md` | 预览 Blob URL 生命周期清理 |
 | 164 | `docs/164-NOTE-05c-b-b-b-b-b-b-b-b-b-b-a.md` | 文本/Markdown 附件预览 |
 | 165 | `docs/165-NOTE-05c-b-b-b-b-b-b-b-b-b-b-b-a.md` | PDF 附件预览 |
+| 166 | `docs/166-NOTE-05c-429-countdown.md` | 上传 429 倒计时禁用 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

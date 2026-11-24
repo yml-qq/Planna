@@ -13,7 +13,8 @@ import {
   createNoteStore,
   isPdfAttachment,
   isTextAttachment,
-  notesForTask
+  notesForTask,
+  retryAfterSeconds
 } from './notes'
 import {
   arrowAction,
@@ -160,6 +161,7 @@ const focusedCalendarDate = ref<string | null>(readStorage('planna.calendarFocus
 const attachmentMessage = ref<Record<string, string>>({})
 const attachmentPreviewUrls = ref<Record<string, string>>({})
 const attachmentPreviewTexts = ref<Record<string, string>>({})
+const attachmentRetryUntil = ref<Record<string, number>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -512,10 +514,23 @@ async function toggleNoteAttachments(noteId: string): Promise<void> {
   if (next) await notes.loadAttachments(noteId)
 }
 
+function attachmentRetryRemaining(noteId: string): number {
+  const until = attachmentRetryUntil.value[noteId] ?? 0
+  return Math.max(0, Math.ceil((until - nowTick.value) / 1000))
+}
+
 async function uploadNoteAttachment(noteId: string): Promise<void> {
+  if (attachmentRetryRemaining(noteId) > 0) return
   const path = await notes.pickAttachment()
   if (!path) return
   const saved = await notes.uploadAttachment(noteId, path)
+  const retry = retryAfterSeconds(notes.attachmentError.value)
+  if (!saved && retry > 0) {
+    attachmentRetryUntil.value = {
+      ...attachmentRetryUntil.value,
+      [noteId]: Date.now() + retry * 1000
+    }
+  }
   attachmentMessage.value = {
     ...attachmentMessage.value,
     [noteId]: saved ? '已上传' : '上传失败：' + attachmentErrorMessage(notes.attachmentError.value)
@@ -1226,9 +1241,12 @@ onMounted(async () => {
                 v-if="attachmentsOpen[note.id]"
                 class="button button--ghost"
                 type="button"
+                :disabled="attachmentRetryRemaining(note.id) > 0"
                 @click="uploadNoteAttachment(note.id)"
               >
-                上传附件
+                {{ attachmentRetryRemaining(note.id) > 0
+                  ? `请 ${attachmentRetryRemaining(note.id)} 秒后重试`
+                  : '上传附件' }}
               </button>
             </div>
             <div v-if="attachmentsOpen[note.id]" class="attachments">

@@ -6,7 +6,8 @@ import {
   createNoteStore,
   isPdfAttachment,
   isTextAttachment,
-  notesForTask
+  notesForTask,
+  retryAfterSeconds
 } from './notes'
 
 function createStore(token = 'token') {
@@ -143,6 +144,16 @@ describe('note attachment store', () => {
     expect(await store.downloadAttachment('note-1', items[0]!.id)).toBe('downloads/' + items[0]!.id)
     expect(await store.deleteAttachment('note-1', items[0]!.id)).toBe(true)
     expect(store.attachments.value['note-1']).toEqual([])
+  })
+})
+
+describe('attachment retry countdown', () => {
+  it('parses rate-limit seconds with a safe fallback', () => {
+    expect(retryAfterSeconds('ATTACHMENT_RATE_LIMITED:42')).toBe(42)
+    expect(retryAfterSeconds('ATTACHMENT_RATE_LIMITED')).toBe(60)
+    expect(retryAfterSeconds('ATTACHMENT_RATE_LIMITED:0')).toBe(60)
+    expect(retryAfterSeconds('SOMETHING_ELSE:10')).toBe(0)
+    expect(retryAfterSeconds(null)).toBe(0)
   })
 })
 

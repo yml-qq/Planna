@@ -17,6 +17,14 @@ export function isTextAttachment(contentType: string): boolean {
   return contentType === 'text/plain' || contentType === 'text/markdown'
 }
 
+export function retryAfterSeconds(code: string | null): number {
+  if (!code) return 0
+  const [base, seconds] = code.split(':')
+  if (base !== 'ATTACHMENT_RATE_LIMITED') return 0
+  const parsed = Number(seconds)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(Math.ceil(parsed), 3600) : 60
+}
+
 export function attachmentErrorMessage(code: string | null): string {
   if (!code) return ''
   const [base, seconds] = code.split(':')

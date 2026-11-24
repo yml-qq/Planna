@@ -1093,3 +1093,9 @@
 - 前端 104 项测试、build；Rust check/clippy/fmt 通过。
 - [Server integration 45413640500](https://github.com/yml-qq/Planna/actions/runs/45413640500) 与 [Desktop core 45413640205](https://github.com/yml-qq/Planna/actions/runs/45413640205) 均 **success**。
 - 依赖 WebView PDF 支持（WebKitGTK 可能不显示）；无降级/外开；无 UI/设备验证。
+
+## NOTE-05c-429-countdown 检查（2026-11-22）
+
+- 解析 Retry-After 秒数（非法回退 60、上限 3600）；上传 429 后按钮禁用并显示倒计时，归零恢复；入口二次防重复。
+- 前端新增 1 项测试，合计 105 项；build 通过。
+- 不自动重试；倒计时仅内存/按 noteId；依赖客户端时钟；无 DOM 测试。
