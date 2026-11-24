@@ -451,6 +451,15 @@ async function importCalendarOverrides(): Promise<void> {
   if (result.imported > 0) calendarImportText.value = ''
 }
 
+function revokeAttachmentPreview(attachmentId: string): void {
+  const url = attachmentPreviewUrls.value[attachmentId]
+  if (!url) return
+  URL.revokeObjectURL(url)
+  const next = { ...attachmentPreviewUrls.value }
+  delete next[attachmentId]
+  attachmentPreviewUrls.value = next
+}
+
 async function previewNoteAttachment(
   noteId: string,
   attachment: { id: string; contentType: string }
@@ -464,8 +473,7 @@ async function previewNoteAttachment(
       noteId,
       attachment.id
     )
-    const previous = attachmentPreviewUrls.value[attachment.id]
-    if (previous) URL.revokeObjectURL(previous)
+    revokeAttachmentPreview(attachment.id)
     const url = URL.createObjectURL(
       new Blob([new Uint8Array(bytes)], { type: attachment.contentType })
     )
@@ -506,6 +514,7 @@ async function downloadNoteAttachment(noteId: string, attachmentId: string): Pro
 
 async function deleteNoteAttachment(noteId: string, attachmentId: string): Promise<void> {
   const removed = await notes.deleteAttachment(noteId, attachmentId)
+  if (removed) revokeAttachmentPreview(attachmentId)
   attachmentMessage.value = {
     ...attachmentMessage.value,
     [noteId]: removed ? '已删除附件' : '删除失败：' + attachmentErrorMessage(notes.attachmentError.value)
@@ -513,6 +522,9 @@ async function deleteNoteAttachment(noteId: string, attachmentId: string): Promi
 }
 
 async function removeNote(noteId: string, version: number): Promise<void> {
+  for (const attachment of notes.attachments.value[noteId] ?? []) {
+    revokeAttachmentPreview(attachment.id)
+  }
   const note = notes.notes.value.find((candidate) => candidate.id === noteId)
   if (note) await notes.remove({ ...note, version })
 }
@@ -878,6 +890,8 @@ watch([quietStart, quietEnd], ([start, end]) => {
 })
 
 onUnmounted(() => {
+  for (const url of Object.values(attachmentPreviewUrls.value)) URL.revokeObjectURL(url)
+  attachmentPreviewUrls.value = {}
   if (reminderTimer) clearInterval(reminderTimer)
   if (focusTimer) clearInterval(focusTimer)
   if (aiTickTimer) clearInterval(aiTickTimer)

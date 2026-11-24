@@ -173,6 +173,7 @@
 | 160 | `docs/160-REL-02-a-d.md` | schema 定义哈希校验 |
 | 161 | `docs/161-SEC-02-b-a.md` | CI 依赖许可证清单 |
 | 162 | `docs/162-NOTE-05c-b-b-b-b-b-b-b-b-a.md` | 图片附件预览 |
+| 163 | `docs/163-NOTE-05c-b-b-b-b-b-b-b-b-a-b.md` | 预览 Blob URL 生命周期清理 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
