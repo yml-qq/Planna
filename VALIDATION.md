@@ -1098,4 +1098,5 @@
 
 - 解析 Retry-After 秒数（非法回退 60、上限 3600）；上传 429 后按钮禁用并显示倒计时，归零恢复；入口二次防重复。
 - 前端新增 1 项测试，合计 105 项；build 通过。
+- [Server integration 45417892635](https://github.com/yml-qq/Planna/actions/runs/45417892635) 与 [Desktop core 45417893285](https://github.com/yml-qq/Planna/actions/runs/45417893285) 均 **success**。
 - 不自动重试；倒计时仅内存/按 noteId；依赖客户端时钟；无 DOM 测试。

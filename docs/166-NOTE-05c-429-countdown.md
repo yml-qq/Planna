@@ -1,6 +1,6 @@
 # 166｜NOTE-05c-429-countdown：上传 429 倒计时禁用
 
-状态：代码已实现；本地前端 `pnpm test`（105 项）与 `pnpm build` 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（105 项）与 `pnpm build` 通过；[Server integration 45417892635](https://github.com/yml-qq/Planna/actions/runs/45417892635) 与 [Desktop core 45417893285](https://github.com/yml-qq/Planna/actions/runs/45417893285) 均 **success**。
 
 ## 范围与验收
 
