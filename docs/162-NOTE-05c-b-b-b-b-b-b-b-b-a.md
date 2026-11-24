@@ -1,6 +1,6 @@
 # 162｜NOTE-05c-b-b-b-b-b-b-b-b-a：图片附件预览
 
-状态：代码已实现；本地前端 `pnpm test`（104 项）、`pnpm build`、Rust `cargo test`（3 项）/clippy/fmt 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（104 项）、`pnpm build`、Rust `cargo test`（3 项）/clippy/fmt 通过；[Server integration 45401407782](https://github.com/yml-qq/Planna/actions/runs/45401407782) 与 [Desktop core 45401407743](https://github.com/yml-qq/Planna/actions/runs/45401407743) 均 **success**。
 
 ## 范围与验收
 

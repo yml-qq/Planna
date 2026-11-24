@@ -1071,4 +1071,5 @@
 
 - Tauri `note_attachment_bytes` 仅返回 image/*（≤5 MiB）；桥接/`canPreviewAttachment`（PNG/JPEG）；UI 预览按钮 + Blob URL `<img>`。
 - 前端 104 项测试、build；Rust 3 项、clippy/fmt 通过。
+- [Server integration 45401407782](https://github.com/yml-qq/Planna/actions/runs/45401407782) 与 [Desktop core 45401407743](https://github.com/yml-qq/Planna/actions/runs/45401407743) 均 **success**。
 - 仅图片；不缓存/不持久化；Blob URL 卸载/删除未统一 revoke；无 DOM/设备测试。
