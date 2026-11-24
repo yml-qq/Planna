@@ -1084,4 +1084,5 @@
 
 - 字节通道允许 text/plain/text/markdown；UI 用 TextDecoder 解码并以 `<pre>` 纯文本展示；清理逻辑同时清文本缓存。
 - 前端 104 项测试、build；Rust check/clippy/fmt 通过。
+- [Server integration 45409175505](https://github.com/yml-qq/Planna/actions/runs/45409175505) 与 [Desktop core 45409175510](https://github.com/yml-qq/Planna/actions/runs/45409175510) 均 **success**。
 - UTF-8 假设、不解析 Markdown/HTML、无分页；无 UI/设备测试。
