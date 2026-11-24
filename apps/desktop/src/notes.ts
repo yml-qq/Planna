@@ -17,6 +17,18 @@ export function isTextAttachment(contentType: string): boolean {
   return contentType === 'text/plain' || contentType === 'text/markdown'
 }
 
+export function pushPreviewOrder(
+  order: string[],
+  id: string,
+  limit = 20
+): { order: string[]; evicted: string | null } {
+  const next = order.filter((value) => value !== id)
+  next.push(id)
+  let evicted: string | null = null
+  while (next.length > limit) evicted = next.shift() ?? evicted
+  return { order: next, evicted }
+}
+
 export function retryAfterSeconds(code: string | null): number {
   if (!code) return 0
   const [base, seconds] = code.split(':')

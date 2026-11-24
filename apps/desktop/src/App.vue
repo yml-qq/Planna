@@ -14,6 +14,7 @@ import {
   isPdfAttachment,
   isTextAttachment,
   notesForTask,
+  pushPreviewOrder,
   retryAfterSeconds
 } from './notes'
 import {
@@ -162,6 +163,7 @@ const attachmentMessage = ref<Record<string, string>>({})
 const attachmentPreviewUrls = ref<Record<string, string>>({})
 const attachmentPreviewTexts = ref<Record<string, string>>({})
 const attachmentRetryUntil = ref<Record<string, number>>({})
+const attachmentPreviewOrder = ref<string[]>([])
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -471,6 +473,13 @@ function revokeAttachmentPreview(attachmentId: string): void {
   const texts = { ...attachmentPreviewTexts.value }
   delete texts[attachmentId]
   attachmentPreviewTexts.value = texts
+  attachmentPreviewOrder.value = attachmentPreviewOrder.value.filter((id) => id !== attachmentId)
+}
+
+function rememberPreview(attachmentId: string): void {
+  const next = pushPreviewOrder(attachmentPreviewOrder.value, attachmentId)
+  attachmentPreviewOrder.value = next.order
+  if (next.evicted) revokeAttachmentPreview(next.evicted)
 }
 
 async function previewNoteAttachment(
@@ -495,12 +504,14 @@ async function previewNoteAttachment(
         ...attachmentPreviewTexts.value,
         [attachment.id]: new TextDecoder().decode(new Uint8Array(bytes))
       }
+      rememberPreview(attachment.id)
       return
     }
     const url = URL.createObjectURL(
       new Blob([new Uint8Array(bytes)], { type: attachment.contentType })
     )
     attachmentPreviewUrls.value = { ...attachmentPreviewUrls.value, [attachment.id]: url }
+    rememberPreview(attachment.id)
   } catch (failure) {
     attachmentMessage.value = {
       ...attachmentMessage.value,
@@ -948,6 +959,7 @@ onUnmounted(() => {
   for (const url of Object.values(attachmentPreviewUrls.value)) URL.revokeObjectURL(url)
   attachmentPreviewUrls.value = {}
   attachmentPreviewTexts.value = {}
+  attachmentPreviewOrder.value = []
   if (reminderTimer) clearInterval(reminderTimer)
   if (focusTimer) clearInterval(focusTimer)
   if (aiTickTimer) clearInterval(aiTickTimer)

@@ -7,6 +7,7 @@ import {
   isPdfAttachment,
   isTextAttachment,
   notesForTask,
+  pushPreviewOrder,
   retryAfterSeconds
 } from './notes'
 
@@ -144,6 +145,19 @@ describe('note attachment store', () => {
     expect(await store.downloadAttachment('note-1', items[0]!.id)).toBe('downloads/' + items[0]!.id)
     expect(await store.deleteAttachment('note-1', items[0]!.id)).toBe(true)
     expect(store.attachments.value['note-1']).toEqual([])
+  })
+})
+
+describe('preview cache order', () => {
+  it('keeps the newest ids within the limit', () => {
+    const first = pushPreviewOrder(['a', 'b'], 'c', 3)
+    expect(first.order).toEqual(['a', 'b', 'c'])
+    expect(first.evicted).toBeNull()
+    const moved = pushPreviewOrder(['a', 'b', 'c'], 'a', 3)
+    expect(moved.order).toEqual(['b', 'c', 'a'])
+    const evicted = pushPreviewOrder(['a', 'b', 'c'], 'd', 3)
+    expect(evicted.order).toEqual(['b', 'c', 'd'])
+    expect(evicted.evicted).toBe('a')
   })
 })
 

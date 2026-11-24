@@ -1128,3 +1128,9 @@
 - 前端 105 项测试、build；Rust check/clippy/fmt 通过。
 - [Server integration 45438783152](https://github.com/yml-qq/Planna/actions/runs/45438783152) 与 [Desktop core 45438783499](https://github.com/yml-qq/Planna/actions/runs/45438783499) 均 **success**。
 - 缓存无 LRU/手动刷新；临时文件仅下次打开时清理；无文件系统测试。
+
+## NOTE-05c-preview-lru 检查（2026-11-22）
+
+- 预览缓存按附件 id 维护顺序，上限 20；超限淘汰最旧并 revoke URL/文本；删除/卸载移出。
+- 前端新增 1 项测试，合计 106 项；build 通过。
+- 上限固定不可配；仅内存；命中不提升顺序；无字节限额/手动刷新。
