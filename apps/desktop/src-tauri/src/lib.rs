@@ -1351,6 +1351,29 @@ fn note_attachment_bytes(
     Ok(bytes)
 }
 
+fn cleanup_old_attachments(directory: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return;
+    };
+    let cutoff =
+        std::time::SystemTime::now().checked_sub(std::time::Duration::from_secs(24 * 60 * 60));
+    for entry in entries.flatten() {
+        let is_old = cutoff
+            .and_then(|cutoff| {
+                entry
+                    .metadata()
+                    .ok()?
+                    .modified()
+                    .ok()
+                    .map(|time| time < cutoff)
+            })
+            .unwrap_or(false);
+        if is_old {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
 #[tauri::command]
 fn note_attachment_open(
     base_url: String,
@@ -1373,6 +1396,7 @@ fn note_attachment_open(
         .collect();
     let directory = std::env::temp_dir().join("planna-attachments");
     std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    cleanup_old_attachments(&directory);
     let path = directory.join(format!("{safe_id}.{extension}"));
     std::fs::write(&path, bytes).map_err(|error| error.to_string())?;
 

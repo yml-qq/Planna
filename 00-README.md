@@ -180,6 +180,7 @@
 | 167 | `docs/167-NOTE-05c-preview-sniffing.md` | 预览内容签名校验 |
 | 168 | `docs/168-NOTE-05c-server-content-check-a.md` | 服务端上传内容签名校验 |
 | 169 | `docs/169-NOTE-05c-server-content-check-b-a.md` | 附件外部打开/PDF 降级 |
+| 170 | `docs/170-NOTE-05c-preview-cache-cleanup.md` | 预览复用缓存与临时文件清理 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

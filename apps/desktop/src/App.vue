@@ -479,6 +479,9 @@ async function previewNoteAttachment(
 ): Promise<void> {
   const token = session.token.value
   if (!token) return
+  if (attachmentPreviewUrls.value[attachment.id] || attachmentPreviewTexts.value[attachment.id]) {
+    return
+  }
   try {
     const bytes = await bridge.noteAttachmentBytes(
       baseUrl.value,
