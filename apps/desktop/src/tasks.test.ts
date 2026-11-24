@@ -151,6 +151,7 @@ describe('task store', () => {
         throw new Error('offline')
       },
       noteAttachmentList: async () => [],
+      noteAttachmentBytes: async () => [],
       noteAttachmentUpload: async () => {
         throw new Error('offline')
       },

@@ -1066,3 +1066,9 @@
 - 本地 `pnpm licenses list --prod --json`/文本退出 0 并产出（未提交）。
 - [Server integration 45232499757](https://github.com/yml-qq/Planna/actions/runs/45232499757) 与 [Desktop core 45232499749](https://github.com/yml-qq/Planna/actions/runs/45232499749) 均 **success**（artifact 生成/上传成功）。
 - 非完整 SBOM；dotnet 清单无许可证字段；仅生产依赖；不做合规判定；SEC-02-b 仍需外部渗透/密钥审计/正式 SBOM。
+
+## NOTE-05c-b-b-b-b-b-b-b-b-a 图片预览检查（2026-11-22）
+
+- Tauri `note_attachment_bytes` 仅返回 image/*（≤5 MiB）；桥接/`canPreviewAttachment`（PNG/JPEG）；UI 预览按钮 + Blob URL `<img>`。
+- 前端 104 项测试、build；Rust 3 项、clippy/fmt 通过。
+- 仅图片；不缓存/不持久化；Blob URL 卸载/删除未统一 revoke；无 DOM/设备测试。

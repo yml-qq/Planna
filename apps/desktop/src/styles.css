@@ -638,3 +638,13 @@ textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+.attachment-preview {
+  display: block;
+  max-width: min(100%, 420px);
+  max-height: 320px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  object-fit: contain;
+}

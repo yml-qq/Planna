@@ -7,7 +7,7 @@ import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
-import { attachmentErrorMessage, createNoteStore, notesForTask } from './notes'
+import { attachmentErrorMessage, canPreviewAttachment, createNoteStore, notesForTask } from './notes'
 import {
   arrowAction,
   createCalendarStore,
@@ -151,6 +151,7 @@ const calendarImportStatus = ref('')
 const calendarGrid = ref<HTMLElement | null>(null)
 const focusedCalendarDate = ref<string | null>(readStorage('planna.calendarFocus'))
 const attachmentMessage = ref<Record<string, string>>({})
+const attachmentPreviewUrls = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -448,6 +449,35 @@ async function importCalendarOverrides(): Promise<void> {
   }
   calendarImportStatus.value = `导入 ${result.imported} 条，忽略 ${result.errors} 条`
   if (result.imported > 0) calendarImportText.value = ''
+}
+
+async function previewNoteAttachment(
+  noteId: string,
+  attachment: { id: string; contentType: string }
+): Promise<void> {
+  const token = session.token.value
+  if (!token) return
+  try {
+    const bytes = await bridge.noteAttachmentBytes(
+      baseUrl.value,
+      token,
+      noteId,
+      attachment.id
+    )
+    const previous = attachmentPreviewUrls.value[attachment.id]
+    if (previous) URL.revokeObjectURL(previous)
+    const url = URL.createObjectURL(
+      new Blob([new Uint8Array(bytes)], { type: attachment.contentType })
+    )
+    attachmentPreviewUrls.value = { ...attachmentPreviewUrls.value, [attachment.id]: url }
+  } catch (failure) {
+    attachmentMessage.value = {
+      ...attachmentMessage.value,
+      [attachment.id]: '预览失败：' + attachmentErrorMessage(
+        failure instanceof Error ? failure.message.split(':').slice(1).join(':') : null
+      )
+    }
+  }
 }
 
 async function toggleNoteAttachments(noteId: string): Promise<void> {
@@ -1181,6 +1211,20 @@ onMounted(async () => {
                   <button class="button button--ghost" type="button" @click="downloadNoteAttachment(note.id, attachment.id)">
                     下载
                   </button>
+                  <button
+                    v-if="canPreviewAttachment(attachment.contentType)"
+                    class="button button--ghost"
+                    type="button"
+                    @click="previewNoteAttachment(note.id, attachment)"
+                  >
+                    预览
+                  </button>
+                  <img
+                    v-if="attachmentPreviewUrls[attachment.id]"
+                    class="attachment-preview"
+                    :src="attachmentPreviewUrls[attachment.id]"
+                    :alt="attachment.filename"
+                  />
                   <button class="button button--ghost" type="button" @click="deleteNoteAttachment(note.id, attachment.id)">
                     删除
                   </button>

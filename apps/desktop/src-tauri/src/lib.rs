@@ -1286,6 +1286,40 @@ fn note_attachment_upload(
 }
 
 #[tauri::command]
+fn note_attachment_bytes(
+    base_url: String,
+    access_token: String,
+    note_id: String,
+    attachment_id: String,
+) -> Result<Vec<u8>, String> {
+    let response = http_client()
+        .get(format!(
+            "{}/notes/{note_id}/attachments/{attachment_id}",
+            base(&base_url)
+        ))
+        .bearer_auth(&access_token)
+        .send()
+        .map_err(|error| error.to_string())?;
+    if !response.status().is_success() {
+        return Err(focus_error(response));
+    }
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !content_type.starts_with("image/") {
+        return Err("400:UNSUPPORTED_ATTACHMENT_PREVIEW".into());
+    }
+    let bytes = response.bytes().map_err(|error| error.to_string())?;
+    if bytes.len() > 5 * 1024 * 1024 {
+        return Err("413:ATTACHMENT_TOO_LARGE".into());
+    }
+    Ok(bytes.to_vec())
+}
+
+#[tauri::command]
 fn note_attachment_download(
     app: tauri::AppHandle,
     base_url: String,
@@ -1759,6 +1793,7 @@ pub fn run() {
             note_attachment_download,
             note_attachment_delete,
             note_attachment_pick,
+            note_attachment_bytes,
             workday_days,
             workday_override_set,
             workday_override_clear,

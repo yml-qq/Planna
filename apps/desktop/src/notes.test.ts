@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryBridge, type DesktopBridge } from './api'
-import { attachmentErrorMessage, createNoteStore, notesForTask } from './notes'
+import {
+  attachmentErrorMessage,
+  canPreviewAttachment,
+  createNoteStore,
+  notesForTask
+} from './notes'
 
 function createStore(token = 'token') {
   const bridge = new MemoryBridge()
@@ -136,6 +141,15 @@ describe('note attachment store', () => {
     expect(await store.downloadAttachment('note-1', items[0]!.id)).toBe('downloads/' + items[0]!.id)
     expect(await store.deleteAttachment('note-1', items[0]!.id)).toBe(true)
     expect(store.attachments.value['note-1']).toEqual([])
+  })
+})
+
+describe('attachment preview support', () => {
+  it('only previews supported image types', () => {
+    expect(canPreviewAttachment('image/png')).toBe(true)
+    expect(canPreviewAttachment('image/jpeg')).toBe(true)
+    expect(canPreviewAttachment('application/pdf')).toBe(false)
+    expect(canPreviewAttachment('text/plain')).toBe(false)
   })
 })
 

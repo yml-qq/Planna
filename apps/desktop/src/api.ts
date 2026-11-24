@@ -351,6 +351,12 @@ export interface DesktopBridge {
     accessToken: string,
     noteId: string
   ): Promise<NoteAttachment[]>
+  noteAttachmentBytes(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<number[]>
   noteAttachmentUpload(
     baseUrl: string,
     accessToken: string,
@@ -952,6 +958,10 @@ export class MemoryBridge implements DesktopBridge {
     noteId: string
   ): Promise<NoteAttachment[]> {
     return [...(this.noteAttachments.get(noteId) ?? [])]
+  }
+
+  async noteAttachmentBytes(): Promise<number[]> {
+    return [137, 80, 78, 71, 13, 10, 26, 10]
   }
 
   async noteAttachmentUpload(
@@ -1651,6 +1661,20 @@ export class TauriBridge implements DesktopBridge {
       sizeBytes: row.size_bytes,
       createdAt: row.created_at
     }))
+  }
+
+  async noteAttachmentBytes(
+    baseUrl: string,
+    accessToken: string,
+    noteId: string,
+    attachmentId: string
+  ): Promise<number[]> {
+    return this.invoke<number[]>('note_attachment_bytes', {
+      baseUrl,
+      accessToken,
+      noteId,
+      attachmentId
+    })
   }
 
   async noteAttachmentUpload(
