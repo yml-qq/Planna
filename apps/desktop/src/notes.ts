@@ -5,7 +5,12 @@ export function canPreviewAttachment(contentType: string): boolean {
   return contentType === 'image/png' ||
     contentType === 'image/jpeg' ||
     contentType === 'text/plain' ||
-    contentType === 'text/markdown'
+    contentType === 'text/markdown' ||
+    contentType === 'application/pdf'
+}
+
+export function isPdfAttachment(contentType: string): boolean {
+  return contentType === 'application/pdf'
 }
 
 export function isTextAttachment(contentType: string): boolean {

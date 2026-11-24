@@ -11,6 +11,7 @@ import {
   attachmentErrorMessage,
   canPreviewAttachment,
   createNoteStore,
+  isPdfAttachment,
   isTextAttachment,
   notesForTask
 } from './notes'
@@ -1252,10 +1253,17 @@ onMounted(async () => {
                     预览
                   </button>
                   <img
-                    v-if="attachmentPreviewUrls[attachment.id]"
+                    v-if="attachmentPreviewUrls[attachment.id] && !isPdfAttachment(attachment.contentType)"
                     class="attachment-preview"
                     :src="attachmentPreviewUrls[attachment.id]"
                     :alt="attachment.filename"
+                  />
+                  <embed
+                    v-if="attachmentPreviewUrls[attachment.id] && isPdfAttachment(attachment.contentType)"
+                    class="attachment-preview-pdf"
+                    :src="attachmentPreviewUrls[attachment.id]"
+                    type="application/pdf"
+                    :title="attachment.filename"
                   />
                   <pre
                     v-if="attachmentPreviewTexts[attachment.id]"

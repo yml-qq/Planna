@@ -1312,6 +1312,7 @@ fn note_attachment_bytes(
     if !content_type.starts_with("image/")
         && content_type != "text/plain"
         && content_type != "text/markdown"
+        && content_type != "application/pdf"
     {
         return Err("400:UNSUPPORTED_ATTACHMENT_PREVIEW".into());
     }

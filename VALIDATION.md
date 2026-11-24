@@ -1086,3 +1086,9 @@
 - 前端 104 项测试、build；Rust check/clippy/fmt 通过。
 - [Server integration 45409175505](https://github.com/yml-qq/Planna/actions/runs/45409175505) 与 [Desktop core 45409175510](https://github.com/yml-qq/Planna/actions/runs/45409175510) 均 **success**。
 - UTF-8 假设、不解析 Markdown/HTML、无分页；无 UI/设备测试。
+
+## NOTE-05c-b-b-b-b-b-b-b-b-b-b-b-a PDF 预览检查（2026-11-22）
+
+- 字节通道允许 application/pdf；`canPreviewAttachment`/`isPdfAttachment`；UI 用 `<embed>` 渲染 PDF，图片/文本分支不变。
+- 前端 104 项测试、build；Rust check/clippy/fmt 通过。
+- 依赖 WebView PDF 支持（WebKitGTK 可能不显示）；无降级/外开；无 UI/设备验证。

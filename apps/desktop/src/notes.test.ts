@@ -4,6 +4,7 @@ import {
   attachmentErrorMessage,
   canPreviewAttachment,
   createNoteStore,
+  isPdfAttachment,
   isTextAttachment,
   notesForTask
 } from './notes'
@@ -149,7 +150,9 @@ describe('attachment preview support', () => {
   it('only previews supported image types', () => {
     expect(canPreviewAttachment('image/png')).toBe(true)
     expect(canPreviewAttachment('image/jpeg')).toBe(true)
-    expect(canPreviewAttachment('application/pdf')).toBe(false)
+    expect(canPreviewAttachment('application/pdf')).toBe(true)
+    expect(isPdfAttachment('application/pdf')).toBe(true)
+    expect(isPdfAttachment('image/png')).toBe(false)
     expect(canPreviewAttachment('text/plain')).toBe(true)
     expect(canPreviewAttachment('text/markdown')).toBe(true)
     expect(isTextAttachment('text/plain')).toBe(true)

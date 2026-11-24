@@ -661,3 +661,12 @@ textarea:focus-visible {
   word-break: break-word;
   font-size: 12px;
 }
+
+.attachment-preview-pdf {
+  display: block;
+  width: min(100%, 720px);
+  height: 480px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
