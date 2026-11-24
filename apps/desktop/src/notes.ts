@@ -2,7 +2,14 @@ import { ref, type Ref } from 'vue'
 import type { DesktopBridge, Note, NoteAttachment } from './api'
 
 export function canPreviewAttachment(contentType: string): boolean {
-  return contentType === 'image/png' || contentType === 'image/jpeg'
+  return contentType === 'image/png' ||
+    contentType === 'image/jpeg' ||
+    contentType === 'text/plain' ||
+    contentType === 'text/markdown'
+}
+
+export function isTextAttachment(contentType: string): boolean {
+  return contentType === 'text/plain' || contentType === 'text/markdown'
 }
 
 export function attachmentErrorMessage(code: string | null): string {

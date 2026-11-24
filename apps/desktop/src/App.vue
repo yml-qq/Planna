@@ -7,7 +7,13 @@ import { createGoalStore, filterGoals } from './goals'
 import type { GoalBreakdownSuggestion } from './api'
 import { createModuleStore, MODULE_LABELS, type ModuleKey } from './modules'
 import { densityClass, navLinks, normalizeTheme, type Theme } from './prefs'
-import { attachmentErrorMessage, canPreviewAttachment, createNoteStore, notesForTask } from './notes'
+import {
+  attachmentErrorMessage,
+  canPreviewAttachment,
+  createNoteStore,
+  isTextAttachment,
+  notesForTask
+} from './notes'
 import {
   arrowAction,
   createCalendarStore,
@@ -152,6 +158,7 @@ const calendarGrid = ref<HTMLElement | null>(null)
 const focusedCalendarDate = ref<string | null>(readStorage('planna.calendarFocus'))
 const attachmentMessage = ref<Record<string, string>>({})
 const attachmentPreviewUrls = ref<Record<string, string>>({})
+const attachmentPreviewTexts = ref<Record<string, string>>({})
 const nowTick = ref(Date.now())
 const theme = ref<Theme>(normalizeTheme(readStorage('planna.theme')))
 const compact = ref(readStorage('planna.compact') === '1')
@@ -458,6 +465,9 @@ function revokeAttachmentPreview(attachmentId: string): void {
   const next = { ...attachmentPreviewUrls.value }
   delete next[attachmentId]
   attachmentPreviewUrls.value = next
+  const texts = { ...attachmentPreviewTexts.value }
+  delete texts[attachmentId]
+  attachmentPreviewTexts.value = texts
 }
 
 async function previewNoteAttachment(
@@ -474,6 +484,13 @@ async function previewNoteAttachment(
       attachment.id
     )
     revokeAttachmentPreview(attachment.id)
+    if (isTextAttachment(attachment.contentType)) {
+      attachmentPreviewTexts.value = {
+        ...attachmentPreviewTexts.value,
+        [attachment.id]: new TextDecoder().decode(new Uint8Array(bytes))
+      }
+      return
+    }
     const url = URL.createObjectURL(
       new Blob([new Uint8Array(bytes)], { type: attachment.contentType })
     )
@@ -892,6 +909,7 @@ watch([quietStart, quietEnd], ([start, end]) => {
 onUnmounted(() => {
   for (const url of Object.values(attachmentPreviewUrls.value)) URL.revokeObjectURL(url)
   attachmentPreviewUrls.value = {}
+  attachmentPreviewTexts.value = {}
   if (reminderTimer) clearInterval(reminderTimer)
   if (focusTimer) clearInterval(focusTimer)
   if (aiTickTimer) clearInterval(aiTickTimer)
@@ -1239,6 +1257,10 @@ onMounted(async () => {
                     :src="attachmentPreviewUrls[attachment.id]"
                     :alt="attachment.filename"
                   />
+                  <pre
+                    v-if="attachmentPreviewTexts[attachment.id]"
+                    class="attachment-preview-text"
+                  >{{ attachmentPreviewTexts[attachment.id] }}</pre>
                   <button class="button button--ghost" type="button" @click="deleteNoteAttachment(note.id, attachment.id)">
                     删除
                   </button>

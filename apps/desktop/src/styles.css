@@ -648,3 +648,16 @@ textarea:focus-visible {
   border-radius: 8px;
   object-fit: contain;
 }
+
+.attachment-preview-text {
+  max-height: 240px;
+  overflow: auto;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}

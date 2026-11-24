@@ -1079,3 +1079,9 @@
 - 预览 URL 在再次预览、删除附件、删除笔记、组件卸载时 revoke/清理；错误提示按附件 id。
 - [Server integration 45405268245](https://github.com/yml-qq/Planna/actions/runs/45405268245) 与 [Desktop core 45405268617](https://github.com/yml-qq/Planna/actions/runs/45405268617) 均 **success**。
 - 前端 104 项测试、build 通过；无 DOM 测试验证 revoke 调用次数。
+
+## NOTE-05c-b-b-b-b-b-b-b-b-b-b-a 文本预览检查（2026-11-22）
+
+- 字节通道允许 text/plain/text/markdown；UI 用 TextDecoder 解码并以 `<pre>` 纯文本展示；清理逻辑同时清文本缓存。
+- 前端 104 项测试、build；Rust check/clippy/fmt 通过。
+- UTF-8 假设、不解析 Markdown/HTML、无分页；无 UI/设备测试。

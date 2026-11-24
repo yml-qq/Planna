@@ -1309,7 +1309,10 @@ fn note_attachment_bytes(
         .and_then(|value| value.to_str().ok())
         .unwrap_or("")
         .to_ascii_lowercase();
-    if !content_type.starts_with("image/") {
+    if !content_type.starts_with("image/")
+        && content_type != "text/plain"
+        && content_type != "text/markdown"
+    {
         return Err("400:UNSUPPORTED_ATTACHMENT_PREVIEW".into());
     }
     let bytes = response.bytes().map_err(|error| error.to_string())?;
