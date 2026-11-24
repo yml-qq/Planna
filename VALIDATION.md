@@ -1091,4 +1091,5 @@
 
 - 字节通道允许 application/pdf；`canPreviewAttachment`/`isPdfAttachment`；UI 用 `<embed>` 渲染 PDF，图片/文本分支不变。
 - 前端 104 项测试、build；Rust check/clippy/fmt 通过。
+- [Server integration 45413640500](https://github.com/yml-qq/Planna/actions/runs/45413640500) 与 [Desktop core 45413640205](https://github.com/yml-qq/Planna/actions/runs/45413640205) 均 **success**。
 - 依赖 WebView PDF 支持（WebKitGTK 可能不显示）；无降级/外开；无 UI/设备验证。
