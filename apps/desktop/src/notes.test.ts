@@ -176,6 +176,7 @@ describe('attachment error messages', () => {
     expect(attachmentErrorMessage('ATTACHMENT_RATE_LIMITED:42')).toBe('上传过于频繁，请 42 秒后重试')
     expect(attachmentErrorMessage('ATTACHMENT_RATE_LIMITED')).toBe('上传过于频繁，请稍后重试')
     expect(attachmentErrorMessage('UNSUPPORTED_ATTACHMENT_TYPE')).toBe('不支持该文件类型')
+    expect(attachmentErrorMessage('ATTACHMENT_CONTENT_MISMATCH')).toBe('文件内容与类型不符，已阻止预览')
     expect(attachmentErrorMessage(null)).toBe('')
     expect(attachmentErrorMessage('SOMETHING_ELSE')).toBe('附件操作失败（SOMETHING_ELSE）')
   })

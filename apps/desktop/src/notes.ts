@@ -41,6 +41,8 @@ export function attachmentErrorMessage(code: string | null): string {
       return '该笔记附件数量已达上限'
     case 'ATTACHMENT_OWNER_QUOTA':
       return '附件总容量已达上限'
+    case 'ATTACHMENT_CONTENT_MISMATCH':
+      return '文件内容与类型不符，已阻止预览'
     case 'NOTE_NOT_FOUND':
       return '笔记尚未同步到服务端，请先同步'
     default:

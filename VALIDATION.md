@@ -1100,3 +1100,9 @@
 - 前端新增 1 项测试，合计 105 项；build 通过。
 - [Server integration 45417892635](https://github.com/yml-qq/Planna/actions/runs/45417892635) 与 [Desktop core 45417893285](https://github.com/yml-qq/Planna/actions/runs/45417893285) 均 **success**。
 - 不自动重试；倒计时仅内存/按 noteId；依赖客户端时钟；无 DOM 测试。
+
+## NOTE-05c-preview-sniffing 检查（2026-11-22）
+
+- 预览前校验 PNG/JPEG/PDF 魔数与文本 UTF-8，失败返回 415 CONTENT_MISMATCH；客户端提示中文。
+- 修复长 .json 文件名截断补错扩展名；Rust 4 项单测、前端 105 项测试、build/clippy 通过。
+- 仅预览路径；服务端仍按声明类型存储；魔数不证明安全；PDF 仍内嵌 WebView。

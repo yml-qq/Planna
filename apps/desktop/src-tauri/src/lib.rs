@@ -1145,12 +1145,17 @@ fn sanitize_report_filename(input: &str) -> String {
         cleaned.push_str("focus-report");
     }
     let lower = cleaned.to_ascii_lowercase();
+    let extension = if lower.ends_with(".json") {
+        ".json"
+    } else {
+        ".csv"
+    };
     if !lower.ends_with(".csv") && !lower.ends_with(".json") {
-        cleaned.push_str(".csv");
+        cleaned.push_str(extension);
     }
     if cleaned.len() > 120 {
-        cleaned.truncate(116);
-        cleaned.push_str(".csv");
+        cleaned.truncate(120 - extension.len());
+        cleaned.push_str(extension);
     }
     cleaned
 }
@@ -1285,6 +1290,16 @@ fn note_attachment_upload(
     response.json().map_err(|error| error.to_string())
 }
 
+fn content_matches(content_type: &str, bytes: &[u8]) -> bool {
+    match content_type {
+        "image/png" => bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+        "image/jpeg" => bytes.starts_with(&[0xFF, 0xD8, 0xFF]),
+        "application/pdf" => bytes.starts_with(b"%PDF-"),
+        "text/plain" | "text/markdown" => std::str::from_utf8(bytes).is_ok(),
+        _ => false,
+    }
+}
+
 #[tauri::command]
 fn note_attachment_bytes(
     base_url: String,
@@ -1319,6 +1334,9 @@ fn note_attachment_bytes(
     let bytes = response.bytes().map_err(|error| error.to_string())?;
     if bytes.len() > 5 * 1024 * 1024 {
         return Err("413:ATTACHMENT_TOO_LARGE".into());
+    }
+    if !content_matches(&content_type, &bytes) {
+        return Err("415:ATTACHMENT_CONTENT_MISMATCH".into());
     }
     Ok(bytes.to_vec())
 }
@@ -1845,14 +1863,34 @@ pub fn run() {
 
 #[cfg(test)]
 mod report_tests {
-    use super::sanitize_report_filename;
+    use super::{content_matches, sanitize_report_filename};
 
     #[test]
-    fn keeps_simple_csv_names() {
+    fn keeps_simple_csv_and_json_names() {
         assert_eq!(
             sanitize_report_filename("planna-focus-2026-11-22.csv"),
             "planna-focus-2026-11-22.csv"
         );
+        assert_eq!(
+            sanitize_report_filename("planna-focus-2026-11-22.json"),
+            "planna-focus-2026-11-22.json"
+        );
+    }
+
+    #[test]
+    fn validates_preview_content_signatures() {
+        assert!(content_matches(
+            "image/png",
+            &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]
+        ));
+        assert!(content_matches("image/jpeg", &[0xFF, 0xD8, 0xFF, 0xE0]));
+        assert!(content_matches("application/pdf", b"%PDF-1.7"));
+        assert!(content_matches("text/plain", "hello".as_bytes()));
+        assert!(content_matches("text/markdown", "# hi".as_bytes()));
+        assert!(!content_matches("image/png", b"not a png"));
+        assert!(!content_matches("application/pdf", b"<html>"));
+        assert!(!content_matches("text/plain", &[0xFF, 0xFE]));
+        assert!(!content_matches("application/zip", b"PK"));
     }
 
     #[test]
@@ -1871,5 +1909,9 @@ mod report_tests {
         let name = sanitize_report_filename(&long);
         assert!(name.len() <= 120);
         assert!(name.ends_with(".csv"));
+        let long_json = "a".repeat(200) + ".json";
+        let json = sanitize_report_filename(&long_json);
+        assert!(json.len() <= 120);
+        assert!(json.ends_with(".json"));
     }
 }
