@@ -1,6 +1,6 @@
 # 167｜NOTE-05c-preview-sniffing：预览内容签名校验
 
-状态：代码已实现；本地前端 `pnpm test`（105 项）、`pnpm build`、Rust `cargo test`（4 项）/clippy/fmt 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（105 项）、`pnpm build`、Rust `cargo test`（4 项）/clippy/fmt 通过；[Server integration 45422298194](https://github.com/yml-qq/Planna/actions/runs/45422298194) 与 [Desktop core 45422304209](https://github.com/yml-qq/Planna/actions/runs/45422304209) 均 **success**。
 
 ## 范围与验收
 

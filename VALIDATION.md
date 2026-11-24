@@ -1105,4 +1105,5 @@
 
 - 预览前校验 PNG/JPEG/PDF 魔数与文本 UTF-8，失败返回 415 CONTENT_MISMATCH；客户端提示中文。
 - 修复长 .json 文件名截断补错扩展名；Rust 4 项单测、前端 105 项测试、build/clippy 通过。
+- [Server integration 45422298194](https://github.com/yml-qq/Planna/actions/runs/45422298194) 与 [Desktop core 45422304209](https://github.com/yml-qq/Planna/actions/runs/45422304209) 均 **success**。
 - 仅预览路径；服务端仍按声明类型存储；魔数不证明安全；PDF 仍内嵌 WebView。
