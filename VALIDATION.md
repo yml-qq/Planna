@@ -1126,4 +1126,5 @@
 
 - 预览命中内存缓存直接返回；外部打开写入前清理 temp 目录中超过 24h 的文件（失败忽略）。
 - 前端 105 项测试、build；Rust check/clippy/fmt 通过。
+- [Server integration 45438783152](https://github.com/yml-qq/Planna/actions/runs/45438783152) 与 [Desktop core 45438783499](https://github.com/yml-qq/Planna/actions/runs/45438783499) 均 **success**。
 - 缓存无 LRU/手动刷新；临时文件仅下次打开时清理；无文件系统测试。

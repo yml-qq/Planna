@@ -1,6 +1,6 @@
 # 170｜NOTE-05c-preview-cache-cleanup：预览复用缓存与临时文件清理
 
-状态：代码已实现；本地前端 `pnpm test`（105 项）、`pnpm build`、Rust `cargo check/clippy/fmt` 通过；CI 见 `VALIDATION.md`。
+状态：代码已实现；本地前端 `pnpm test`（105 项）、`pnpm build`、Rust `cargo check/clippy/fmt` 通过；[Server integration 45438783152](https://github.com/yml-qq/Planna/actions/runs/45438783152) 与 [Desktop core 45438783499](https://github.com/yml-qq/Planna/actions/runs/45438783499) 均 **success**。
 
 ## 范围与验收
 
