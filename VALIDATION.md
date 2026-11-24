@@ -1135,3 +1135,9 @@
 - 前端新增 1 项测试，合计 106 项；build 通过。
 - [Server integration 45442887728](https://github.com/yml-qq/Planna/actions/runs/45442887728) 与 [Desktop core 45442887355](https://github.com/yml-qq/Planna/actions/runs/45442887355) 均 **success**。
 - 上限固定不可配；仅内存；命中不提升顺序；无字节限额/手动刷新。
+
+## V1.0 自动化切片收尾审计（2026-11-25）
+
+- 本地可交付切片已完成；前端 106 项、契约 37 项、Rust lib 3 项，近期 CI 均绿。
+- 未完成项为外部资源/产品决策：SEC-02-b-b、REL-02-b、DESK-01I、AND/IOS、真机通知 QA、REM-02、legal_workday、病毒扫描、完整 ARIA/屏幕阅读器；详见 `docs/172-V1-CLOSURE-AUDIT.md`。
+- 未连接生产库、未提交凭据；剩余项不得宣称完成。

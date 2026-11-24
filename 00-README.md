@@ -182,6 +182,7 @@
 | 169 | `docs/169-NOTE-05c-server-content-check-b-a.md` | 附件外部打开/PDF 降级 |
 | 170 | `docs/170-NOTE-05c-preview-cache-cleanup.md` | 预览复用缓存与临时文件清理 |
 | 171 | `docs/171-NOTE-05c-preview-lru.md` | 预览缓存 LRU 上限 |
+| 172 | `docs/172-V1-CLOSURE-AUDIT.md` | V1.0 自动化切片收尾审计 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |
