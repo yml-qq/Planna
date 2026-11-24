@@ -178,6 +178,7 @@
 | 165 | `docs/165-NOTE-05c-b-b-b-b-b-b-b-b-b-b-b-a.md` | PDF 附件预览 |
 | 166 | `docs/166-NOTE-05c-429-countdown.md` | 上传 429 倒计时禁用 |
 | 167 | `docs/167-NOTE-05c-preview-sniffing.md` | 预览内容签名校验 |
+| 168 | `docs/168-NOTE-05c-server-content-check-a.md` | 服务端上传内容签名校验 |
 | - | `spec/openapi.yaml` | 可用于 SDK 生成的核心 API 契约初稿 |
 | - | `spec/task.schema.json` | 任务记录 JSON Schema |
 | - | `spec/ai-plan.schema.json` | AI 计划预览 JSON Schema |

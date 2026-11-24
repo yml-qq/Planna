@@ -54,6 +54,8 @@ internal static class HttpNoteAttachmentSmoke
             HttpStatusCode.NotFound);
         Check(await Upload(client, token, note, Guid.NewGuid(), "hello.exe", "application/octet-stream", "hello"),
             HttpStatusCode.UnsupportedMediaType);
+        Check(await Upload(client, token, note, Guid.NewGuid(), "fake.png", "image/png", "hello"),
+            HttpStatusCode.UnsupportedMediaType);
         Check(await Upload(client, token, note, Guid.NewGuid(), "empty.txt", "text/plain", ""),
             HttpStatusCode.UnprocessableEntity);
 

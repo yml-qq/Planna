@@ -69,6 +69,16 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
         if (length < 1) return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_EMPTY");
         if (length > maxBytes)
             return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
+        await using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, ct);
+        var bytes = buffer.ToArray();
+        length = bytes.Length;
+        if (length < 1) return new(NoteAttachmentStatus.Invalid, Code: "ATTACHMENT_EMPTY");
+        if (length > maxBytes)
+            return new(NoteAttachmentStatus.TooLarge, Code: "ATTACHMENT_TOO_LARGE");
+        if (!ContentMatches(type, bytes))
+            return new(NoteAttachmentStatus.UnsupportedType,
+                Code: "ATTACHMENT_CONTENT_MISMATCH");
         if (!await NoteOwnedAsync(ownerId, noteId, ct))
             return new(NoteAttachmentStatus.NotFound, Code: "NOTE_NOT_FOUND");
         // Serialize quota checks and inserts per owner so concurrent uploads cannot overshoot.
@@ -100,8 +110,7 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         try
         {
-            await using (var output = File.Create(path))
-                await content.CopyToAsync(output, ct);
+            await File.WriteAllBytesAsync(path, bytes, ct);
             var now = clock.GetUtcNow();
             await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO note_attachments(id, owner_id, note_id, filename, content_type,
@@ -225,6 +234,20 @@ public sealed class NoteAttachmentService(TaskWriteContext db, TimeProvider cloc
                 WHERE id=@Id AND owner_id=@Owner AND note_id=@Note{deletedFilter}
                 """, new { Id = attachmentId, Owner = ownerId, Note = noteId },
                 db.Database.CurrentTransaction?.GetDbTransaction(), cancellationToken: ct));
+    }
+
+    private static bool ContentMatches(string type, byte[] bytes)
+    {
+        ReadOnlySpan<byte> span = bytes;
+        return type switch
+        {
+            "image/png" => span.StartsWith(new byte[]
+                { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
+            "image/jpeg" => span.StartsWith(new byte[] { 0xFF, 0xD8, 0xFF }),
+            "application/pdf" => span.StartsWith("%PDF-"u8),
+            "text/plain" or "text/markdown" => System.Text.Unicode.Utf8.IsValid(bytes),
+            _ => false
+        };
     }
 
     private static int ParseInt(string? raw, int fallback, int min, int max)
