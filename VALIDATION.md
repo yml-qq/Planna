@@ -1141,3 +1141,9 @@
 - 本地可交付切片已完成；前端 106 项、契约 37 项、Rust lib 3 项，近期 CI 均绿。
 - 未完成项为外部资源/产品决策：SEC-02-b-b、REL-02-b、DESK-01I、AND/IOS、真机通知 QA、REM-02、legal_workday、病毒扫描、完整 ARIA/屏幕阅读器；详见 `docs/172-V1-CLOSURE-AUDIT.md`。
 - 未连接生产库、未提交凭据；剩余项不得宣称完成。
+
+## 审查修复（2026-11-25）
+
+- Release 发布命令允许按 linux-x64 还原和构建；API、Worker、迁移工具的 Linux 发布命令均在本机执行成功。
+- Tauri CSP 为图片与 PDF 预览允许 blob URL；前端 106 项测试通过。尚需在打包后的 WebView 验证图片与 PDF，PDF 渲染取决于系统 WebView。
+- 清除重复依赖注册；更新文档合订版和文件清单。开发库仍有 10 条待应用迁移，须先完成 PostgreSQL 18 备份及恢复验证。

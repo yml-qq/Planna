@@ -5,19 +5,29 @@
   "status": "partial .NET server implementation; client apps pending",
   "source_files": [
     {
+      "file": ".github/workflows/desktop.yml",
+      "bytes": 2413,
+      "sha256": "1d8e8ef736192df118b6bf8d77741b342c780ef7525228ca6493180573f48b1b"
+    },
+    {
       "file": ".github/workflows/migrations.yml",
-      "bytes": 1587,
-      "sha256": "dcff957664831eb2635e6e9d1b023ec8e89a0bf689e209ddc2a90cf3eb7a852b"
+      "bytes": 2533,
+      "sha256": "aabd92972114965c584c12157d4a6c8ac6555701c7129f4dde70c9a428be8d6b"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "bytes": 1889,
+      "sha256": "28c1912fcfc059fafac7dfc625a4cd0e95dee6a8e43f8b3abc25c42ec0b130dd"
     },
     {
       "file": ".gitignore",
-      "bytes": 64,
-      "sha256": "b1b8f2dd1f44c0f5494fd9565742b098b4628b7521ec6cb3db66e15a8c4b19e0"
+      "bytes": 87,
+      "sha256": "be93ddeca3a2591c5ed5c09bec04ec1320704321e5b45590b859f22c99a854f6"
     },
     {
       "file": "00-README.md",
-      "bytes": 9772,
-      "sha256": "50cd50fbcc101d3ea9629addd236b6fd3c76010afa5d9fad7dac8e9770f40221"
+      "bytes": 20232,
+      "sha256": "7bd88142b45a708b371e847dbeecc1113daaaefffdba6ac78943ca09830a84d7"
     },
     {
       "file": "AGENTS.md",
@@ -25,14 +35,294 @@
       "sha256": "eef915c65deb080c47a1e82f67031c63a333768cda18d22ab75c641e09e0bc45"
     },
     {
-      "file": "MASTER-DEVELOPMENT-SPEC.md",
-      "bytes": 185086,
-      "sha256": "3fe06764ec3fb39cefbeb185462279e7aeaafe9f5475333b5f186f6829591402"
+      "file": "apps/desktop/.gitignore",
+      "bytes": 82,
+      "sha256": "c6dab40338c81029b639b3af13b2c4059a0fecf72fd56f98ae4420c8a303046b"
     },
     {
-      "file": "VALIDATION.md",
-      "bytes": 10569,
-      "sha256": "1b166aa28163df392e15026f78c04abc0785c68251ee92cc23ad80cdadec413e"
+      "file": "apps/desktop/Cargo.lock",
+      "bytes": 11406,
+      "sha256": "ef1923a730da7d189823e496c1837e84fc2c4d441b15f47e7fb5c002aa36640f"
+    },
+    {
+      "file": "apps/desktop/Cargo.toml",
+      "bytes": 125,
+      "sha256": "9b1f2ae404ba3443b18a8788b6fcde4c73b9ff7ad0124b1eb89a276a888b63f4"
+    },
+    {
+      "file": "apps/desktop/core/Cargo.toml",
+      "bytes": 439,
+      "sha256": "6161e567e329776f596b6ffbbdd0bbe78c811c580f000b6aa122926c4da4345e"
+    },
+    {
+      "file": "apps/desktop/core/src/lib.rs",
+      "bytes": 750,
+      "sha256": "da7266ca5675d3e1f0b29fd6b7a023271abc2d4be2a1d54d78a1b8c8945969cf"
+    },
+    {
+      "file": "apps/desktop/core/src/store.rs",
+      "bytes": 66910,
+      "sha256": "3cee9014e7dd0b4364ca7396d883ac72b2082956776a68a3b95f1de38e4fc8f7"
+    },
+    {
+      "file": "apps/desktop/core/src/sync.rs",
+      "bytes": 9432,
+      "sha256": "2bd1d39cb432fea425e87c887d70de34dd5d6a52102f694325d1a95ee98bc31c"
+    },
+    {
+      "file": "apps/desktop/core/tests/habit_tests.rs",
+      "bytes": 16940,
+      "sha256": "d6f81074c4251de2c8479362b9415b3d048ece197e1998e73a20c69128d8c0c8"
+    },
+    {
+      "file": "apps/desktop/core/tests/note_tests.rs",
+      "bytes": 9093,
+      "sha256": "ce55e6cb6cb31cd657df1cda24b9b97e94ba154f8d305dbe5a704140eb391760"
+    },
+    {
+      "file": "apps/desktop/core/tests/store_tests.rs",
+      "bytes": 8381,
+      "sha256": "7061e6db52c935feb6e96ca7698b353a664c310ba54d3d026903d4aec7871cf9"
+    },
+    {
+      "file": "apps/desktop/core/tests/sync_tests.rs",
+      "bytes": 13039,
+      "sha256": "56073abc02578640d9f12ebfde4026daff26ee8d2b303ef0011f708586c8a7ed"
+    },
+    {
+      "file": "apps/desktop/index.html",
+      "bytes": 307,
+      "sha256": "54595f306c177ce94efaf852888394e4c1acd7dd052c6b35638e3324f840687d"
+    },
+    {
+      "file": "apps/desktop/package.json",
+      "bytes": 597,
+      "sha256": "2531aad25198e8d9bcf6e0bd7aa9100a5672b748b158f656046ef5bac2875d9c"
+    },
+    {
+      "file": "apps/desktop/pnpm-lock.yaml",
+      "bytes": 51743,
+      "sha256": "786ffb5af527e50980a3bde5680c10e8f3e7094a49cad11f2e3ad50ff55a49d4"
+    },
+    {
+      "file": "apps/desktop/pnpm-workspace.yaml",
+      "bytes": 64,
+      "sha256": "200151099c4991752c3818cb32d16a7ce4cba08489ccf0a14fd893d3acdcbcff"
+    },
+    {
+      "file": "apps/desktop/src-tauri/build.rs",
+      "bytes": 39,
+      "sha256": "487059eaf8a947b80f20a9aacac038a5047b2ad69d2401b827376c67d6fe847f"
+    },
+    {
+      "file": "apps/desktop/src-tauri/capabilities/default.json",
+      "bytes": 282,
+      "sha256": "b3a3e72edb5c746eafd9ef8f917750d29a6452bf00018d3ccd3c793ecce2cb5a"
+    },
+    {
+      "file": "apps/desktop/src-tauri/Cargo.lock",
+      "bytes": 134598,
+      "sha256": "fa4279a0e352d158f6972c050c9bec30718049fa0e22c6d9a5268db4ffd8dea5"
+    },
+    {
+      "file": "apps/desktop/src-tauri/Cargo.toml",
+      "bytes": 661,
+      "sha256": "93deabe42bd7bf6c399c7b229d9aa6f4ba503c951527cd5fc29988fbc7050bef"
+    },
+    {
+      "file": "apps/desktop/src-tauri/icons/128x128.png",
+      "bytes": 1370,
+      "sha256": "7153472caed4e958f13a309093be7249ee564594d9956441d9bc6eee66b8fc9a"
+    },
+    {
+      "file": "apps/desktop/src-tauri/icons/128x128@2x.png",
+      "bytes": 2851,
+      "sha256": "d70ced45e2d9216bc0aa5ebb286cd7ba2a287030fcba324f3284ae7fd8f732a4"
+    },
+    {
+      "file": "apps/desktop/src-tauri/icons/32x32.png",
+      "bytes": 364,
+      "sha256": "f2b548b502dc32c37ee9260ca86064e3f9ebe40a1aa74a196ac47cb526efb2a9"
+    },
+    {
+      "file": "apps/desktop/src-tauri/icons/icon.ico",
+      "bytes": 11481,
+      "sha256": "4f1c764a0fdc89032ecea26cc90b0f9413e8857f7f67824dcee94582bce1da15"
+    },
+    {
+      "file": "apps/desktop/src-tauri/icons/icon.png",
+      "bytes": 6039,
+      "sha256": "db22b995c6c531859fb57684265df170c5ae93be2c247c27f2b629be374b0590"
+    },
+    {
+      "file": "apps/desktop/src-tauri/src/lib.rs",
+      "bytes": 59507,
+      "sha256": "c2b357ec8e2170e708b0433bdf4d49833948ef94e5fd4a58ec53a32cf3cdbe39"
+    },
+    {
+      "file": "apps/desktop/src-tauri/src/main.rs",
+      "bytes": 40,
+      "sha256": "0d57aef27654bae87420f6e524204f01fe644e6ae71988646ed8c7a7823d2793"
+    },
+    {
+      "file": "apps/desktop/src-tauri/tauri.conf.json",
+      "bytes": 815,
+      "sha256": "326946543e42f43ba72c936604da9db33f2cd315e0f9e400ffddd9adcdcd09ac"
+    },
+    {
+      "file": "apps/desktop/src/api.ts",
+      "bytes": 56262,
+      "sha256": "295643322a423f7ecbd8a1838e9d3e8145a450b9ca4c75c3881adcc08546cb91"
+    },
+    {
+      "file": "apps/desktop/src/App.vue",
+      "bytes": 73382,
+      "sha256": "48c755b68bc3bca96791ac8e8a14f3dad83f0e02cd2999f98fa24fc6d24c9cf9"
+    },
+    {
+      "file": "apps/desktop/src/calendar.test.ts",
+      "bytes": 4331,
+      "sha256": "add8de31cae46da63b0c155f5df39234c88063fd013aa2065d0afdabe7f64e38"
+    },
+    {
+      "file": "apps/desktop/src/calendar.ts",
+      "bytes": 5728,
+      "sha256": "c8709b27479cf08ad0dc12efe7c299cb06e07e53855fec708726d8fccf31fa2a"
+    },
+    {
+      "file": "apps/desktop/src/confirm-dialog.a11y.test.ts",
+      "bytes": 1111,
+      "sha256": "78596a4ce5db31fb635eada575243da51f9ad20cde3015e8ec166180d7825822"
+    },
+    {
+      "file": "apps/desktop/src/ConfirmDialog.vue",
+      "bytes": 1265,
+      "sha256": "189c9fbd7ed3634f555fa083790732fcc5c35e5ccf64508e5857a3599e8ce976"
+    },
+    {
+      "file": "apps/desktop/src/focus.test.ts",
+      "bytes": 13262,
+      "sha256": "6e68b13ef104238a80acd72d3ab6f9ad625c6ab71c8f8d0062473cf510343401"
+    },
+    {
+      "file": "apps/desktop/src/focus.ts",
+      "bytes": 13867,
+      "sha256": "7fc3d83a17185b7d2d7b0e1a589cc98f8467652efd4ca92d2cac48233282a6b3"
+    },
+    {
+      "file": "apps/desktop/src/goals.test.ts",
+      "bytes": 11812,
+      "sha256": "ee7478f4f6cdd84dd41edc8fcaba2657e3d7a3c980a772832ebbfb19a5e2e02d"
+    },
+    {
+      "file": "apps/desktop/src/goals.ts",
+      "bytes": 12194,
+      "sha256": "829bea295598d146453955b0c68179e07c6ae0420a7ddab3951d7518fa5a7fd0"
+    },
+    {
+      "file": "apps/desktop/src/habits.test.ts",
+      "bytes": 13249,
+      "sha256": "4e53417a6fff6d9ad5a4f29171510651615cc74eef0489508f7c52b405acc0e4"
+    },
+    {
+      "file": "apps/desktop/src/habits.ts",
+      "bytes": 9099,
+      "sha256": "ca0b47c333b2082af0be60d60d7c6604f8382429a0fb12a2b73ab3f659122983"
+    },
+    {
+      "file": "apps/desktop/src/main.ts",
+      "bytes": 112,
+      "sha256": "e6989f43be872be95a6bcf4185151038b63e88fc2ff7b4a776b654b909804598"
+    },
+    {
+      "file": "apps/desktop/src/modules.test.ts",
+      "bytes": 1772,
+      "sha256": "a952772431026f9f261eb70faade993309401c1b3f062e613ffb7166a0f74c26"
+    },
+    {
+      "file": "apps/desktop/src/modules.ts",
+      "bytes": 2375,
+      "sha256": "09eea1c7e40742d2d6db45b6af55963c472fb677bb7600e1e1e419ae0414f78f"
+    },
+    {
+      "file": "apps/desktop/src/notes.test.ts",
+      "bytes": 8547,
+      "sha256": "7c9e5fb2a72ca9a49bd377f9f31ab687269489347513f71b5673e26aaad03118"
+    },
+    {
+      "file": "apps/desktop/src/notes.ts",
+      "bytes": 9422,
+      "sha256": "bef823e068b5e66bd4374ca44eb6308c4e355d409ce24c06223ff3617fb4bedf"
+    },
+    {
+      "file": "apps/desktop/src/notifier.ts",
+      "bytes": 906,
+      "sha256": "d44c44c8ecf587f7ffb78a7880d80d710c35a97ac22fed36d4781b0851087300"
+    },
+    {
+      "file": "apps/desktop/src/prefs.test.ts",
+      "bytes": 1134,
+      "sha256": "6ffd574f17fb6863f0d5b718e0b2ec870aaf733c3096eee2a32228f1f928085a"
+    },
+    {
+      "file": "apps/desktop/src/prefs.ts",
+      "bytes": 903,
+      "sha256": "0f627227dcfe67c848ad54239b630f93a895f76cdd74a29e7299cc694d54d3fd"
+    },
+    {
+      "file": "apps/desktop/src/reminders.test.ts",
+      "bytes": 5481,
+      "sha256": "ac7efbeabb804fdfaffb5ab280a91cbe00ac7ee6258badc785279d9811650fce"
+    },
+    {
+      "file": "apps/desktop/src/reminders.ts",
+      "bytes": 4000,
+      "sha256": "17b4d3df1b931f2caad6d4cd1e3bf3fa1ec3db194de24413d6042b239b4bbbdb"
+    },
+    {
+      "file": "apps/desktop/src/report.test.ts",
+      "bytes": 1938,
+      "sha256": "5e91b29d6e96d78b24ef6bb6a349aa543180109eff14a221a2d0d50915b12339"
+    },
+    {
+      "file": "apps/desktop/src/report.ts",
+      "bytes": 1015,
+      "sha256": "f22582ce3ab650901f8a4a26fb40dd1310ae7240d679d5d8e856fd5a3bd4258c"
+    },
+    {
+      "file": "apps/desktop/src/session.test.ts",
+      "bytes": 8429,
+      "sha256": "14766e871e72dad5191098768df63a087a6e76fe9353f7b0bdce489b7ca20b2d"
+    },
+    {
+      "file": "apps/desktop/src/session.ts",
+      "bytes": 6191,
+      "sha256": "2244108e19a6346966c0de8aff207b95840159290bd9aef69adadeccfdc95c26"
+    },
+    {
+      "file": "apps/desktop/src/styles.css",
+      "bytes": 11063,
+      "sha256": "204eaddf636738f2dd36496855ab0e307c9196af28907cb727c8b93daee023c6"
+    },
+    {
+      "file": "apps/desktop/src/tasks.test.ts",
+      "bytes": 6806,
+      "sha256": "1a3188f84bbb8050f330e2242457c45c605550b46d7a38d97c9a51f8af88d9a9"
+    },
+    {
+      "file": "apps/desktop/src/tasks.ts",
+      "bytes": 1406,
+      "sha256": "ae1f3baecfbf1ff617d7310578091b0834d5e2852532922a4ff43a51a1fb3458"
+    },
+    {
+      "file": "apps/desktop/tsconfig.json",
+      "bytes": 529,
+      "sha256": "3bbcbbe27f735762bed0be499335e99c2178ccbed588b608ca324d29df799d3b"
+    },
+    {
+      "file": "apps/desktop/vite.config.ts",
+      "bytes": 261,
+      "sha256": "2cca7aa511af4e5a394ecb25c46b116bbab07ecb33abaaac457d740682c2037c"
     },
     {
       "file": "db/001_init.sql",
@@ -43,6 +333,16 @@
       "file": "db/002_spec01.sql",
       "bytes": 2842,
       "sha256": "33b7d6e4617a28e73bfb9464c87f6a99f8b9a7a0d9ac2eb87a8885204f6132c4"
+    },
+    {
+      "file": "deploy/.env.example",
+      "bytes": 1048,
+      "sha256": "a2bc1d8c58b5dadd4aea45dbf932c6af1f571e59d2ffc6d17992904efce6da21"
+    },
+    {
+      "file": "deploy/README.md",
+      "bytes": 3184,
+      "sha256": "b353b940586499c1b62a7662418337a2702e73af64a89b5d044f815cd35f0717"
     },
     {
       "file": "docs/01-PRD.md",
@@ -71,8 +371,8 @@
     },
     {
       "file": "docs/06-API-CONTRACT.md",
-      "bytes": 11770,
-      "sha256": "0274d8f6137927b4217ad85c3ad7238ceb78df81c08fec1f7a9c505417f6efe5"
+      "bytes": 27119,
+      "sha256": "2de4d02e4a262ef362b970b4e09316922ac768d483b9d527eae6f54fc632b9fb"
     },
     {
       "file": "docs/07-OFFLINE-SYNC.md",
@@ -95,9 +395,109 @@
       "sha256": "6723fcdb744b3f60405526b28855b92f9a10fc2459bc7eaf9dc8e91ae54f3d76"
     },
     {
+      "file": "docs/100-UX-02.md",
+      "bytes": 1358,
+      "sha256": "eebb12269b25f753e9523bda2458e46737a260e5facd41e01adfda379a36027f"
+    },
+    {
+      "file": "docs/101-NOTE-04a.md",
+      "bytes": 1302,
+      "sha256": "bbe3132e7235fcbc7b161b8ac86b78244fa308b25419ca6a0ce9ddc3df2a139c"
+    },
+    {
+      "file": "docs/102-FOCUS-08.md",
+      "bytes": 1738,
+      "sha256": "009ac946ef4afd8a1545e79b2210f84442fb4262c8f8f344b114e2b2ac5b81b7"
+    },
+    {
+      "file": "docs/103-FOCUS-09a.md",
+      "bytes": 1865,
+      "sha256": "acb94368baf206360626d58a44cb5e3c7a4412e383435b3b0e1ff8c539d6ac65"
+    },
+    {
+      "file": "docs/104-NOTE-04b-1.md",
+      "bytes": 1277,
+      "sha256": "938aadec9de0045cf244c40131f78c213c711bf4f4d0534cc838564d1365007e"
+    },
+    {
+      "file": "docs/105-GOAL-03a.md",
+      "bytes": 2106,
+      "sha256": "8d2b98a5412ff377b533c40972029f0b76971e0ba478c45c7aaad10fc272c636"
+    },
+    {
+      "file": "docs/106-GOAL-03b.md",
+      "bytes": 1859,
+      "sha256": "e6cdc39eabdf95f29a908fd2b3f704f00151aae3d2946239c5082a5337ff4b78"
+    },
+    {
+      "file": "docs/107-GOAL-03c.md",
+      "bytes": 1492,
+      "sha256": "51080f64f177bf35ced64c0658b8135e2154369822ccd8ce58d94994f0175c82"
+    },
+    {
+      "file": "docs/108-GOAL-03d.md",
+      "bytes": 1388,
+      "sha256": "da4c8cc322d0491537be461b8e61df7b48d18564dce170ca823183873c5a191a"
+    },
+    {
+      "file": "docs/109-FOCUS-09b-a.md",
+      "bytes": 1979,
+      "sha256": "a69007d7e0d22034f3ebe271c40f5ad92a4e63268e74bae761ca42075c4ce1a4"
+    },
+    {
       "file": "docs/11-DOTNET-BACKEND.md",
       "bytes": 4288,
       "sha256": "2cc73df6fa7b259ca0528c0543d94f7025cecd3d4ce1bc45f5dcaf1e81c5a1e8"
+    },
+    {
+      "file": "docs/110-FOCUS-09b-b.md",
+      "bytes": 1555,
+      "sha256": "24fd6b5554752300ec44517755bc3e182402dcdcd1b476a233b4c53e01c47a40"
+    },
+    {
+      "file": "docs/111-FOCUS-09b-c.md",
+      "bytes": 1535,
+      "sha256": "4fd6c0da980c5b846d7cdc00a77506204198e30c71f19699948fb1f85674c38e"
+    },
+    {
+      "file": "docs/112-GOAL-03e.md",
+      "bytes": 1377,
+      "sha256": "02085191ec93770ee00fb608b1c7b367334221582665fc79b46ba86527bbcdfd"
+    },
+    {
+      "file": "docs/113-GOAL-03f.md",
+      "bytes": 1446,
+      "sha256": "134aca308124a2729497c5b10d2c69d556d2aed5d3a4e885ac6513299bf8bbdd"
+    },
+    {
+      "file": "docs/114-GOAL-03g-a.md",
+      "bytes": 2188,
+      "sha256": "f685c5d422d1ead34fa7d5eb848c196c32dc28e403fca5771ec270bdadc273e8"
+    },
+    {
+      "file": "docs/115-GOAL-03g-b.md",
+      "bytes": 1467,
+      "sha256": "a27183d7ba3098ebd645ed556cd8c435d10ef0d8d45973371983a3dcde7d0adb"
+    },
+    {
+      "file": "docs/116-FOCUS-09b-d.md",
+      "bytes": 1821,
+      "sha256": "1b727218672b46d902dde818cc24611593f07227c46bc7709867c2172ad242a7"
+    },
+    {
+      "file": "docs/117-GOAL-03g-c.md",
+      "bytes": 1558,
+      "sha256": "0dec5f7df9fcee38dd4f4e63110393c7c660833587dad56ce2c17088811f32ce"
+    },
+    {
+      "file": "docs/118-NOTE-04b-2a.md",
+      "bytes": 2243,
+      "sha256": "6d0d7a88b02d205382a98eceef154692a74e412412e271a4f11637c6e756b738"
+    },
+    {
+      "file": "docs/119-TIME-01G-a.md",
+      "bytes": 2255,
+      "sha256": "3f1b024e897665f252bb034517682eecd8be240a21b9d208955e68364b8d8991"
     },
     {
       "file": "docs/12-DESKTOP-TAURI.md",
@@ -105,9 +505,109 @@
       "sha256": "c4f66cd7dc66aceedd98ab6888cc58fb5cbaa0c13221c4e5737a0601795f4f35"
     },
     {
+      "file": "docs/120-TIME-01G-b-a.md",
+      "bytes": 1928,
+      "sha256": "bb5ec78a9881aff9d28861b05fc84faa7b2c5f33461a9738dafb3748973fc007"
+    },
+    {
+      "file": "docs/121-UX-03.md",
+      "bytes": 1712,
+      "sha256": "aab846b0a61ef5ff42f520e51108f6a59b9aa715dfb45d49eef3fa777d543555"
+    },
+    {
+      "file": "docs/122-NOTE-04b-2b-a.md",
+      "bytes": 2119,
+      "sha256": "8ede88d2da80facc10dd0be9e4918710f7845f753587d2386c602750897be4dd"
+    },
+    {
+      "file": "docs/123-NOTE-04b-2b-b-a.md",
+      "bytes": 1483,
+      "sha256": "31a50cdd738f2e077bb42bce58f8a1f5884b21a947aa0da3e63097ea31ef15a7"
+    },
+    {
+      "file": "docs/124-NOTE-04b-2b-b-b.md",
+      "bytes": 1804,
+      "sha256": "aba8c92430a463d05d1f87c24f4c1a5c152245839fb27c6bc33ed2e6da5c661b"
+    },
+    {
+      "file": "docs/125-UX-04.md",
+      "bytes": 1707,
+      "sha256": "0e0ebfc6615040ce86cae16f71db53c192f02db3aef9f0bb44bf9abff4cae27f"
+    },
+    {
+      "file": "docs/126-NOTE-04b-2b-b-c-a.md",
+      "bytes": 1446,
+      "sha256": "dea6df5e43e8aa844ad43883bc6d5fce1dd48d8fb8fd72bb6e189ff69ab35257"
+    },
+    {
+      "file": "docs/127-NOTE-04b-2b-b-c-b-a.md",
+      "bytes": 1342,
+      "sha256": "60937b78462d153a83ca7a18813c4c1d80c0270bbe66a7309428e4fe4f7228fe"
+    },
+    {
+      "file": "docs/128-TIME-01G-b-b-a.md",
+      "bytes": 1920,
+      "sha256": "52052ce32335cb5cb61a1e4f2d71e57bbc1487789771163bdeecf9e4dc6c43ba"
+    },
+    {
+      "file": "docs/129-NOTE-04b-2b-b-c-b-b-a.md",
+      "bytes": 1359,
+      "sha256": "427b8b426ba4a6486b1b53b32206eccf8f4139cfde88dad11ef6bb57a65bb7ee"
+    },
+    {
       "file": "docs/13-ANDROID.md",
       "bytes": 4059,
       "sha256": "90fcbbaaa8ed6e16eb3e822145189f5942dc4d66ba5ae4b4529f05d10d8887a4"
+    },
+    {
+      "file": "docs/130-NOTE-04b-2b-b-c-b-b-b-a.md",
+      "bytes": 1403,
+      "sha256": "bbf7749d79eaf65c649b7ccd06140b03fdbcd1ac38c9a75395a14073aefd179d"
+    },
+    {
+      "file": "docs/131-FOCUS-09b-e-a.md",
+      "bytes": 1764,
+      "sha256": "63cb5470a144a056cee132a306f1418cbc9db04e17a190a10459defbb2844399"
+    },
+    {
+      "file": "docs/132-NOTE-04b-2b-b-c-b-b-b-b-a.md",
+      "bytes": 1550,
+      "sha256": "9a5696a3d17c69ddbfc4c074ab17e64c851c5408c4d2c88eba399485da6357a4"
+    },
+    {
+      "file": "docs/133-REL-02-a.md",
+      "bytes": 1945,
+      "sha256": "a1b2f684e74f6a5b8062d583d721c8764b2c2193abd289f8e62f08e816d7de6d"
+    },
+    {
+      "file": "docs/134-NOTE-05a.md",
+      "bytes": 2637,
+      "sha256": "ec2f1881b2c2184975eeae23dacd3ea60f312632d46bc917f470f490c7e55921"
+    },
+    {
+      "file": "docs/135-NOTE-05a-b.md",
+      "bytes": 2184,
+      "sha256": "b12add92ab2506eee2a00e0472c0286f66f7f36b9576034cd8fb1b9ab0dbd1e5"
+    },
+    {
+      "file": "docs/136-NOTE-05b-a.md",
+      "bytes": 1794,
+      "sha256": "af3dc96bc795b3d7744c77de8376deac579cb188f54dd84b4ea109dc28e09850"
+    },
+    {
+      "file": "docs/137-NOTE-05b-b.md",
+      "bytes": 1690,
+      "sha256": "437940b668502148de04525bf7c2aeef9fb7000b28620bc05d482f0ace054378"
+    },
+    {
+      "file": "docs/138-SEC-02-a.md",
+      "bytes": 2001,
+      "sha256": "6ef7742c9ade6da6fdabcb37f1d18c754fd10be5241a5c593188ec52612ca8d9"
+    },
+    {
+      "file": "docs/139-NOTE-05a-c.md",
+      "bytes": 1785,
+      "sha256": "4276250ebdf482bc469f916d0f2f304c7b8823e178379ca7d88cae50cf9ece28"
     },
     {
       "file": "docs/14-IOS.md",
@@ -115,9 +615,109 @@
       "sha256": "fd579412acf6b3b721c3c2de084dca0a3619a6f65b07c585ab2e718c20215333"
     },
     {
+      "file": "docs/140-NOTE-05c-a.md",
+      "bytes": 1698,
+      "sha256": "1e4c2c22180e15115800e2a8c7424ef038150977de4ddf06082a3a93096e0c76"
+    },
+    {
+      "file": "docs/141-NOTE-05c-b-a.md",
+      "bytes": 1665,
+      "sha256": "deb25d11dc8568ab3154f0d9c42d89733b73c804a50cf1cc3b3d298f0e17b4d7"
+    },
+    {
+      "file": "docs/142-NOTE-05c-b-b-a.md",
+      "bytes": 1570,
+      "sha256": "b479b4dd2df6ee9c67cfb6e5c1a98035909c4b4afaa43e45bd45aa8d65e57995"
+    },
+    {
+      "file": "docs/143-UX-05-a.md",
+      "bytes": 1488,
+      "sha256": "4ad85cc868beaa08f18dba273592375cc3927858ffd4f6b029294b280283d723"
+    },
+    {
+      "file": "docs/144-TIME-01G-b-b-b-a.md",
+      "bytes": 1984,
+      "sha256": "7d47725bc54a7e9c56e21af375808a013215ad5bcaf1deb582e0849f8a5ede81"
+    },
+    {
+      "file": "docs/145-UX-06-a.md",
+      "bytes": 1497,
+      "sha256": "d35c1c770410d4bb2bb89baa8997ca1378da896f70fc4305f4dcbee7546e24bc"
+    },
+    {
+      "file": "docs/146-TIME-01G-b-b-b-b-a.md",
+      "bytes": 1930,
+      "sha256": "edd25205aa869334a6d886484e7bca11f9aa2f354dc49923ef4c14766d9f40f0"
+    },
+    {
+      "file": "docs/147-NOTE-05c-b-b-b-a.md",
+      "bytes": 1622,
+      "sha256": "15ff38a437049790e65d05649fa50ca76518278e2817786b936cfdabc747901c"
+    },
+    {
+      "file": "docs/148-UX-06-b-a.md",
+      "bytes": 1432,
+      "sha256": "b6620c9704153167fa27edc2c61403d4c2a0a5fb38b8f95092506c7efe993aa4"
+    },
+    {
+      "file": "docs/149-NOTE-05c-b-b-b-b-a.md",
+      "bytes": 1105,
+      "sha256": "e9f2322ac5fbdaeb6051e023a1c9f3743a97814fe86a3373926791c77850521b"
+    },
+    {
       "file": "docs/15-SECURITY-PRIVACY.md",
       "bytes": 4614,
       "sha256": "a91850a6ae49bb1c5589833509ea2f8d8c58d2a45d47891fb52c1fd11bca8548"
+    },
+    {
+      "file": "docs/150-UX-06-b-b.md",
+      "bytes": 1386,
+      "sha256": "1b863e6aabd529aa166d446186f455796f1534d1b1b26b9f8634442f4454bf27"
+    },
+    {
+      "file": "docs/151-NOTE-05c-b-b-b-b-b-a.md",
+      "bytes": 1186,
+      "sha256": "b2220595ba3282e6d6d580237cfe9ebda75101d81cbcbc8d9db4cf7b83308e34"
+    },
+    {
+      "file": "docs/152-UX-06-b-c.md",
+      "bytes": 1426,
+      "sha256": "cd73abc73dd75d74163b7e4139d35363b09fc026660d8115b207b39e5c126e52"
+    },
+    {
+      "file": "docs/153-UX-06-b-d-a.md",
+      "bytes": 1446,
+      "sha256": "a5c609828920d149679a827633dcc6635149bc55d755eab5cdd98ccbee5c3266"
+    },
+    {
+      "file": "docs/154-NOTE-05c-b-b-b-b-b-b-a.md",
+      "bytes": 1782,
+      "sha256": "7e09f4a4bae4fa22659fb0fc9c7297e581071c6cda48525fa24c5a8c7b7fd128"
+    },
+    {
+      "file": "docs/155-FOCUS-09b-e-b-a.md",
+      "bytes": 1508,
+      "sha256": "9f62b8d2ec19df7f4370f7073407214bb06f9da88119d46506c011765636e0b1"
+    },
+    {
+      "file": "docs/156-FOCUS-09b-e-b-b-a.md",
+      "bytes": 1334,
+      "sha256": "6045f770253734fa583fc1fb2584d2af8faa63ad69c23a1660ad26524b3f16bb"
+    },
+    {
+      "file": "docs/157-NOTE-05c-b-b-b-b-b-b-b-a.md",
+      "bytes": 1544,
+      "sha256": "5c8b8c061d62b40bf8599e3f29c2d51922564637c967408dbe61626e0926c33e"
+    },
+    {
+      "file": "docs/158-REL-02-a-b.md",
+      "bytes": 1467,
+      "sha256": "ddbdc4aa5f38e89f56a50eb3b14a7611673878c448dac6e7a4b78831bd1cc5c6"
+    },
+    {
+      "file": "docs/159-REL-02-a-c.md",
+      "bytes": 1286,
+      "sha256": "5bf1bdbd891fabbb65a59863e7a47fb12f528d154aaf13baf0bdb40305779ccb"
     },
     {
       "file": "docs/16-QUALITY-TESTING.md",
@@ -125,9 +725,74 @@
       "sha256": "b955c750ba33802f6b52cab2b7be7743cc0431112b95ecebcebb3fa7f579755e"
     },
     {
+      "file": "docs/160-REL-02-a-d.md",
+      "bytes": 1302,
+      "sha256": "c4f5ae60401ceaff90d362b6cf50f46b7fe2dd08f1d6272c361482e4cd0a0316"
+    },
+    {
+      "file": "docs/161-SEC-02-b-a.md",
+      "bytes": 1584,
+      "sha256": "34b073016dee6669d730d84d1f4cbfb49fe2298027654b19573efd8ddb777a36"
+    },
+    {
+      "file": "docs/162-NOTE-05c-b-b-b-b-b-b-b-b-a.md",
+      "bytes": 1726,
+      "sha256": "0e7422629ca1fe1744683d38526de8229da3c0b5745aef36dad9bffb2cfc7bff"
+    },
+    {
+      "file": "docs/163-NOTE-05c-b-b-b-b-b-b-b-b-a-b.md",
+      "bytes": 1268,
+      "sha256": "1266d8b5379f160259bf85af2b81e5a86a9227d009b7fa493eef1b8657dab984"
+    },
+    {
+      "file": "docs/164-NOTE-05c-b-b-b-b-b-b-b-b-b-b-a.md",
+      "bytes": 1469,
+      "sha256": "c2206113ab01d12ab2bc801670c7f195b8b6f6d380c032e34908b090eba148e3"
+    },
+    {
+      "file": "docs/165-NOTE-05c-b-b-b-b-b-b-b-b-b-b-b-a.md",
+      "bytes": 1452,
+      "sha256": "1642065021750121fee93aeddda4f096c8b662f15442c8e6932bc44c68da1a8b"
+    },
+    {
+      "file": "docs/166-NOTE-05c-429-countdown.md",
+      "bytes": 1399,
+      "sha256": "f2b873ee9e85a82e55a132dd10563dbd78a4d50954210cc2a297098d86e7151d"
+    },
+    {
+      "file": "docs/167-NOTE-05c-preview-sniffing.md",
+      "bytes": 1619,
+      "sha256": "fcc8ec653f3807d4a0db6583414086b85f97e8aad3fc23387b92afc60aa03253"
+    },
+    {
+      "file": "docs/168-NOTE-05c-server-content-check-a.md",
+      "bytes": 1634,
+      "sha256": "be4da5445e7dac3297d6a9313bd9b6b9a869f1182ae9703e0422a8e4e8eca45d"
+    },
+    {
+      "file": "docs/169-NOTE-05c-server-content-check-b-a.md",
+      "bytes": 1650,
+      "sha256": "cfc5c962a2b8e54f5d67921917116c8ecf735dca02ffa84122c61b2859e18d13"
+    },
+    {
       "file": "docs/17-DEVOPS.md",
-      "bytes": 4861,
-      "sha256": "55dc6e30358ad9023ff31568a5cbc0ac7aa88c32b8b6dae56e947dc0b9a41252"
+      "bytes": 4931,
+      "sha256": "ba9c03f2ac503c755f02efcf3b018902354cc3677e1c19dddcc56fa627b75b29"
+    },
+    {
+      "file": "docs/170-NOTE-05c-preview-cache-cleanup.md",
+      "bytes": 1486,
+      "sha256": "b3ef23ec7af7bacc9570480647acab2572767d0634245e6dd4952124ad07393a"
+    },
+    {
+      "file": "docs/171-NOTE-05c-preview-lru.md",
+      "bytes": 1472,
+      "sha256": "b97c82c09bc71d707b34cbc8fb9c46021bc8e691e1cc5bdac164a133fd55868f"
+    },
+    {
+      "file": "docs/172-V1-CLOSURE-AUDIT.md",
+      "bytes": 2297,
+      "sha256": "aa4aea2d5fa23597479650db796439d3ce19ba8e60808b8651736d7dca81a0f5"
     },
     {
       "file": "docs/18-AI-CODING-GUIDE.md",
@@ -136,8 +801,8 @@
     },
     {
       "file": "docs/19-ROADMAP-BACKLOG.md",
-      "bytes": 4432,
-      "sha256": "1c851cf4a61d28aa41b544507a4e6aa6974a6eb1134068d3bb70183106619145"
+      "bytes": 19308,
+      "sha256": "291fbaf267230629d203e20c3eb3353d97ba4c545a1ea461c1e0e8496e3f7eed"
     },
     {
       "file": "docs/20-BUSINESS-METRICS.md",
@@ -225,6 +890,321 @@
       "sha256": "8ddfa71841da8ab50752452a8f0b59abbb1b58b0908bd4ccb3163cfc240f732d"
     },
     {
+      "file": "docs/37-TASK-READ-01.md",
+      "bytes": 2405,
+      "sha256": "c4f1f37ef24b1eb4a45a418017a4da37e83cc0ccc890c6e8ec22a9aaa7fdaeb6"
+    },
+    {
+      "file": "docs/38-TASK-UPDATE-01.md",
+      "bytes": 2934,
+      "sha256": "94de3c80748edebc6ab5d9893b53c759f47310f7f6eb6d35f942b62389c9937b"
+    },
+    {
+      "file": "docs/39-TASK-COMPLETE-01.md",
+      "bytes": 2678,
+      "sha256": "126f29e610f24a046b217e9484b9edd2322738eefe2be917bd6ef581e561ee0a"
+    },
+    {
+      "file": "docs/40-TASK-LIST-01.md",
+      "bytes": 2688,
+      "sha256": "0eba2fb3d36aab7586e11161d09772b471832d4a9426e307525361002900d587"
+    },
+    {
+      "file": "docs/41-TAG-01A.md",
+      "bytes": 2462,
+      "sha256": "81f8805b2cae137284624e95b34083c2524f6c65208d0106b202cb84ea39e99e"
+    },
+    {
+      "file": "docs/42-TAG-01B.md",
+      "bytes": 2235,
+      "sha256": "e3b61b992f33c14945e4831a896e0a765b4cfeb6ff6bc1d7528d407762c55527"
+    },
+    {
+      "file": "docs/43-STEP-01.md",
+      "bytes": 2279,
+      "sha256": "ddfe0a05ac68fb0060eed999607e50a9026ace944d5c9d2c75f3f81687138b5e"
+    },
+    {
+      "file": "docs/44-SYNC-PULL-01.md",
+      "bytes": 1938,
+      "sha256": "5ab47df80b8fa54795b44b666dd887d7abc05dc32c075993e44341102cae6811"
+    },
+    {
+      "file": "docs/45-SYNC-PUSH-01.md",
+      "bytes": 2591,
+      "sha256": "99567c71b4aea563dc8d30b005cad813ce182530c5979e632fb56e335f2d660a"
+    },
+    {
+      "file": "docs/46-SYNC-BOOTSTRAP-01.md",
+      "bytes": 1650,
+      "sha256": "4407aba62b96226c4051bd213b5995d8aacc3042e9cae60a92b14a517d5e4e85"
+    },
+    {
+      "file": "docs/47-TIME-01A.md",
+      "bytes": 2360,
+      "sha256": "d859d09882bcb6cdb0955eec65645bcd028535af2d77e3a3703271a87a915f06"
+    },
+    {
+      "file": "docs/48-TIME-01B.md",
+      "bytes": 1914,
+      "sha256": "aab129c1eef38ccc09c29e462b6935e0c9f88975420b01590550633cc83d08d7"
+    },
+    {
+      "file": "docs/49-TIME-01C.md",
+      "bytes": 2073,
+      "sha256": "47291621e05be6d175ebb6466fae158ed68b1b18c8c1e97a240e909ee8c6b034"
+    },
+    {
+      "file": "docs/50-AI-01.md",
+      "bytes": 2163,
+      "sha256": "e2f586fb3f9afdada4b0559f0d75d765a366db638444a0284ea2342cc0487bc7"
+    },
+    {
+      "file": "docs/51-AI-02.md",
+      "bytes": 2380,
+      "sha256": "f3ea7e6a2b30970a99ab88cbd7ad8fea0642ad16dc65c9731ffec893df9c9cb9"
+    },
+    {
+      "file": "docs/52-AI-03-04.md",
+      "bytes": 2217,
+      "sha256": "a9e02566ab196fba4bc410cfc0e39a6939b464179efd84b28d554fb7c76ac2b9"
+    },
+    {
+      "file": "docs/53-PRIV-EXPORT-01.md",
+      "bytes": 2135,
+      "sha256": "8be71bd9639d25a9a3887c803888e0b2c2abe7f29aa7b5c794a4328f34fcc124"
+    },
+    {
+      "file": "docs/54-TIME-01D.md",
+      "bytes": 1910,
+      "sha256": "3742154f9f1c404a95fd89f459fea4b1c820ffa45d76a3cfaa132e12801398a8"
+    },
+    {
+      "file": "docs/55-PRIV-STEPUP-01.md",
+      "bytes": 2099,
+      "sha256": "36207b798b34725e2b4d39388b0d823bcafb2e0c20712dc5c560a26289ec7dd3"
+    },
+    {
+      "file": "docs/56-PRIV-DELETE-01.md",
+      "bytes": 2198,
+      "sha256": "dd2508036d719a2c793404fb185b351055a78395125a8d940768be72fdf75a39"
+    },
+    {
+      "file": "docs/57-AI-CONSENT-01.md",
+      "bytes": 1920,
+      "sha256": "6ca26dbcd31afe8ce6795d7f3dafce9c6265a73356e1d80e6117b2cfedd27b6f"
+    },
+    {
+      "file": "docs/58-PRIV-CLEANUP-01.md",
+      "bytes": 2423,
+      "sha256": "2e4fbe586552f85bb01952b7363a515178f41cf147cb237d55a31499bcd98617"
+    },
+    {
+      "file": "docs/59-SEC-01A.md",
+      "bytes": 2288,
+      "sha256": "3da3d2c3b30ce98351f7d50ec9dd083f777c72845ccc430729f480918d698c3f"
+    },
+    {
+      "file": "docs/60-DESK-01A.md",
+      "bytes": 2201,
+      "sha256": "01e33adfe750d17a2584edcf52e7e96a4f94cb52ab3bb36d7042e14f35965581"
+    },
+    {
+      "file": "docs/61-DESK-01B.md",
+      "bytes": 2694,
+      "sha256": "844129745f8ca63a715fd0a783687ec6464fd219605a32eb90fba295dea95497"
+    },
+    {
+      "file": "docs/62-DESK-01C.md",
+      "bytes": 2442,
+      "sha256": "9baa86a27cbce8cea3368bef13b0bc2002d8f49772f35e638279281171086d07"
+    },
+    {
+      "file": "docs/63-DESK-01D.md",
+      "bytes": 2445,
+      "sha256": "72677ec2dd3a6df6dae903c38ac4d2199803189b97787af169c4ca30fbb379a9"
+    },
+    {
+      "file": "docs/64-DESK-01E.md",
+      "bytes": 2529,
+      "sha256": "c94cd40e802bb90637842cdaaf26c81fba90fc072380d818febc1bb4332bd471"
+    },
+    {
+      "file": "docs/65-DESK-01F.md",
+      "bytes": 2459,
+      "sha256": "f01144489339a42f0aa4aa8d95550c1b6e945a9cc5e161d2f0c8860ba9e4665d"
+    },
+    {
+      "file": "docs/66-DESK-01G.md",
+      "bytes": 2099,
+      "sha256": "35ed37249a78a33d09b35877ae0697bd190cd4a640ec14efb85974e068d3410f"
+    },
+    {
+      "file": "docs/67-DESK-01H.md",
+      "bytes": 2493,
+      "sha256": "cda77a49f72c378ad5068ae930aa478cee6852d1a8baf84570029cd468762cca"
+    },
+    {
+      "file": "docs/68-HAB-01A.md",
+      "bytes": 2536,
+      "sha256": "3074a5de9c2b89544dc3f125dc754d0d3400cc365980c7d7c4ca89fca827678e"
+    },
+    {
+      "file": "docs/69-HAB-01B.md",
+      "bytes": 2489,
+      "sha256": "4e4abbf6249da85c6062ad718711d1dd83caf93ed714bdf69a901890885d5586"
+    },
+    {
+      "file": "docs/70-HAB-01C.md",
+      "bytes": 2520,
+      "sha256": "f607e5025c7052b3507ef366d882aa753ff90e1ac00deae9b00c98a5ef6b21db"
+    },
+    {
+      "file": "docs/71-HAB-01D.md",
+      "bytes": 2088,
+      "sha256": "c0c2f7270141d18aaf5bcb8c2c6d92092bf733c4e94c7db7f5938a02ae165bd6"
+    },
+    {
+      "file": "docs/72-HAB-01E.md",
+      "bytes": 2594,
+      "sha256": "4b012eb2c1930b3fcd9dbe816ad127f88f7ba63bdd56d3612f9ba176defd4de9"
+    },
+    {
+      "file": "docs/73-HAB-01F.md",
+      "bytes": 2429,
+      "sha256": "3af2adc54a7ff75f6e0ba9136a8959b7b69d977d0aefb3a169aa124e866bb677"
+    },
+    {
+      "file": "docs/74-HAB-01G.md",
+      "bytes": 2556,
+      "sha256": "c53d426f0be824610762d1227169632cb7afc0cb5a58c52ee3718c75d1be188c"
+    },
+    {
+      "file": "docs/75-HAB-01H.md",
+      "bytes": 2231,
+      "sha256": "d7f8d49c10d8cbecfbffb14e9991bfd16bd5fba498ea6ab6071db581ccefbfb3"
+    },
+    {
+      "file": "docs/76-HAB-01I.md",
+      "bytes": 1930,
+      "sha256": "03047e0b1547b70c1c802092dba0d340f643e04221d2c9debf492560a0c917a7"
+    },
+    {
+      "file": "docs/77-HAB-01J.md",
+      "bytes": 2210,
+      "sha256": "4f0c425fc222019d2a020fa3a6e026fc6790cf083051cf71969210e1658533e0"
+    },
+    {
+      "file": "docs/78-HAB-01K.md",
+      "bytes": 1883,
+      "sha256": "336000afecc833787ade0a817ef32e1de2f256d155d826518b863e3e6d42abc7"
+    },
+    {
+      "file": "docs/79-HAB-01L.md",
+      "bytes": 1955,
+      "sha256": "c6fb561a3fffd90bfd197bb5e40033d6413a4676eaa722a83ac32523dbe62bc7"
+    },
+    {
+      "file": "docs/80-HAB-01M.md",
+      "bytes": 2439,
+      "sha256": "d31d66e572544d1416077a5047e40d9e2f4e81f2b563485f98085d938a345ffe"
+    },
+    {
+      "file": "docs/81-HAB-01N.md",
+      "bytes": 2389,
+      "sha256": "7ff7d1a970c57be356f27b11984c1604244f5e44ea2ef19a2c918d9b3bae62b0"
+    },
+    {
+      "file": "docs/82-HAB-01O.md",
+      "bytes": 2033,
+      "sha256": "817bf6e898dde5710c2168a1a537db859d772924bf94c3b7387d68e0eb87260c"
+    },
+    {
+      "file": "docs/83-HAB-01P.md",
+      "bytes": 1939,
+      "sha256": "ed9416084cd89437db90597b423afa1928c454f7fa1fcaf86a6d2feeabcf8cc3"
+    },
+    {
+      "file": "docs/84-FOCUS-01.md",
+      "bytes": 3040,
+      "sha256": "545691da7371e9c8d24007f3603c32552e8770208c2b47e5f639cdf999d96373"
+    },
+    {
+      "file": "docs/85-FOCUS-02.md",
+      "bytes": 2616,
+      "sha256": "a3bf2fa26faae40608d2be7467ef1916b7013457eef1c5d648a6ff58357b5b89"
+    },
+    {
+      "file": "docs/86-FOCUS-03.md",
+      "bytes": 1826,
+      "sha256": "fe95e81ce46ec893b47e9519c1ca5f47e2c956b126c3519bf5d96319292b7e01"
+    },
+    {
+      "file": "docs/87-FOCUS-04.md",
+      "bytes": 2320,
+      "sha256": "583ce738b0c01d226fda4059c74e29b2896503ce7929ff4dd8c5792749b5c98a"
+    },
+    {
+      "file": "docs/88-GOAL-01.md",
+      "bytes": 3025,
+      "sha256": "6e4b405adc5fb32f2b90ac8507f2c6e484c48c26945dacd8689729cb54779d47"
+    },
+    {
+      "file": "docs/89-TIME-01E.md",
+      "bytes": 3192,
+      "sha256": "d5f46b59807a6ec0000f87a21c3935d9da668c67a473b76c2623dae2dc17b297"
+    },
+    {
+      "file": "docs/90-GOAL-02.md",
+      "bytes": 1997,
+      "sha256": "8961c66d385c8951662349efc9aa6303a7d5d5e04ad458298e0cde9cc375520b"
+    },
+    {
+      "file": "docs/91-FOCUS-05.md",
+      "bytes": 1853,
+      "sha256": "e5f878860dbd108b598b82c17a6cb726c66b05ac3d171b81d66b19820bfab64c"
+    },
+    {
+      "file": "docs/92-NOTE-01.md",
+      "bytes": 2483,
+      "sha256": "7c6345a51fd58db258603215e019d63f296ed98847abf0681d6b17909306102a"
+    },
+    {
+      "file": "docs/93-SEC-01.md",
+      "bytes": 3822,
+      "sha256": "e3b57cf74d5225e5ab435550cbb1945eb32fee517d711c922630627298840076"
+    },
+    {
+      "file": "docs/94-NOTE-02.md",
+      "bytes": 2096,
+      "sha256": "71ad7b2950dad6346282cc295fc5eb064d9aaa93920a22318a66d77c18079875"
+    },
+    {
+      "file": "docs/95-REL-01.md",
+      "bytes": 3472,
+      "sha256": "35d8f0362f1c2f34c5fa0b79c5a1323ca2316ec22e46984ac5013743d821b278"
+    },
+    {
+      "file": "docs/96-NOTE-03.md",
+      "bytes": 1749,
+      "sha256": "59942617f4a81bf7e9d36eb107cba76da89e368e23a3c7bc5d4a0b45e4c422c9"
+    },
+    {
+      "file": "docs/97-FOCUS-06.md",
+      "bytes": 1771,
+      "sha256": "92c0b2032c7a6b1fd23a631b468446b27bcc0f0abfd52b248f4fed5e2a3a6187"
+    },
+    {
+      "file": "docs/98-TIME-01F.md",
+      "bytes": 2509,
+      "sha256": "d6fb96a45fc20b20c888619b58ad3d6a5fbe9b5cde9611dced2d25eb00a9f152"
+    },
+    {
+      "file": "docs/99-FOCUS-07.md",
+      "bytes": 1585,
+      "sha256": "2bea85ed34587319c30049a6e35fbe4bfca46f24a1d2eaf7f8099dfc4a8ad6c6"
+    },
+    {
       "file": "examples/ai-plan-preview.json",
       "bytes": 763,
       "sha256": "03c4ce754c64afb9e01feb724e73df4f01a52814dea11997530fdf05c6637e6d"
@@ -236,13 +1216,13 @@
     },
     {
       "file": "examples/spec-01/account-export-cloud.json",
-      "bytes": 420,
-      "sha256": "f732ee2ae44e37bd046314096d4b01dd5e56984720a2029b02cff3f7a64ad67a"
+      "bytes": 825,
+      "sha256": "ef8cb91967d66ffff03112566dc8dc8c3e513bd8c4888e8b85c72aa847d984f7"
     },
     {
       "file": "examples/spec-01/account-export-local.json",
-      "bytes": 683,
-      "sha256": "4de3c05a0c5822ee7536afb5f4983ecb5a49662f6e42aa87785963524a2f7cf7"
+      "bytes": 1206,
+      "sha256": "02f50fbffd80196c02f47eadfec39ac8010158e240a9927bc943ed7e2e0b88c7"
     },
     {
       "file": "examples/spec-01/ai-breakdown-preview.json",
@@ -255,9 +1235,19 @@
       "sha256": "407788f09b84b8d23583321acb693657a56517bb3d7879f3e733325131631e50"
     },
     {
+      "file": "examples/spec-01/focus-report.json",
+      "bytes": 391,
+      "sha256": "1fe547cc75fdbfa6103e93ed240d10affc876b21fca55f995c097f81cb9b0ed3"
+    },
+    {
       "file": "examples/sync-push.json",
       "bytes": 544,
       "sha256": "fc4de48b5af8b8a627353afef3a60d26d06c7e2ecdb213536da4df0826076040"
+    },
+    {
+      "file": "MASTER-DEVELOPMENT-SPEC.md",
+      "bytes": 483093,
+      "sha256": "f14abb3837afdb72807c84e0eff1dbf61e75cea3d8dc72f833323809cfd5ab1a"
     },
     {
       "file": "prompts/00-START-PROJECT.md",
@@ -300,9 +1290,9 @@
       "sha256": "9db3fdaa90fb05b5850c2e6c9265e5e4e00e6bcdf36444258fefbcdae751ac77"
     },
     {
-      "file": "server/Planna.slnx",
-      "bytes": 456,
-      "sha256": "bcef0639afb72e3d64a216fcefdb8221e6c16529e93c74f7f58635cf2446cbc3"
+      "file": "scripts/backup-restore-drill.sh",
+      "bytes": 5018,
+      "sha256": "47c922e674e91b270094f3a211c28021eaa863967d075d848970df871c0433fd"
     },
     {
       "file": "server/auth-migrations.sql",
@@ -320,6 +1310,16 @@
       "sha256": "fca94b1ce883a76d90b2048e1c4283f994a6b0690937e489bfe793d53bb20650"
     },
     {
+      "file": "server/export-migrations.sql",
+      "bytes": 27267,
+      "sha256": "4ffad3a2f873e462f564a7aecd0c116b4e4918a819b1920a4ab7a633124effa9"
+    },
+    {
+      "file": "server/habit-migrations.sql",
+      "bytes": 34069,
+      "sha256": "2f355e5a5067373ab330f1dbe7f71fdf2917fa91a18dc71a0934e9b80aa6fed7"
+    },
+    {
       "file": "server/login-failure-migrations.sql",
       "bytes": 18483,
       "sha256": "3a00a435720812b2723f744f930d4a774410f28d6baa9fc4dd86d6a646122e48"
@@ -330,14 +1330,59 @@
       "sha256": "11a3b1e685753c07ab378ec0ce7287ae6aa908dabecf56157b59c277c727874b"
     },
     {
+      "file": "server/Planna.slnx",
+      "bytes": 563,
+      "sha256": "636160b4af6a0495ed28b7038a9f30a13ffee87c64909c0353f076cdfc03ef29"
+    },
+    {
       "file": "server/spec01-migrations.sql",
       "bytes": 14600,
       "sha256": "baa3bd843bcc808dbcc4f05f2a139a2c6f40e08c18f243493e2e89647ebfe86c"
     },
     {
+      "file": "server/src/Planna.Api/Ai/AiEndpoints.cs",
+      "bytes": 13072,
+      "sha256": "549d0d91a4dd93459a9c008686cadf1e453b768250c944369a5d90cef499e6b5"
+    },
+    {
       "file": "server/src/Planna.Api/ApiAssemblyMarker.cs",
       "bytes": 62,
       "sha256": "bf2321984a7fbe2bffb4ce6d588023b53f12cfc4123e9d45df4bc9bcbbb20853"
+    },
+    {
+      "file": "server/src/Planna.Api/appsettings.Development.json",
+      "bytes": 127,
+      "sha256": "73f95f9e0ceb205fc1c4dc50c07697fcfa29d7087868c2aef1d504cb38c771ec"
+    },
+    {
+      "file": "server/src/Planna.Api/appsettings.json",
+      "bytes": 151,
+      "sha256": "200332b434757a0054a3d356c91cde01f2c48712be8aa2bcb0f3e973619f06e3"
+    },
+    {
+      "file": "server/src/Planna.Api/Calendar/CalendarEndpoints.cs",
+      "bytes": 5418,
+      "sha256": "a69442076710b4b22fd450f7fc0dc73dadfe350f31cc3d51a19767aec6953481"
+    },
+    {
+      "file": "server/src/Planna.Api/Focus/FocusEndpoints.cs",
+      "bytes": 7436,
+      "sha256": "e14bbcef6252d3924eaa0e6d36c93b14c07b0adbb74ff98065a2bdf55f2d2ac4"
+    },
+    {
+      "file": "server/src/Planna.Api/Goals/GoalEndpoints.cs",
+      "bytes": 11085,
+      "sha256": "3c0681bc15dddcb6e8aeeff752b6a331061da545706cf22bd7a7b95ee1250288"
+    },
+    {
+      "file": "server/src/Planna.Api/Habits/HabitEndpoints.cs",
+      "bytes": 9833,
+      "sha256": "26ec612bd394726f83fd073d02cb46b0bad1befec8bf66a9ed1a139b798c5474"
+    },
+    {
+      "file": "server/src/Planna.Api/Http/SecurityPipeline.cs",
+      "bytes": 5016,
+      "sha256": "463eff9f9783afa725dfc757882d3ab485716dfa4dbbe9d82b1df727e4e9b144"
     },
     {
       "file": "server/src/Planna.Api/Identity/AccessTokenIssuer.cs",
@@ -355,14 +1400,34 @@
       "sha256": "4910672d57b25505cf0315e7cc617aec2cd388e4ecd695b9975a157b05cfdb7a"
     },
     {
+      "file": "server/src/Planna.Api/Identity/StepUpEndpoints.cs",
+      "bytes": 3412,
+      "sha256": "78bb03af1c5c52aa37f6ce91a88b033b0cc93de3ae3ca2bf4ba5adabafefdf28"
+    },
+    {
+      "file": "server/src/Planna.Api/Lists/ListEndpoints.cs",
+      "bytes": 7005,
+      "sha256": "633d9ca4fb28d58e4e26e3d9e5649f661ca7a946f24d14ee9833ceea6fae6048"
+    },
+    {
+      "file": "server/src/Planna.Api/Me/MeEndpoints.cs",
+      "bytes": 5740,
+      "sha256": "2f059ba33bad450245dac744920414229d6476cef9b4d90099fe5a4d91a0941d"
+    },
+    {
+      "file": "server/src/Planna.Api/Notes/NoteEndpoints.cs",
+      "bytes": 11824,
+      "sha256": "061d7bc2b58df84baea2f538711980adc18b48b7c34d4071a7f779d2ad049360"
+    },
+    {
       "file": "server/src/Planna.Api/Planna.Api.csproj",
       "bytes": 560,
       "sha256": "9e13cba587ebf0aeb4ce26af67fbc436bb233cc6b65fd1601f8798af86a039e7"
     },
     {
       "file": "server/src/Planna.Api/Program.cs",
-      "bytes": 6142,
-      "sha256": "7e563b5ca72e5fba319080d9b69d92e681fa28f2abb4781068a26218d8eb3096"
+      "bytes": 12157,
+      "sha256": "bf894eaf2425d641df0acd638cb37f408d34dcf77a8b739b19710e424575beec"
     },
     {
       "file": "server/src/Planna.Api/Properties/launchSettings.json",
@@ -370,19 +1435,94 @@
       "sha256": "bb9c55f0a194e7aae62e743c8af0060c37258cc4a673245ee573e63bd4cef930"
     },
     {
+      "file": "server/src/Planna.Api/Reminders/ReminderEndpoints.cs",
+      "bytes": 8190,
+      "sha256": "4a60a52ca17c983ddfb90c6ae31ac9ee7394491bc8adbecefeb057209f41e898"
+    },
+    {
+      "file": "server/src/Planna.Api/Sync/SyncEndpoints.cs",
+      "bytes": 3245,
+      "sha256": "5a6d09afda92cb82cf7beeec23d35f6f626261f0599afe907df8736535f95315"
+    },
+    {
+      "file": "server/src/Planna.Api/Tags/TagEndpoints.cs",
+      "bytes": 6794,
+      "sha256": "8a89ea4e5def03ae5bd9a2a2f8f985da988dbdd276b7b4e7f05d6ce8a3cdedec"
+    },
+    {
+      "file": "server/src/Planna.Api/Tasks/RecurrenceEndpoints.cs",
+      "bytes": 9887,
+      "sha256": "2a46261f0cfb00b45a45c14812560be7600e13b7c783d9d988baf56355f32b38"
+    },
+    {
+      "file": "server/src/Planna.Api/Tasks/StepEndpoints.cs",
+      "bytes": 6895,
+      "sha256": "141b23ef6e94b076412ead848d2002b74f4868e4d7ce1fc5bd6a8d60ef20a672"
+    },
+    {
       "file": "server/src/Planna.Api/Tasks/TaskEndpoints.cs",
-      "bytes": 1839,
-      "sha256": "17ab4b992d568831c086290b58598f7001404ba0710fe95fa993030e2454ddb5"
+      "bytes": 15544,
+      "sha256": "6f36be8ba69135913b94ca944311c3409686033481b8cfa06d53e33c73588dae"
     },
     {
-      "file": "server/src/Planna.Api/appsettings.Development.json",
-      "bytes": 127,
-      "sha256": "73f95f9e0ceb205fc1c4dc50c07697fcfa29d7087868c2aef1d504cb38c771ec"
+      "file": "server/src/Planna.Application/Ai/AiBreakdownContracts.cs",
+      "bytes": 3159,
+      "sha256": "df32f512bf20008d408e47f272ad77be649b88012b9c36b5d554063c3ca30f87"
     },
     {
-      "file": "server/src/Planna.Api/appsettings.json",
-      "bytes": 151,
-      "sha256": "200332b434757a0054a3d356c91cde01f2c48712be8aa2bcb0f3e973619f06e3"
+      "file": "server/src/Planna.Application/Ai/AiConsentContracts.cs",
+      "bytes": 1166,
+      "sha256": "8efb1cc674b64bb924f83148358380836a879ca069ca254e9bc269ba39729af1"
+    },
+    {
+      "file": "server/src/Planna.Application/Ai/AiContracts.cs",
+      "bytes": 1597,
+      "sha256": "d2d055d67f01ab56e55ceb0940efc7202d28ae27213e45fa1dceecd7446d7f31"
+    },
+    {
+      "file": "server/src/Planna.Application/Ai/AiPlanContracts.cs",
+      "bytes": 3413,
+      "sha256": "0e5e8a04197f15adc3058b3c2223f47f7b24e4056f51b4509034af8bceda8f43"
+    },
+    {
+      "file": "server/src/Planna.Application/Ai/GoalBreakdownContracts.cs",
+      "bytes": 771,
+      "sha256": "eda4b7c5ab1380a46f89393f84d66f4d76d45e1de6b8c48a0ea861f9f3846ce0"
+    },
+    {
+      "file": "server/src/Planna.Application/Calendar/WorkdayCalendar.cs",
+      "bytes": 1395,
+      "sha256": "7b580765ff4ae41eafe2f680f8b0db6c17a58a17cfeb5c9b10edb53bc9f4a50d"
+    },
+    {
+      "file": "server/src/Planna.Application/Calendar/WorkdayOverrideContracts.cs",
+      "bytes": 3249,
+      "sha256": "5f40037690915028ef18cdbc7e1cd6f865e7f2ae76afaf02cdb1b88261cbd52f"
+    },
+    {
+      "file": "server/src/Planna.Application/Export/ExportContracts.cs",
+      "bytes": 1381,
+      "sha256": "4a7bd701027516d3e4fb4935da25a3bced2128aede33ab1fa5070666ea224943"
+    },
+    {
+      "file": "server/src/Planna.Application/Focus/FocusContracts.cs",
+      "bytes": 3625,
+      "sha256": "6f9d868f7441b0e929a8a33e80508034c1ef187388df4ff3ee71f4b410bc1a74"
+    },
+    {
+      "file": "server/src/Planna.Application/Goals/GoalContracts.cs",
+      "bytes": 5396,
+      "sha256": "e8d5bd1d637ce2e449d567b3856412f6bbe1c7ea343307036b3ffaa152ac71ce"
+    },
+    {
+      "file": "server/src/Planna.Application/Habits/HabitContracts.cs",
+      "bytes": 3340,
+      "sha256": "2c9442c83e6e5d83e1e8708bfac39be332333a13606adcf5fdb586ebaeadd6f7"
+    },
+    {
+      "file": "server/src/Planna.Application/Habits/HabitLogContracts.cs",
+      "bytes": 2146,
+      "sha256": "5a67ddc880efd32951156e6968991f360d7cdee19751dece49373fa6d1bcd502"
     },
     {
       "file": "server/src/Planna.Application/Identity/AuthContracts.cs",
@@ -395,14 +1535,159 @@
       "sha256": "3bce72a616c5bee28995d4ea1149da309d0f17657a636b3162a3778dfdc4ff30"
     },
     {
+      "file": "server/src/Planna.Application/Identity/StepUpContracts.cs",
+      "bytes": 1237,
+      "sha256": "ff7bdd7d8e9014e4126f3b1f06c0646dd55c332759b0077fcd16cbba846e9df9"
+    },
+    {
+      "file": "server/src/Planna.Application/Notes/NoteAttachmentContracts.cs",
+      "bytes": 1934,
+      "sha256": "a9186dbf1602f1ff61aeaddc78340d60ffa74f76404e7f889455a1c7b7b3bd3f"
+    },
+    {
+      "file": "server/src/Planna.Application/Notes/NoteContracts.cs",
+      "bytes": 2340,
+      "sha256": "6a49ca659d0dd297c7bed678146c7d2695020b377a0aedaf00bfd20c8c789421"
+    },
+    {
       "file": "server/src/Planna.Application/Planna.Application.csproj",
       "bytes": 219,
       "sha256": "61e3f2d043e37f0db4be1d8083dd31bebbfbb8fde2cf027327db2556c16bc385"
     },
     {
+      "file": "server/src/Planna.Application/Privacy/DeletionContracts.cs",
+      "bytes": 1157,
+      "sha256": "c6499b4021c68673ac7a84ad029b9c69b5d21f6962ff1c86d0127e139a29e858"
+    },
+    {
+      "file": "server/src/Planna.Application/Reminders/ReminderContracts.cs",
+      "bytes": 2798,
+      "sha256": "3f5232c39dba1237a0e9f08c6733c906790529f0fcddf22dc08e86483314c00d"
+    },
+    {
+      "file": "server/src/Planna.Application/Sync/SyncBootstrapContracts.cs",
+      "bytes": 582,
+      "sha256": "ccc370809115974fa913e18ec11047a4fdff7f4025279812221671f77df9bcce"
+    },
+    {
+      "file": "server/src/Planna.Application/Sync/SyncContracts.cs",
+      "bytes": 2638,
+      "sha256": "ba2ba2a7fec700803fbacb9d149481c18c94702f91f74e84170e1dc07f0b853f"
+    },
+    {
+      "file": "server/src/Planna.Application/Sync/SyncPushContracts.cs",
+      "bytes": 1466,
+      "sha256": "1df059e8de0d39562c87f6c44c8a9840264fea6937876d2254d24f77c3b65900"
+    },
+    {
+      "file": "server/src/Planna.Application/Tags/TagContracts.cs",
+      "bytes": 4944,
+      "sha256": "1124531e4687a09bd3e45235df30d06451295069135b0371181a2432f4cc32e1"
+    },
+    {
       "file": "server/src/Planna.Application/Tasks/CreateTask.cs",
       "bytes": 2103,
       "sha256": "5f1320e319d02b3c6bddbbe2b7364dfb0483e3abe6f752fac78c0db20f8d3100"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/OccurrenceContracts.cs",
+      "bytes": 1054,
+      "sha256": "0a255ea18c50465f2bfed8f1ff6ac0c3c5d95ae4c4437d077398f966a4950421"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/RecurrenceContracts.cs",
+      "bytes": 3698,
+      "sha256": "081ec598f44088f376a40f642186ee6b5b2f9bde747d5851af0f736cd26a3c34"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/StepContracts.cs",
+      "bytes": 5733,
+      "sha256": "3739b67232f9419817f8a3c3bf5d739cae10569c01871fcc9d3785bc85c579c3"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/TaskCompleteContracts.cs",
+      "bytes": 1784,
+      "sha256": "d3e8e6f5c3763a4384d32eab7207cb3dee4980099e5ee11a7f84f6ce00c90249"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/TaskListContracts.cs",
+      "bytes": 2739,
+      "sha256": "04026bf4f62c7bf318e65bef9f6710b89386407df4457af2e17a44fdee84e357"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/TaskReadContracts.cs",
+      "bytes": 3229,
+      "sha256": "b0655face4c5c592fc1a90a26e0b51b75bab116660966e2eec8955ddafff3331"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/TaskTagContracts.cs",
+      "bytes": 1353,
+      "sha256": "d5e5cf70ce9df38311930b6ef7ff1a0e57d89dc6af5c70577085c73a4745b3cf"
+    },
+    {
+      "file": "server/src/Planna.Application/Tasks/TaskWriteContracts.cs",
+      "bytes": 6390,
+      "sha256": "405beddeada67121cf871574c74ec42f3fa51952b4ccaa27da717eca4c41af59"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/AiConsentService.cs",
+      "bytes": 4796,
+      "sha256": "cf76df51058430de87edd41a44a92d01517149956789e1fe0f6d35528ff189a3"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/BreakdownService.cs",
+      "bytes": 15077,
+      "sha256": "09838512a42f4c7e69db3d3b6d88c405f9f4d60876007ff46a7adc29d1bb6310"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/PlanService.cs",
+      "bytes": 11519,
+      "sha256": "882964f9c38a64e11b51cbe9e794ddf0d14d23a8e8e61a9ed6fe3f085cc623a6"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/RuleBasedBreakdownProvider.cs",
+      "bytes": 1044,
+      "sha256": "e1c2f43b18e65f679d9a539180a34d5d6442d7ba12d529588c162ec5fb297b22"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/RuleBasedParseProvider.cs",
+      "bytes": 5363,
+      "sha256": "7f68e347f22f638433b4b7a47c6ee5772af89c8d31543457b55f371e2e00bd4f"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Ai/RuleBasedPlanScheduler.cs",
+      "bytes": 1988,
+      "sha256": "8e1bae1f420cff7b82d04fa0a5e63e5d1317af605413a7f81a9c3971e73452c1"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Calendar/WorkdayOverrideService.cs",
+      "bytes": 11076,
+      "sha256": "54d6dba2f0f70a70b8587770f76fbc007c98de95ff7dd14f61d7950025ff2663"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Export/AccountExportService.cs",
+      "bytes": 21498,
+      "sha256": "d6c36a7a0e7fcbe56a5ccba0509a304c3074ad24d979aba5bf21f18b00e6bcc3"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Focus/FocusSessionService.cs",
+      "bytes": 19100,
+      "sha256": "1b7da241dfa17b71621778116523bb4c82c2bb938959fcdf8f045cef8e96e137"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Goals/GoalService.cs",
+      "bytes": 29158,
+      "sha256": "4e52b52954e31bf6ad332f6dfb97a35839e3605b0f82dd61773f375f433a45b3"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Habits/HabitLogService.cs",
+      "bytes": 11068,
+      "sha256": "9f510dbcf9f583691b670a1ee6cc8579ef6d2e3f27d792e5a99c9e24e81ccab2"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Habits/HabitService.cs",
+      "bytes": 15600,
+      "sha256": "d9ab27739fc8cfa086539a1e1946803701fc1ad0c1fce742e306daaa07463b57"
     },
     {
       "file": "server/src/Planna.Infrastructure/Identity/AuthQueueMaintenance.cs",
@@ -438,6 +1723,36 @@
       "file": "server/src/Planna.Infrastructure/Identity/SmtpLoginCodeSender.cs",
       "bytes": 802,
       "sha256": "28292c1ea9d43776d10cce71d218350d0b0d102fa5e065501f943c6ec9c0eac9"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Identity/StepUpEmailDispatcher.cs",
+      "bytes": 6113,
+      "sha256": "4aca5538f8ac3f3da5c27d9db38ffba8c0acb33474549e567b215ea1158ffebc"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Identity/StepUpService.cs",
+      "bytes": 10055,
+      "sha256": "8de46129a185f8ea206c99b79dbb20f63276d34d0ecea771a266a99f57ea8d67"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Notes/NoteAttachmentCleanup.cs",
+      "bytes": 2100,
+      "sha256": "22b319a76f9eb47f20ae10213c15bf785527ab9c6839bebca06f423b4e15a318"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Notes/NoteAttachmentService.cs",
+      "bytes": 14285,
+      "sha256": "66414144dcffaeade7e0cbcf41174ad1c777384c411b807ea391d82e086cd749"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Notes/NoteAttachmentStorage.cs",
+      "bytes": 1057,
+      "sha256": "32c9d7fa72ec9367c4951bbe2b5489effa16a7cf43a71348754a507440da9385"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Notes/NoteService.cs",
+      "bytes": 12518,
+      "sha256": "85c91b11795f47d25295dfef5c9d849098b192daaa89bc234e1201d2d859aa4e"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/AuthContext.cs",
@@ -480,14 +1795,69 @@
       "sha256": "17c3164ac7a5ee33b350906a621d01ab2eedd4874268799f9caae21de42d410d"
     },
     {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611110008_TaskListReadIndex.cs",
+      "bytes": 741,
+      "sha256": "ec1f75fca710be5e665c01128b704db5cd8cf83073363d18234f963cbdd90eab"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611120009_AccountExportPayload.cs",
+      "bytes": 630,
+      "sha256": "8680edc1d94bef2cc61626d336fee3046f447570993c8b5c054bd4823cda88c1"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611120010_StepUpChallenges.cs",
+      "bytes": 4137,
+      "sha256": "0ad28ab9eb0dcb28ad09feff63bca32d5001723b29870cc2c311630a2ab6b403"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611130001_Habits.cs",
+      "bytes": 2876,
+      "sha256": "1f5e663b16cf933e2c7bc1618c424b6291d37fa609c0babc552c9dc66333f9e0"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611130002_HabitLogs.cs",
+      "bytes": 2276,
+      "sha256": "91667947fdfa4c65e9dde05e6c3700bffea1257810c842945d2ac119f0047a6e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611140001_FocusSessions.cs",
+      "bytes": 3064,
+      "sha256": "054e2174853f4d25941bbd03a07f4bbd493801b5bc61f126fd809133a96c53e5"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611140002_Goals.cs",
+      "bytes": 3939,
+      "sha256": "8a646d2b66676a665ac7e7113a6cc6197d8020128849968004746537bb83fffa"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611140003_Notes.cs",
+      "bytes": 2164,
+      "sha256": "199c616603c8e11a432b0a29e80ac3fe2f9e8966b94234744cfb12044b67c715"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611220001_WorkdayOverrides.cs",
+      "bytes": 2209,
+      "sha256": "17bbb189cc97b769e8196102564a938bd12ee63aa5d3e87956111412928606ce"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611230001_NoteAttachments.cs",
+      "bytes": 2442,
+      "sha256": "245c7b4462b2a91e3fb9b2acd3b53bda3af6f0d822f919143691c8bef81f11c1"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Persistence/Migrations/202611230002_AttachmentRateWindows.cs",
+      "bytes": 1214,
+      "sha256": "5496060842308bbbc4167677b0b40d9483de92d8eb3db8e25840891db05aaa72"
+    },
+    {
       "file": "server/src/Planna.Infrastructure/Persistence/PlannaSchemaContext.cs",
       "bytes": 949,
       "sha256": "4d80cf65111cb403a6fcb37354f49326c4634a8dd79a7fbc1a49a4466c89819b"
     },
     {
       "file": "server/src/Planna.Infrastructure/Persistence/TaskWriteContext.cs",
-      "bytes": 5222,
-      "sha256": "b33e0c3100e29c42c3615fe0371cbb511fee98bed64bdf36e6ccffc0093181f6"
+      "bytes": 7977,
+      "sha256": "623b24d9f3483781202391a8c881fae5db67971e791aaa714ac7eb8f41f2fea6"
     },
     {
       "file": "server/src/Planna.Infrastructure/Planna.Infrastructure.csproj",
@@ -495,9 +1865,159 @@
       "sha256": "17a84585a84fc479b2839fe6f49510cd4dabfe15c00eb47280db576efbd5a31d"
     },
     {
+      "file": "server/src/Planna.Infrastructure/Privacy/AccountCleanupService.cs",
+      "bytes": 4847,
+      "sha256": "3feb2dddf6f6ba2d60843890a725ad72a36be342f54aa7b6f2bf19ea21e18c3d"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Privacy/AccountDeletionService.cs",
+      "bytes": 5023,
+      "sha256": "43f08bb28bd8003983a98639b5b4de86436a7fbd8415b3f078329293d8301bfb"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Reminders/ReminderService.cs",
+      "bytes": 15875,
+      "sha256": "dc05f01fa058922fb914996eb591863732e0365a81b4789a485a4e69ace8dc5a"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Sync/SyncBootstrapQuery.cs",
+      "bytes": 3806,
+      "sha256": "f696adabcb7e0dd4008b249905cd90d562f013533dcdf34b2819683e8f3d200c"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Sync/SyncPullQuery.cs",
+      "bytes": 2852,
+      "sha256": "9385e45ed91ce9b9aac98267bc1710fed2700763e43068e6f76690e17daa6b68"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Sync/SyncPushService.cs",
+      "bytes": 44545,
+      "sha256": "e7415e5d930cec28736a7cb25e070a4e897207eee54e9e56cad8a8d22892e0d8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Sync/SyncPushService.Notes.cs",
+      "bytes": 11774,
+      "sha256": "ff9456f2f97d586136f074075e9b5fa5db64416ade5ed24c7b4dda3a3d8d5f85"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tags/TagCreateService.cs",
+      "bytes": 3785,
+      "sha256": "1ba0427d132cc3dc547b55f5de8ad7c7f241a58bb129a1c88df4804dfcc1b120"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tags/TagDeleteService.cs",
+      "bytes": 3418,
+      "sha256": "95447611ec7d6295adf125d420014f35a463c74b1e89cac3d08535d125b7699b"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tags/TagQuery.cs",
+      "bytes": 1817,
+      "sha256": "12885706229e10547b475ec1692b74fa027c8adec93109b3fd1a308ccb898d90"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tags/TagUpdateService.cs",
+      "bytes": 4643,
+      "sha256": "e64210ce1096bc5f49dc43abd291b1432436699df3caf5f315521a1e90908809"
+    },
+    {
       "file": "server/src/Planna.Infrastructure/Tasks/CreateTaskService.cs",
       "bytes": 4998,
       "sha256": "fb12ff337378ad247f4131440ded0e3d177aa88a162df905bd9ef41f4899d682"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/ListCreateService.cs",
+      "bytes": 3483,
+      "sha256": "da4b51b270e567fc75f122a71567bb32f07ef45861cde63dfa3dd297f6c23587"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/ListDeleteService.cs",
+      "bytes": 3930,
+      "sha256": "f07133177c5fe83da611a0a4659863e1d489dfa399dd9fdb3515268d9235d798"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/ListUpdateService.cs",
+      "bytes": 3677,
+      "sha256": "f8a29f0aa6c56ca2a8e888a7e77175fac4739fa3508c98d07acc4aeb9cef666a"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/OccurrencePatchService.cs",
+      "bytes": 6625,
+      "sha256": "1ea18cf816cbb7fc79b6f9ec7d4fa139f4047f61c1d0938962d7b88d70bcb4c6"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/RecurrenceExpander.cs",
+      "bytes": 6337,
+      "sha256": "3affd4ae8c0579aa7fb7f88180260466444fd951c9552f521efc07f0f6a564cc"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/RecurrenceQuery.cs",
+      "bytes": 7735,
+      "sha256": "69cb45a61635e9965c16a5d97804a1d326ff937116b22b914113f45804e06b31"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/RecurrenceService.cs",
+      "bytes": 10921,
+      "sha256": "67a12e8481e09f60eb01c44be057339ef05d0dfc08bad6a8288560c8e8771ed6"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/SetTaskTagsService.cs",
+      "bytes": 5080,
+      "sha256": "9535f1a7ac1e7a65164f72ba0c615f3c78767a86238a82c0d6e1c24ab9d3829e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/StepCreateService.cs",
+      "bytes": 3980,
+      "sha256": "2f3b8740ce9e830f1926f355b2b43e39d33bba2b362300fd5cc604e6ff139f2e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/StepDeleteService.cs",
+      "bytes": 3468,
+      "sha256": "9300daec193c028eb4ad6fb3057f5944a1ac2c4dd77cc22f089eacb29e9b07bb"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/StepQuery.cs",
+      "bytes": 1782,
+      "sha256": "3ee997b715b10578f933cbcdff614871aa53642fe65fc5c663dfc9fffba05a8f"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/StepUpdateService.cs",
+      "bytes": 4897,
+      "sha256": "e762cbe4454ba60fd1eeb12cff2e2519d753f4bfd6c33d13ab0e05623077295e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskCompleteService.cs",
+      "bytes": 12017,
+      "sha256": "711b0719c81a87d6ccf20a378a3895230f5a09787e488302615e5f47878b780a"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskDeleteService.cs",
+      "bytes": 3448,
+      "sha256": "478436a9c645c2cc232f5b7bb0b3f63a20b9f9a7a237d7bbd0e544c154d95ef8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskListQuery.cs",
+      "bytes": 1896,
+      "sha256": "c64bb05f4dc44c154900d78b07209370e20fb90e6fb8efa25ed05e18efea658a"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskReadQuery.cs",
+      "bytes": 5366,
+      "sha256": "c4ede26de8d8619c22e4bf7b060bd7cd76d50239f112c74e2c7e268b7bb2ae6e"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskReopenService.cs",
+      "bytes": 8297,
+      "sha256": "ab79fdffcb92f16a2be1b63a8f88454bf2fda40f34e8aa770aad59210857f8d8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskTagQuery.cs",
+      "bytes": 1686,
+      "sha256": "d17a8a3005c3a280538a3bd1627a58f8e439cb61c25c61092360516c6d0718f8"
+    },
+    {
+      "file": "server/src/Planna.Infrastructure/Tasks/TaskUpdateService.cs",
+      "bytes": 6572,
+      "sha256": "a5f890813b5a4743e3172dac904a22364ba6e02bef928c25c0f9208d6b0e6a3b"
     },
     {
       "file": "server/src/Planna.Worker/LoginEmailWorker.cs",
@@ -505,14 +2025,44 @@
       "sha256": "00991bf87f8bf1f5491c40915e47d05d66b6eea23234c67d0b3b80e1e7092a7d"
     },
     {
+      "file": "server/src/Planna.Worker/NoteAttachmentCleanupWorker.cs",
+      "bytes": 1289,
+      "sha256": "b08e5afd3c89c8788725ba8c2fa89a626e9108765ba55e8aacffb81323765985"
+    },
+    {
       "file": "server/src/Planna.Worker/Planna.Worker.csproj",
       "bytes": 445,
       "sha256": "014b40e823a9565a3570cafd23cc424827974ac7d3237343a98c49246de43328"
     },
     {
+      "file": "server/src/Planna.Worker/PrivacyCleanupWorker.cs",
+      "bytes": 1363,
+      "sha256": "14d2293f6de715f0715ec65929c748ae2b9d1617b5488e22efd561715a90511e"
+    },
+    {
       "file": "server/src/Planna.Worker/Program.cs",
-      "bytes": 1666,
-      "sha256": "5c4ed5f91b526ac3da0abd3289abb6a2cac7d2df34565405f51ad1e5b19155dc"
+      "bytes": 4202,
+      "sha256": "29d30c8ac9d6d9ee2eaf78305801223c3821d68f89d5b001e20117c3ae755067"
+    },
+    {
+      "file": "server/src/Planna.Worker/StepUpEmailWorker.cs",
+      "bytes": 991,
+      "sha256": "24fea5f3f67b7738766544404fbbcb41f120be90d1631952ea5ff59f58d87c49"
+    },
+    {
+      "file": "server/stepup-migrations.sql",
+      "bytes": 30337,
+      "sha256": "1899c502e01a8568b94dc5f370ffe4c0b87b9b8a66a1eaa461c79653bfb72e6e"
+    },
+    {
+      "file": "server/tasks-read-migrations.sql",
+      "bytes": 26729,
+      "sha256": "baed5bacfffb1218525cab7ac58fa1450b5892db36c2f20203bd176bf99ff1e1"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/AccountCleanupSmoke.cs",
+      "bytes": 8908,
+      "sha256": "968ac7db6bd8e1e296e9144a6570bb1fe4e79a7a0ae4ae4da8c1cd6e8fc31d0d"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/AuthMaintenanceSmoke.cs",
@@ -520,9 +2070,34 @@
       "sha256": "e553768e71b1a70983f6db573c6956c6ff1246afc9aad414e7768eb2d389011d"
     },
     {
+      "file": "server/tests/Planna.MigrationSmoke/HttpAfterCompletionSmoke.cs",
+      "bytes": 13163,
+      "sha256": "073f446f34512a4eb9ff761b25a80ab49326e0a593cf01ce252caa6e2eb2bc1b"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpAiConsentSmoke.cs",
+      "bytes": 10609,
+      "sha256": "9b11c493d063468813cd5d20f33c380b388be8733eb522634f389032eb615dea"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpAiParseSmoke.cs",
+      "bytes": 9553,
+      "sha256": "4a983009e6897e61a28cbbac07d16f1fd1f7faa5c0fcb3b05ad6a810eac82b62"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpAuthMatrixSmoke.cs",
+      "bytes": 6316,
+      "sha256": "dd8e47ce3ac75846dd499a175ac34b24d48de3ccb2c4c1cccc2dfe7594e141d8"
+    },
+    {
       "file": "server/tests/Planna.MigrationSmoke/HttpAuthSmoke.cs",
       "bytes": 19271,
       "sha256": "2da9b8931e9e949f7754c246455e3b2ef8462f23e204d0e619dc7666b740b7c6"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpBreakdownSmoke.cs",
+      "bytes": 16513,
+      "sha256": "ecc07578e63bbaa9e3c3ecc88ca05b9e7356d618f784f35d052f6d978eca5a5b"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/HttpCreateTaskSmoke.cs",
@@ -530,9 +2105,169 @@
       "sha256": "b8ada28c4139e034ff2035a1cf73b6855aa47e1fbfa46a37b41ef5fa1cfa75d3"
     },
     {
+      "file": "server/tests/Planna.MigrationSmoke/HttpDeletionSmoke.cs",
+      "bytes": 11139,
+      "sha256": "4165c6bd6d2243e52cdc5e9737d8b7169077f969ccbaf436d257be99fec16731"
+    },
+    {
       "file": "server/tests/Planna.MigrationSmoke/HttpDeviceSmoke.cs",
       "bytes": 8189,
       "sha256": "f5213cba287c2c23525bfefdac469719433a311b1853a8a59bccf1e30cd9d01c"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpExportSmoke.cs",
+      "bytes": 13755,
+      "sha256": "b7ed30d4a10e2c3aef139a0acc6e6f9cee7346fbcea8c50d066c20ce9e35df58"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpFocusPageSmoke.cs",
+      "bytes": 5158,
+      "sha256": "7ea6dc0c7442f6a799683e04edac25a9c378baa929a23fb08d32ebe3bf275135"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpFocusSmoke.cs",
+      "bytes": 12774,
+      "sha256": "a3b6a9658bc8fbe4131e46870ac7a4c530e6402dafa77190747b21459256a3f2"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpFocusStatsSmoke.cs",
+      "bytes": 7933,
+      "sha256": "c39bceaea156aaae8830a3e7b6ff2b4b7d0232b67acf790921510608689dcd71"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpGoalBreakdownSmoke.cs",
+      "bytes": 7295,
+      "sha256": "3cdf4711fc7756caabe70b6aad71cf8dbe5732b38de3f95bdeccfda730ec249e"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpGoalOrderSmoke.cs",
+      "bytes": 7550,
+      "sha256": "c7a0276b66343bb5b503277cb5b281a5a03b0a7cf0846c0e8632f82ffe39310e"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpGoalSmoke.cs",
+      "bytes": 10938,
+      "sha256": "14f66612e70a52f9d44d34efe4358fbba8ca05554cdb083c84b7aba388cd50fa"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpHabitLogSmoke.cs",
+      "bytes": 14132,
+      "sha256": "0e787b51c43224293d7eae2f3c431b7f555a48ed82634dadd5abce3c2ba60243"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpHabitPushSmoke.cs",
+      "bytes": 13186,
+      "sha256": "0faa568db44629bb96c85548590688a94580b84cd39efe70d2dbdd33294c2361"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpHabitSmoke.cs",
+      "bytes": 12782,
+      "sha256": "027551054944d8ec02d4b078d87adae9b3fcf3299bae15f0dd38e94a53b3842b"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpListSmoke.cs",
+      "bytes": 18043,
+      "sha256": "77bda7f79673a7be83a5e79d56136d103ed7255dee21e864d497448fc8116494"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpNoteAttachmentSmoke.cs",
+      "bytes": 18576,
+      "sha256": "b9b34f8b6e90959ec2069648cce4f71b537d4c8e55750f938fdab2e5a2fb9156"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpNoteSmoke.cs",
+      "bytes": 9588,
+      "sha256": "9dbf43d03800c73b2036df2a0eafd6fbc5a77b8c948c85d9b091ab1ec7464997"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpOccurrenceCompleteSmoke.cs",
+      "bytes": 11214,
+      "sha256": "650cc3fcffc3c65ea5c835dc05ac0184c81d0039ec4c5267341c1ba8c5db5e29"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpOccurrenceEditSmoke.cs",
+      "bytes": 12133,
+      "sha256": "c6686e93ed2a7792ff0c8b3f8d0e1769d3a55ad05a6766726c9427631f4bc3e4"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpOccurrenceReopenSmoke.cs",
+      "bytes": 11624,
+      "sha256": "5e6538af26e3f4b65858c5667e8b3a1a352d57ddb7022a144222e571de78b278"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpPlanSmoke.cs",
+      "bytes": 14215,
+      "sha256": "e739393f605e60d4fd51dd7be7672c48869448ad514a33c09a123766a39ffdc4"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpRecurrenceSmoke.cs",
+      "bytes": 16918,
+      "sha256": "1d89f9423be404f38846f311008cd87f6e2e30ac50b87a7907d815e8b5cdcc09"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpReminderSmoke.cs",
+      "bytes": 11985,
+      "sha256": "dec69f8d1dc56de6647b93658b9281b8ef9ba0a95e385f661632aece501ce757"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpSecuritySmoke.cs",
+      "bytes": 7445,
+      "sha256": "e4c2de0915fe8f53c73bf77d7b71cc423de8f91a0199a38b1ecd0df072907ec6"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpStepSmoke.cs",
+      "bytes": 16944,
+      "sha256": "fe8414c901964564e62b1cabbb6e4b34963e1a9c380a80cafdbb8bec79476447"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpStepUpSmoke.cs",
+      "bytes": 11579,
+      "sha256": "3f897b43f2f13b474da889897dc5e799b0b22895f2919d71b89b424b31b8c507"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpSyncBootstrapSmoke.cs",
+      "bytes": 9407,
+      "sha256": "8b600b4e8ef1d43f8ae8add8663ea5830d2b3a8a90eb6dd9ba808c3fa02e78b7"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpSyncPullSmoke.cs",
+      "bytes": 10073,
+      "sha256": "6e67f6d6cbcc9d4ad899f1510a3022d0a8ee7287c412699d01f62cc22e2db76d"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpSyncPushSmoke.cs",
+      "bytes": 15937,
+      "sha256": "c0fed6cc6953e4fda48b4a4ea94863ccf94bec8a458524b3eaecf8aeb56a672b"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpTagSmoke.cs",
+      "bytes": 17651,
+      "sha256": "31b9c8d1080496bc63cdaa430be90b23f2088837f30e5269cbc8d7a406dcdfea"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpTaskCompleteSmoke.cs",
+      "bytes": 17763,
+      "sha256": "431912869787d74c3759434ecafd0b21ace18e65e9c97b0555085f3887922942"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpTaskReadSmoke.cs",
+      "bytes": 12738,
+      "sha256": "2ea7391d1b701c971a73c40712e55051ed5da6e54a44762ddcad6ee74762e0f1"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpTaskTagSmoke.cs",
+      "bytes": 15016,
+      "sha256": "639b8652adae9aaf3452b26e752c143501ae05044ea00e607c255dab583ea9e7"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpTaskWriteSmoke.cs",
+      "bytes": 17172,
+      "sha256": "e6bcde1265f45544c02ad7aedf1ca3cd9810e316f5fe4e662a1ed644d449910f"
+    },
+    {
+      "file": "server/tests/Planna.MigrationSmoke/HttpWorkdayOverrideSmoke.cs",
+      "bytes": 14599,
+      "sha256": "a57495b0a317d134f0d21d6156c6d87bdb95f110c05631b708f15a173ed96888"
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Planna.MigrationSmoke.csproj",
@@ -541,13 +2276,33 @@
     },
     {
       "file": "server/tests/Planna.MigrationSmoke/Program.cs",
-      "bytes": 7610,
-      "sha256": "b2a0668434838e16f29fe8184e9932f448d5d4721a6e867ce19e6ff8ac073093"
+      "bytes": 9567,
+      "sha256": "1115644482fe245fb4fb0557e9a8986f4914226f80053d6a1844cc014b557ba8"
+    },
+    {
+      "file": "server/tools/Planna.Migrate/Planna.Migrate.csproj",
+      "bytes": 422,
+      "sha256": "2a26aa3457e493d2cc7ffef22ac36584b4326d07fac3d7d55c2cc93982f1f7a0"
+    },
+    {
+      "file": "server/tools/Planna.Migrate/Program.cs",
+      "bytes": 1023,
+      "sha256": "170fdeb021236e0896472aea9b470d762e81e151851d622a2e5659889fd867f8"
     },
     {
       "file": "spec/account-deletion.schema.json",
       "bytes": 565,
       "sha256": "613fddb1f7b85d51e4b838cd5dc386225f23c5d385efe604ba3651060a968527"
+    },
+    {
+      "file": "spec/account-export-v2.schema.json",
+      "bytes": 9204,
+      "sha256": "32df49cea9b04506f0f985f7488da746d9291aed79b54327cf7195b5fb971f46"
+    },
+    {
+      "file": "spec/account-export-v3.schema.json",
+      "bytes": 10333,
+      "sha256": "01be4aa31e69f5caf9a0384c240bd04f22e81084dbb9563d81bb8537d645fdd3"
     },
     {
       "file": "spec/account-export.schema.json",
@@ -565,9 +2320,14 @@
       "sha256": "77904d7ff504b594294e55fcd7218af949d4f31643f0676d612826159c065a00"
     },
     {
+      "file": "spec/focus-report-v1.schema.json",
+      "bytes": 1284,
+      "sha256": "f6e037cbc68c0f27076033f22f2b959d5e88f1eac66ba5b089c87ec4a84cfecb"
+    },
+    {
       "file": "spec/openapi.yaml",
-      "bytes": 37255,
-      "sha256": "38290d086940b3bdbd322362d177b13197aef7dfe18a4ab96b0033551811059c"
+      "bytes": 133547,
+      "sha256": "42e6a1ceae2bfdb18c95cd8ac6cb33c90f3e47b0db8af795cd9b61c371919e52"
     },
     {
       "file": "spec/task.schema.json",
@@ -581,8 +2341,13 @@
     },
     {
       "file": "tests/contract/test_spec01.py",
-      "bytes": 7530,
-      "sha256": "44fee4c06a7dcd439386fef3522c980156006153d31dd509671ba6e1b8eac82e"
+      "bytes": 54680,
+      "sha256": "8e52a89bdda7d32447ad294da44d1f642064ea6f34fae090ac6c31cfc033635a"
+    },
+    {
+      "file": "VALIDATION.md",
+      "bytes": 149706,
+      "sha256": "6a7b739533b463ef4478ede1dc6dc92a556613f3300a5c6a869dd6590a369f2c"
     }
   ]
 }
